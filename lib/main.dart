@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'common/widgets/bottom_bar.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
-import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/bloc/auth_event.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
@@ -16,11 +17,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: [BlocProvider(create: (_) => di.sl<AuthBloc>())],
+      providers: [
+        BlocProvider(create: (_) => di.sl<AuthBloc>()..add(AppStartedEvent())),
+      ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Used Tech Market',
-        theme: ThemeData(primarySwatch: Colors.cyan, useMaterial3: true),
-        home: const LoginPage(),
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan),
+          useMaterial3: true,
+        ),
+        // Always start with BottomBar (Guest or User)
+        home: const BottomBar(),
       ),
     );
   }

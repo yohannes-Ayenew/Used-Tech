@@ -20,3 +20,5 @@ class AuthFailure extends AuthState {
   final String message;
   const AuthFailure(this.message);
 }
+
+class AuthGuest extends AuthState {}

@@ -9,6 +9,7 @@ abstract class AuthEvent extends Equatable {
 class LoginRequestedEvent extends AuthEvent {
   final String email;
   final String password;
-
   const LoginRequestedEvent({required this.email, required this.password});
 }
+
+class AppStartedEvent extends AuthEvent {}
