@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:used_tech_client/features/auth/presentation/pages/login_page.dart';
+import 'package:used_tech_client/features/product/presentation/pages/product_detail_page.dart';
+import 'package:used_tech_client/features/product/presentation/pages/search_page.dart';
 import 'common/widgets/bottom_bar.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
@@ -27,8 +30,14 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan),
           useMaterial3: true,
         ),
-        // Always start with BottomBar (Guest or User)
-        home: const BottomBar(),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const BottomBar(),
+          '/search': (context) => const SearchPage(),
+          '/product-detail': (context) => const ProductDetailPage(),
+          '/login': (context) => const LoginPage(),
+        },
+        // home: const BottomBar(), // Remove this line if using routes
       ),
     );
   }
