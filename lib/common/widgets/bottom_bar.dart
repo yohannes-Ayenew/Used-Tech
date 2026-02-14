@@ -5,7 +5,9 @@ import '../../core/utils/auth_guard.dart';
 import '../../core/constants/global_variables.dart';
 import '../../features/product/presentation/pages/home_page.dart';
 import '../../features/product/presentation/pages/search_page.dart';
-import '../../features/profile/presentation/pages/profile_page.dart'; // Import Profile Page
+import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/sell/presentation/pages/sell_page.dart'; // Import Sell Page
+import '../../features/inbox/presentation/pages/inbox_page.dart'; // Import Inbox Page
 
 class BottomBar extends StatefulWidget {
   static const String routeName = '/actual-home';
@@ -20,22 +22,23 @@ class _BottomBarState extends State<BottomBar> {
 
   // List of Screens
   List<Widget> pages = [
-    const HomePage(), // Index 0: Home
-    const SearchPage(), // Index 1: Search
-    const Center(child: Text('Sell Page')), // Index 2: Sell (Placeholder)
-    const Center(child: Text('Inbox Page')), // Index 3: Inbox (Placeholder)
-    const ProfilePage(), // Index 4: Profile (Guest Mode)
+    const HomePage(), // Index 0: Home (Public)
+    const SearchPage(), // Index 1: Search (Public)
+    const SellPage(), // Index 2: Sell (Requires Login)
+    const InboxPage(), // Index 3: Inbox (Requires Login)
+    const ProfilePage(), // Index 4: Profile (Guest Mode/Auth)
   ];
 
   void updatePage(int page) {
-    // Inbox (Index 3) might require login - you can adjust based on your needs
-    if (page == 3) {
+    // Pages that require login: Sell (2) and Inbox (3)
+    if (page == 2 || page == 3) {
       authGuard(context, () {
         setState(() {
           _page = page;
         });
       });
     } else {
+      // Home, Search, Profile are accessible to guests
       setState(() {
         _page = page;
       });
