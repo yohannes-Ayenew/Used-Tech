@@ -1,11 +1,11 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:used_tech_client/features/auth/presentation/pages/login_page.dart';
-import 'package:used_tech_client/features/product/presentation/pages/product_detail_page.dart';
-import 'package:used_tech_client/features/product/presentation/pages/search_page.dart';
 import 'common/widgets/bottom_bar.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
+import 'features/auth/presentation/pages/login_page.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
@@ -33,11 +33,8 @@ class MyApp extends StatelessWidget {
         initialRoute: '/',
         routes: {
           '/': (context) => const BottomBar(),
-          '/search': (context) => const SearchPage(),
-          '/product-detail': (context) => const ProductDetailPage(),
           '/login': (context) => const LoginPage(),
         },
-        // home: const BottomBar(), // Remove this line if using routes
       ),
     );
   }
