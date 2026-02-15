@@ -14,7 +14,14 @@ class ProfilePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text("Profile", style: GlobalVariables.headerStyle),
+        title: const Text(
+          "Profile",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
@@ -22,6 +29,7 @@ class ProfilePage extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Hero Section - Start Trading Today
             Container(
@@ -58,7 +66,7 @@ class ProfilePage extends StatelessWidget {
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 24),
-                  // Login / Create Account Button
+                  // Log In / Create Account Button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -151,26 +159,7 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 30),
-
-            // Bottom Navigation Bar Preview (optional - since you have bottom_bar.dart)
-            // This is just for visual reference in the profile page
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildNavItem(Icons.home_outlined, "Home", false),
-                  _buildNavItem(Icons.search_outlined, "Search", false),
-                  _buildNavItem(Icons.add_circle_outline, "Sell", false),
-                  _buildNavItem(Icons.chat_outlined, "Inbox", false),
-                  _buildNavItem(Icons.person, "Profile", true),
-                ],
-              ),
-            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -212,28 +201,6 @@ class ProfilePage extends StatelessWidget {
                 style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isSelected) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isSelected ? GlobalVariables.primaryTeal : Colors.grey,
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: isSelected ? GlobalVariables.primaryTeal : Colors.grey,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ],
