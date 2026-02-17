@@ -1,11 +1,38 @@
+// lib/features/product/presentation/pages/product_detail_page.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/global_variables.dart';
-import '../../../../common/widgets/auth_bottom_sheet.dart'; // To prompt login
-import '../widgets/product_card.dart'; // For "Similar Devices"
+import '../../../../common/widgets/auth_bottom_sheet.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
+import '../widgets/product_card.dart';
 
 class ProductDetailPage extends StatelessWidget {
-  // In a real app, pass the Product Entity here
   const ProductDetailPage({super.key});
+
+  void _handleAction(BuildContext context, String action) {
+    final authState = context.read<AuthBloc>().state;
+
+    if (authState is AuthSuccess) {
+      // User is logged in - proceed with action
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("$action - Feature coming soon"),
+          backgroundColor: GlobalVariables.primaryTeal,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      // User is guest - show auth bottom sheet
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => const AuthBottomSheet(),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +48,22 @@ class ProductDetailPage extends StatelessWidget {
                 Stack(
                   children: [
                     Image.network(
-                      "https://via.placeholder.com/400x300", // Replace with product image
+                      "https://via.placeholder.com/400x300",
                       height: 300,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 300,
+                          width: double.infinity,
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
                     ),
                     Positioned(
                       top: 40,
@@ -39,9 +78,13 @@ class ProductDetailPage extends StatelessWidget {
                       right: 16,
                       child: Row(
                         children: [
-                          _buildCircleBtn(Icons.favorite_border, () {}),
+                          _buildCircleBtn(Icons.favorite_border, () {
+                            _handleAction(context, "Add to favorites");
+                          }),
                           const SizedBox(width: 10),
-                          _buildCircleBtn(Icons.share, () {}),
+                          _buildCircleBtn(Icons.share, () {
+                            _handleAction(context, "Share");
+                          }),
                         ],
                       ),
                     ),
@@ -92,11 +135,11 @@ class ProductDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
 
-                      // 3. ESCROW TRUST BANNER (The Green Shield)
+                      // 3. ESCROW TRUST BANNER
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE0F7FA), // Light Teal bg
+                          color: const Color(0xFFE0F7FA),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: GlobalVariables.primaryTeal.withOpacity(0.3),
@@ -193,7 +236,9 @@ class ProductDetailPage extends StatelessWidget {
                                 ),
                                 const Spacer(),
                                 TextButton(
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    _handleAction(context, "View Profile");
+                                  },
                                   child: const Text(
                                     "View Profile",
                                     style: TextStyle(
@@ -205,40 +250,107 @@ class ProductDetailPage extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            // Protected Contact Info (Guest Mode Logic)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(
-                                    Icons.lock_outline,
-                                    size: 14,
-                                    color: Colors.grey,
+                            // Contact Info - Changes based on auth state
+                            BlocBuilder<AuthBloc, AuthState>(
+                              builder: (context, state) {
+                                final isAuthenticated = state is AuthSuccess;
+
+                                return Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
                                   ),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    "Sign in to view contact",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
+                                  decoration: BoxDecoration(
+                                    color: isAuthenticated
+                                        ? Colors.green.withOpacity(0.1)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isAuthenticated
+                                          ? Colors.green.shade200
+                                          : Colors.grey.shade300,
                                     ),
                                   ),
-                                ],
-                              ),
+                                  child: isAuthenticated
+                                      ? const Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.phone_in_talk,
+                                              size: 14,
+                                              color: Colors.green,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              "09XXXXXXXX",
+                                              style: TextStyle(
+                                                color: Colors.green,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            SizedBox(width: 16),
+                                            Icon(
+                                              Icons.email_outlined,
+                                              size: 14,
+                                              color: Colors.green,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              "seller@email.com",
+                                              style: TextStyle(
+                                                color: Colors.green,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(
+                                              Icons.lock_outline,
+                                              size: 14,
+                                              color: Colors.grey,
+                                            ),
+                                            const SizedBox(width: 5),
+                                            GestureDetector(
+                                              onTap: () {
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  builder: (context) =>
+                                                      const AuthBottomSheet(),
+                                                );
+                                              },
+                                              child: const Text(
+                                                "Sign in to view contact",
+                                                style: TextStyle(
+                                                  color: GlobalVariables
+                                                      .primaryTeal,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                );
+                              },
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 25),
 
-                      // 5. DEVICE SPECIFICATIONS (The Table)
+                      // 5. DEVICE SPECIFICATIONS
                       const Text(
                         "Device Specifications",
                         style: GlobalVariables.headerStyle,
@@ -300,7 +412,7 @@ class ProductDetailPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3E0), // Light Orange
+                          color: const Color(0xFFFFF3E0),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.orange.shade200),
                         ),
@@ -336,7 +448,7 @@ class ProductDetailPage extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 100), // Space for bottom bar
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
@@ -344,7 +456,7 @@ class ProductDetailPage extends StatelessWidget {
             ),
           ),
 
-          // 8. STICKY BOTTOM BAR (Buy Now)
+          // 8. STICKY BOTTOM BAR
           Positioned(
             bottom: 0,
             left: 0,
@@ -361,64 +473,82 @@ class ProductDetailPage extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  // Chat Button (Outlined)
-                  Expanded(
-                    flex: 1,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        // Trigger Auth Sheet if guest
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (c) => const AuthBottomSheet(),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: const BorderSide(
-                          color: GlobalVariables.primaryTeal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.chat_bubble_outline,
-                        color: GlobalVariables.primaryTeal,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Buy Button (Solid)
-                  Expanded(
-                    flex: 3,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Trigger Auth Sheet if guest
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (c) => const AuthBottomSheet(),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: GlobalVariables.secondaryOrange,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+              child: BlocBuilder<AuthBloc, AuthState>(
+                builder: (context, state) {
+                  final isAuthenticated = state is AuthSuccess;
+
+                  return Row(
+                    children: [
+                      // Chat Button
+                      Expanded(
+                        flex: 1,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            if (isAuthenticated) {
+                              _handleAction(context, "Chat");
+                            } else {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => const AuthBottomSheet(),
+                              );
+                            }
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(
+                              color: GlobalVariables.primaryTeal,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.chat_bubble_outline,
+                            color: GlobalVariables.primaryTeal,
+                          ),
                         ),
                       ),
-                      child: const Text(
-                        "Buy Now",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      const SizedBox(width: 12),
+                      // Buy Button
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (isAuthenticated) {
+                              _handleAction(context, "Buy Now");
+                            } else {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => const AuthBottomSheet(),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isAuthenticated
+                                ? GlobalVariables.secondaryOrange
+                                : Colors.grey,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            isAuthenticated ? "Buy Now" : "Sign in to Buy",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -426,8 +556,6 @@ class ProductDetailPage extends StatelessWidget {
       ),
     );
   }
-
-  // --- HELPER WIDGETS ---
 
   Widget _buildCircleBtn(IconData icon, VoidCallback onTap) {
     return InkWell(

@@ -1,12 +1,24 @@
 // lib/features/product/presentation/pages/home_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/global_variables.dart';
 import '../../../../common/widgets/auth_bottom_sheet.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../widgets/product_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return "U";
+    final parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,22 +55,65 @@ class HomePage extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => const AuthBottomSheet(),
-              );
+          BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, state) {
+              if (state is AuthSuccess) {
+                // Show user avatar when logged in
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: GestureDetector(
+                    onTap: () {
+                      // Switch to profile tab in bottom bar
+                      // This would require accessing the bottom bar state
+                      // For now, just show a message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Go to Profile tab"),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: GlobalVariables.primaryTeal.withOpacity(0.1),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _getInitials(state.user.name),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: GlobalVariables.primaryTeal,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                // Show Sign In button when guest
+                return TextButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const AuthBottomSheet(),
+                    );
+                  },
+                  child: const Text(
+                    "Sign In",
+                    style: TextStyle(
+                      color: GlobalVariables.primaryTeal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              }
             },
-            child: const Text(
-              "Sign In",
-              style: TextStyle(
-                color: GlobalVariables.primaryTeal,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
         ],
       ),
@@ -209,7 +264,7 @@ class HomePage extends StatelessWidget {
                     condition: "Like New",
                     location: "Bole",
                     isVerified: true,
-                    isEscrow: true, // ADDED: isEscrow parameter
+                    isEscrow: true,
                   );
                 },
               ),
