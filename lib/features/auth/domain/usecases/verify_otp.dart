@@ -1,18 +1,18 @@
-// lib/features/auth/domain/usecases/login_user.dart
+// lib/features/auth/domain/usecases/verify_otp.dart
 
 import 'package:dartz/dartz.dart';
 import 'package:used_tech_client/core/error/failures.dart';
 import '../repositories/auth_repository.dart';
 
-class LoginUser {
+class VerifyOtp {
   final AuthRepository repository;
 
-  LoginUser(this.repository);
+  VerifyOtp(this.repository);
 
   Future<Either<Failure, Map<String, dynamic>>> call(
-    String email,
-    String password,
+    String userId,
+    String otp,
   ) async {
-    return await repository.login(email, password);
+    return await repository.verifyOtp(userId, otp);
   }
 }
