@@ -1,22 +1,72 @@
+// lib/features/auth/data/models/user_model.dart
+
 import '../../domain/entities/user_entity.dart';
+import '../../domain/enums/user_role.dart';
+import '../../domain/enums/kyc_status.dart';
 
 class UserModel extends UserEntity {
   const UserModel({
     required super.id,
     required super.name,
     required super.email,
+    required super.phone,
     required super.role,
     required super.token,
+    required super.isPhoneVerified,
+    required super.walletBalance,
+    required super.isActive,
+    super.lastLoginAt,
+    required super.kycStatus,
+    super.kycIdImage,
+    super.kycSubmittedAt,
+    super.kycReviewedAt,
+    super.kycRejectionReason,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    final user = json['user'];
     return UserModel(
-      id: user['_id'] ?? '',
-      name: user['name'] ?? '',
-      email: user['email'] ?? '',
-      role: user['role'] ?? 'USER',
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+      role: UserRole.fromString(json['role'] ?? 'USER'),
       token: json['token'] ?? '',
+      isPhoneVerified: json['isPhoneVerified'] ?? false,
+      walletBalance: (json['walletBalance'] ?? 0).toDouble(),
+      isActive: json['isActive'] ?? true,
+      lastLoginAt: json['lastLoginAt'] != null
+          ? DateTime.parse(json['lastLoginAt'])
+          : null,
+      kycStatus: KycStatus.fromString(json['kyc']?['status'] ?? 'NONE'),
+      kycIdImage: json['kyc']?['idImage'],
+      kycSubmittedAt: json['kyc']?['submittedAt'] != null
+          ? DateTime.parse(json['kyc']['submittedAt'])
+          : null,
+      kycReviewedAt: json['kyc']?['reviewedAt'] != null
+          ? DateTime.parse(json['kyc']['reviewedAt'])
+          : null,
+      kycRejectionReason: json['kyc']?['rejectionReason'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'role': role.toJson(),
+      'isPhoneVerified': isPhoneVerified,
+      'walletBalance': walletBalance,
+      'isActive': isActive,
+      'lastLoginAt': lastLoginAt?.toIso8601String(),
+      'kyc': {
+        'status': kycStatus.toJson(),
+        'idImage': kycIdImage,
+        'submittedAt': kycSubmittedAt?.toIso8601String(),
+        'reviewedAt': kycReviewedAt?.toIso8601String(),
+        'rejectionReason': kycRejectionReason,
+      },
+    };
   }
 }
