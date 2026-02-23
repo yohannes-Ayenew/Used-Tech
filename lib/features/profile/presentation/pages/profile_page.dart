@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
-import 'package:used_tech_client/core/constants/global_variables.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -10,20 +10,11 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "Profile",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
+        title: Text("Profile", style: context.textTheme.titleLarge),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: context.darkText),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -31,7 +22,7 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero Section - Start Trading Today
+            // Hero Section
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -40,8 +31,8 @@ class ProfilePage extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    GlobalVariables.primaryTeal,
-                    GlobalVariables.primaryTeal.withOpacity(0.8),
+                    context.primaryColor,
+                    context.primaryColor.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: const BorderRadius.only(
@@ -52,21 +43,20 @@ class ProfilePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Start Trading Today",
-                    style: TextStyle(
+                    style: context.textTheme.headlineSmall?.copyWith(
                       color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     "Create your account to buy and sell electronics safely",
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white70,
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  // Log In / Create Account Button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -81,7 +71,7 @@ class ProfilePage extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: GlobalVariables.primaryTeal,
+                        foregroundColor: context.primaryColor,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
@@ -102,20 +92,19 @@ class ProfilePage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Why Join? Section
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            // Why Join Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Why Join?",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
+                  Text("Why Join?", style: context.textTheme.headlineSmall),
+                  const SizedBox(height: 8),
                   Text(
                     "Membership Benefits",
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: context.greyText,
+                    ),
                   ),
                 ],
               ),
@@ -129,31 +118,35 @@ class ProfilePage extends StatelessWidget {
               child: Column(
                 children: [
                   _buildBenefitItem(
-                    icon: Icons.verified_user,
-                    iconColor: Colors.blue,
-                    title: "Verified Sellers",
-                    description: "Trade only with identity-verified members",
+                    context,
+                    Icons.verified_user,
+                    Colors.blue,
+                    "Verified Sellers",
+                    "Trade only with identity-verified members",
                   ),
                   const SizedBox(height: 16),
                   _buildBenefitItem(
-                    icon: Icons.security,
-                    iconColor: Colors.green,
-                    title: "Escrow Money Protection",
-                    description: "Your payment is protected until delivery",
+                    context,
+                    Icons.security,
+                    Colors.green,
+                    "Escrow Money Protection",
+                    "Your payment is protected until delivery",
                   ),
                   const SizedBox(height: 16),
                   _buildBenefitItem(
-                    icon: Icons.sell,
-                    iconColor: GlobalVariables.secondaryOrange,
-                    title: "Sell Your Device Safely",
-                    description: "List your electronics with confidence",
+                    context,
+                    Icons.sell,
+                    context.secondaryColor,
+                    "Sell Your Device Safely",
+                    "List your electronics with confidence",
                   ),
                   const SizedBox(height: 16),
                   _buildBenefitItem(
-                    icon: Icons.chat,
-                    iconColor: Colors.purple,
-                    title: "Direct Messaging",
-                    description: "Chat securely with buyers and sellers",
+                    context,
+                    Icons.chat,
+                    Colors.purple,
+                    "Direct Messaging",
+                    "Chat securely with buyers and sellers",
                   ),
                 ],
               ),
@@ -166,19 +159,20 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitItem({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String description,
-  }) {
+  Widget _buildBenefitItem(
+    BuildContext context,
+    IconData icon,
+    Color iconColor,
+    String title,
+    String description,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: iconColor, size: 24),
@@ -188,18 +182,9 @@ class ProfilePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(title, style: context.textTheme.titleMedium),
               const SizedBox(height: 4),
-              Text(
-                description,
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
+              Text(description, style: context.textTheme.bodySmall),
             ],
           ),
         ),

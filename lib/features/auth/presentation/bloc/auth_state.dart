@@ -30,21 +30,33 @@ class AuthFailure extends AuthState {
 
 class AuthGuest extends AuthState {}
 
-// OTP states
-class OtpRequiredState extends AuthState {
+// Email verification states
+class EmailVerificationRequired extends AuthState {
   final String userId;
+  final String email;
   final String message;
-  const OtpRequiredState({required this.userId, required this.message});
+  const EmailVerificationRequired({
+    required this.userId,
+    required this.email,
+    required this.message,
+  });
   @override
-  List<Object> get props => [userId, message];
+  List<Object> get props => [userId, email, message];
 }
 
-class OtpVerifiedState extends AuthState {
+class EmailVerified extends AuthState {
   final UserEntity user;
   final String token;
-  const OtpVerifiedState(this.user, {required this.token});
+  const EmailVerified(this.user, {required this.token});
   @override
   List<Object> get props => [user, token];
+}
+
+class OTPResent extends AuthState {
+  final String message;
+  const OTPResent(this.message);
+  @override
+  List<Object> get props => [message];
 }
 
 // Password reset states

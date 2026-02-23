@@ -4,11 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:used_tech_client/core/constants/global_variables.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/core/utils/validators.dart';
-import 'package:used_tech_client/features/profile/presentation/pages/change_password_page.dart';
+import 'package:used_tech_client/features/auth/presentation/pages/email_verification_page.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import 'change_password_page.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -31,7 +32,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final state = context.read<AuthBloc>().state;
     if (state is AuthSuccess) {
       _nameController.text = state.user.name;
-      _phoneController.text = state.user.phone;
     }
   }
 
@@ -100,27 +100,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: context.cardBackground),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "Profile Photo",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Text("Profile Photo", style: context.textTheme.titleLarge),
             const SizedBox(height: 20),
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: GlobalVariables.primaryTeal.withValues(alpha: 0.1),
+                  color: context.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.photo_library,
-                  color: GlobalVariables.primaryTeal,
-                ),
+                child: Icon(Icons.photo_library, color: context.primaryColor),
               ),
-              title: const Text("Choose from Gallery"),
+              title: Text(
+                "Choose from Gallery",
+                style: context.textTheme.bodyLarge,
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage();
@@ -130,15 +128,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: GlobalVariables.primaryTeal.withValues(alpha: 0.1),
+                  color: context.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: GlobalVariables.primaryTeal,
-                ),
+                child: Icon(Icons.camera_alt, color: context.primaryColor),
               ),
-              title: const Text("Take a Photo"),
+              title: Text("Take a Photo", style: context.textTheme.bodyLarge),
               onTap: () {
                 Navigator.pop(context);
                 _takePhoto();
@@ -154,9 +149,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 child: const Icon(Icons.delete_outline, color: Colors.red),
               ),
-              title: const Text(
+              title: Text(
                 "Remove Current Photo",
-                style: TextStyle(color: Colors.red),
+                style: context.textTheme.bodyLarge?.copyWith(color: Colors.red),
               ),
               onTap: () {
                 setState(() {
@@ -184,16 +179,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
         setState(() => _isLoading = false);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Profile updated successfully"),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text("Profile updated successfully"),
+            backgroundColor: context.successColor,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -207,29 +201,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     final state = context.watch<AuthBloc>().state;
     if (state is! AuthSuccess) {
-      return const Center(child: Text("Not authenticated"));
+      return Center(
+        child: Text("Not authenticated", style: context.textTheme.bodyLarge),
+      );
     }
 
     final user = state.user;
     final initials = _getInitials(user.name);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Edit Profile",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        title: Text("Edit Profile", style: context.textTheme.titleLarge),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -238,45 +225,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Picture Section
+                // Profile Picture
                 Center(
                   child: Stack(
                     children: [
-                      // Profile Image
                       Container(
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFFE0F7FA),
+                          color: context.lightGrey,
                           border: Border.all(
-                            color: Colors.grey.shade300,
+                            color: context.borderColor,
                             width: 2,
                           ),
                         ),
                         child: ClipOval(
                           child: _profileImage != null
-                              ? Image.file(
-                                  _profileImage!,
-                                  fit: BoxFit.cover,
-                                  width: 120,
-                                  height: 120,
-                                )
+                              ? Image.file(_profileImage!, fit: BoxFit.cover)
                               : Center(
                                   child: Text(
                                     initials,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 40,
                                       fontWeight: FontWeight.bold,
-                                      color: GlobalVariables.primaryTeal,
+                                      color: context.primaryColor,
                                     ),
                                   ),
                                 ),
                         ),
                       ),
-                      // Camera Icon Button
                       Positioned(
                         bottom: 0,
                         right: 0,
@@ -285,9 +264,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: GlobalVariables.primaryTeal,
+                              color: context.primaryColor,
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(
+                                color: context.cardBackground,
+                                width: 2,
+                              ),
                             ),
                             child: const Icon(
                               Icons.camera_alt,
@@ -303,20 +285,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 const SizedBox(height: 8),
 
-                // Hint text
-                const Center(
+                Center(
                   child: Text(
                     "Tap camera icon to change photo",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: context.textTheme.bodySmall,
                   ),
                 ),
 
                 const SizedBox(height: 32),
 
                 // Email (read-only)
-                const Text(
+                Text(
                   "Email",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -326,31 +309,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: GlobalVariables.lightGrey,
+                    color: context.lightGrey,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.email_outlined,
                         size: 20,
-                        color: Colors.grey,
+                        color: context.greyText,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           user.email,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                          style: context.textTheme.bodyMedium?.copyWith(
+                            color: context.greyText,
                           ),
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.lock_outline,
                         size: 16,
-                        color: Colors.grey,
+                        color: context.greyText,
                       ),
                     ],
                   ),
@@ -358,25 +340,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 const SizedBox(height: 20),
 
-                // Full Name Field
-                const Text(
+                // Full Name
+                Text(
                   "Full Name",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: TextFormField(
                     controller: _nameController,
                     validator: Validators.required,
+                    style: context.textTheme.bodyLarge,
                     decoration: InputDecoration(
                       hintText: "Enter your full name",
-                      prefixIcon: const Icon(
+                      hintStyle: context.textTheme.bodyMedium,
+                      prefixIcon: Icon(
                         Icons.person_outline,
-                        color: Colors.grey,
+                        color: context.greyText,
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -389,26 +375,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 const SizedBox(height: 20),
 
-                // Phone Number Field
-                const Text(
+                // Phone Number
+                Text(
                   "Phone Number",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     validator: Validators.phone,
+                    style: context.textTheme.bodyLarge,
                     decoration: InputDecoration(
                       hintText: "Enter your phone number",
-                      prefixIcon: const Icon(
+                      hintStyle: context.textTheme.bodyMedium,
+                      prefixIcon: Icon(
                         Icons.phone_outlined,
-                        color: Colors.grey,
+                        color: context.greyText,
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -420,29 +410,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
 
                 const SizedBox(height: 20),
-
-                // Phone Verification Status
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: user.isPhoneVerified
-                        ? Colors.green.withValues(alpha: 0.1)
+                    color:
+                        user
+                            .isEmailVerified // Changed from isPhoneVerified
+                        ? context.successColor.withValues(alpha: 0.1)
                         : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: user.isPhoneVerified
-                          ? Colors.green.withValues(alpha: 0.3)
+                      color: user.isEmailVerified
+                          ? context.successColor.withValues(alpha: 0.3)
                           : Colors.orange.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        user.isPhoneVerified
-                            ? Icons.check_circle
+                        user.isEmailVerified
+                            ? Icons.mark_email_read
                             : Icons.warning_amber,
-                        color: user.isPhoneVerified
-                            ? Colors.green
+                        color: user.isEmailVerified
+                            ? context.successColor
                             : Colors.orange,
                       ),
                       const SizedBox(width: 12),
@@ -451,45 +441,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              user.isPhoneVerified
-                                  ? "Phone Verified"
-                                  : "Phone Not Verified",
+                              user.isEmailVerified
+                                  ? "Email Verified"
+                                  : "Email Not Verified",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: user.isPhoneVerified
-                                    ? Colors.green
+                                color: user.isEmailVerified
+                                    ? context.successColor
                                     : Colors.orange,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              user.isPhoneVerified
-                                  ? "Your phone number is verified"
-                                  : "Please verify your phone number to sell items",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
+                              user.isEmailVerified
+                                  ? "Your email address is verified"
+                                  : "Please verify your email to access all features",
+                              style: context.textTheme.bodySmall,
                             ),
                           ],
                         ),
                       ),
-                      if (!user.isPhoneVerified)
+                      if (!user.isEmailVerified)
                         TextButton(
                           onPressed: () {
-                            // TODO: Navigate to phone verification
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Phone verification coming soon"),
-                                behavior: SnackBarBehavior.floating,
+                            // Navigate to email verification
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EmailVerificationPage(
+                                  userId: user.id,
+                                  email: user.email,
+                                  message:
+                                      "Please verify your email to continue",
+                                ),
                               ),
                             );
                           },
-                          child: const Text(
-                            "Verify",
-                            style: TextStyle(
-                              color: GlobalVariables.primaryTeal,
-                            ),
+                          child: Text(
+                            "Verify Now",
+                            style: TextStyle(color: context.primaryColor),
                           ),
                         ),
                     ],
@@ -511,7 +501,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: GlobalVariables.lightGrey,
+                      color: context.lightGrey,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -519,44 +509,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: GlobalVariables.primaryTeal.withValues(
-                              alpha: 0.1,
-                            ),
+                            color: context.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.lock_outline,
-                            color: GlobalVariables.primaryTeal,
+                            color: context.primaryColor,
                             size: 20,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 "Change Password",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: context.textTheme.titleMedium,
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 "Update your password regularly",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey,
-                                ),
+                                style: context.textTheme.bodySmall,
                               ),
                             ],
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.arrow_forward_ios,
                           size: 16,
-                          color: Colors.grey,
+                          color: context.greyText,
                         ),
                       ],
                     ),
@@ -573,20 +555,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ? const Center(child: CircularProgressIndicator())
                       : ElevatedButton(
                           onPressed: _handleSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: GlobalVariables.primaryTeal,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            "Save Changes",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                          child: const Text("Save Changes"),
                         ),
                 ),
               ],

@@ -1,7 +1,7 @@
 // lib/features/product/presentation/widgets/product_card.dart
 
 import 'package:flutter/material.dart';
-import '../../../../core/constants/global_variables.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import '../pages/product_detail_page.dart';
 
 class ProductCard extends StatelessWidget {
@@ -21,8 +21,21 @@ class ProductCard extends StatelessWidget {
     required this.condition,
     required this.location,
     required this.isVerified,
-    this.isEscrow = true, // Default to true based on your image
+    this.isEscrow = true,
   });
+
+  Color _getConditionColor(BuildContext context, String condition) {
+    switch (condition.toLowerCase()) {
+      case 'like new':
+        return Colors.green;
+      case 'good':
+        return Colors.orange;
+      case 'fair':
+        return Colors.red;
+      default:
+        return context.pillText;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +48,12 @@ class ProductCard extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: context.borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -48,142 +61,130 @@ class ProductCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Add this
           children: [
-            // 1. IMAGE & HEART ICON
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                  child: Image.network(
-                    image,
-                    height: 140,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 140,
-                        width: double.infinity,
-                        color: Colors.grey[200],
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          size: 40,
-                          color: Colors.grey,
-                        ),
-                      );
-                    },
-                  ),
+            // Image with fixed aspect ratio
+            AspectRatio(
+              aspectRatio: 1,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white,
-                    radius: 14,
-                    child: Icon(
-                      Icons.favorite_border,
-                      size: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
+                child: Image.network(
+                  image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: context.lightGrey,
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: context.greyText,
+                      ),
+                    );
+                  },
                 ),
-              ],
+              ),
             ),
 
-            // 2. DETAILS
+            // Content with proper spacing
             Padding(
-              padding: const EdgeInsets.all(10.0),
+              padding: const EdgeInsets.all(8.0), // Reduced from 10 to 8
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Title
                   Text(
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                    style: context.textTheme.titleMedium?.copyWith(
+                      fontSize: 13, // Slightly smaller
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2), // Reduced spacing
+                  // Price
                   Text(
                     "$price ETB",
-                    style: const TextStyle(
-                      color: GlobalVariables.primaryTeal,
+                    style: TextStyle(
+                      color: context.primaryColor,
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
+                      fontSize: 14, // Slightly smaller
                     ),
                   ),
-                  const SizedBox(height: 8),
-
+                  const SizedBox(height: 4), // Reduced spacing
                   // Condition Pill
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                      horizontal: 6,
+                      vertical: 2,
+                    ), // Smaller padding
                     decoration: BoxDecoration(
-                      color: _getConditionColor(condition).withOpacity(0.1),
+                      color: _getConditionColor(
+                        context,
+                        condition,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       condition,
                       style: TextStyle(
-                        color: _getConditionColor(condition),
-                        fontSize: 10,
+                        color: _getConditionColor(context, condition),
+                        fontSize: 9, // Smaller font
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-
-                  // Location & Verified & Escrow
+                  const SizedBox(height: 4), // Reduced spacing
+                  // Location & Badges
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on_outlined,
-                        size: 14,
-                        color: Colors.grey,
-                      ),
+                        size: 10,
+                        color: context.greyText,
+                      ), // Smaller icon
                       const SizedBox(width: 2),
-                      Text(
-                        location,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
+                      Expanded(
+                        // Wrap location in Expanded to prevent overflow
+                        child: Text(
+                          location,
+                          style: context.textTheme.bodySmall?.copyWith(
+                            fontSize: 9,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Spacer(),
-
-                      // Verified & Escrow badges
+                      const SizedBox(width: 2),
+                      // Badges
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (isVerified)
                             Container(
-                              padding: const EdgeInsets.all(2),
+                              padding: const EdgeInsets.all(1),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.verified,
-                                size: 14,
+                                size: 10,
                                 color: Colors.blue,
                               ),
                             ),
-                          if (isVerified && isEscrow) const SizedBox(width: 4),
+                          if (isVerified && isEscrow) const SizedBox(width: 2),
                           if (isEscrow)
                             Container(
-                              padding: const EdgeInsets.all(2),
+                              padding: const EdgeInsets.all(1),
                               decoration: BoxDecoration(
-                                color: Colors.green[50],
+                                color: Colors.green.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.security,
-                                size: 14,
+                                size: 10,
                                 color: Colors.green,
                               ),
                             ),
@@ -198,18 +199,5 @@ class ProductCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getConditionColor(String condition) {
-    switch (condition.toLowerCase()) {
-      case 'like new':
-        return Colors.green;
-      case 'good':
-        return Colors.orange;
-      case 'fair':
-        return Colors.red;
-      default:
-        return GlobalVariables.pillText;
-    }
   }
 }

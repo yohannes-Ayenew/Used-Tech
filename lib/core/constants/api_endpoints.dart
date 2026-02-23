@@ -1,27 +1,19 @@
 // lib/core/constants/api_endpoints.dart
 
 class ApiEndpoints {
-  static const String baseUrl =
-      'https://ecommerce-backend-saje.onrender.com/api';
+  // Change this to your actual backend URL
+  static const String baseUrl = 'http://localhost:3000/api';
+  // For production: 'https://ecommerce-backend-saje.onrender.com/api'
 
   // Auth endpoints
-  static const String login = '$baseUrl/users/login';
+  static const String test = '$baseUrl/users/test';
   static const String register = '$baseUrl/users/register';
-  static const String verifyOtp = '$baseUrl/users/verify-otp';
+  static const String verifyEmail = '$baseUrl/users/verify-email';
+  static const String resendOTP = '$baseUrl/users/resend-otp';
+  static const String login = '$baseUrl/users/login';
   static const String forgotPassword = '$baseUrl/users/forgot-password';
   static const String resetPassword = '$baseUrl/users/reset-password';
-
-  // Profile endpoints
-  static const String getUserProfile = '$baseUrl/users/me';
+  static const String getProfile = '$baseUrl/users/me';
   static const String updateProfile = '$baseUrl/users/profile';
   static const String changePassword = '$baseUrl/users/change-password';
-
-  // KYC endpoints
-  static const String requestVerification =
-      '$baseUrl/users/request-verification';
-
-  // Admin endpoints
-  static const String adminPendingVerifications =
-      '$baseUrl/users/admin/pending-verifications';
-  static const String adminVerifyUser = '$baseUrl/users/admin/verify-user';
 }

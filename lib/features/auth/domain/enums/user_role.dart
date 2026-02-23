@@ -7,52 +7,46 @@ enum UserRole {
   verifiedSeller,
   admin;
 
-  // Convert from String to UserRole
   static UserRole fromString(String value) {
     switch (value.toUpperCase()) {
       case 'VERIFIED_SELLER':
         return UserRole.verifiedSeller;
       case 'ADMIN':
         return UserRole.admin;
-      case 'USER':
-        return UserRole.user;
       default:
         return UserRole.user;
     }
   }
 
-  // Convert from UserRole to String for API
   String toJson() {
     switch (this) {
       case UserRole.verifiedSeller:
         return 'VERIFIED_SELLER';
       case UserRole.admin:
         return 'ADMIN';
-      case UserRole.user:
+      default:
         return 'USER';
     }
   }
 
-  // Get display name
   String get displayName {
     switch (this) {
       case UserRole.verifiedSeller:
         return 'Verified Seller';
       case UserRole.admin:
         return 'Admin';
-      case UserRole.user:
+      default:
         return 'User';
     }
   }
 
-  // Get color for role badge
   Color get color {
     switch (this) {
       case UserRole.verifiedSeller:
         return Colors.blue;
       case UserRole.admin:
         return Colors.purple;
-      case UserRole.user:
+      default:
         return Colors.grey;
     }
   }

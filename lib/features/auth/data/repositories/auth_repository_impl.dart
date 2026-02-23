@@ -1,6 +1,7 @@
 // lib/features/auth/data/repositories/auth_repository_impl.dart
 
 import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/user_entity.dart';
@@ -25,10 +26,36 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     try {
       final response = await remoteDataSource.login(email, password);
-      final user = UserModel.fromJson(response['user']);
-      await localDataSource.cacheToken(response['token']);
-      await localDataSource.cacheUser(user);
-      return Right({'user': user, 'token': response['token']});
+
+      // If login successful with token
+      if (response.containsKey('token') && response.containsKey('user')) {
+        final user = UserModel.fromJson(response['user']);
+
+        if (user.isEmailVerified) {
+          await localDataSource.cacheToken(response['token']);
+          await localDataSource.cacheUser(user);
+        } else {
+          // Don't cache token for unverified users
+          return Right({
+            'requiresVerification': true,
+            'userId': user.id,
+            'message': 'Please verify your email first',
+          });
+        }
+
+        return Right({'user': user, 'token': response['token']});
+      }
+
+      // If email verification required
+      if (response.containsKey('requiresVerification')) {
+        return Right({
+          'requiresVerification': true,
+          'userId': response['userId'],
+          'message': response['message'],
+        });
+      }
+
+      return Left(ServerFailure('Unexpected response format'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -38,100 +65,60 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, Map<String, dynamic>>> signup({
     required String name,
     required String email,
-    required String phone,
     required String password,
+    String? phone,
   }) async {
     try {
       final response = await remoteDataSource.signup(
         name: name,
         email: email,
-        phone: phone,
         password: password,
+        phone: phone,
       );
-      return Right({
-        'userId': response['userId'],
-        'message': response['message'],
-      });
+
+      // Registration successful - verification required
+      if (response.containsKey('userId')) {
+        return Right({
+          'userId': response['userId'],
+          'message': response['message'],
+          'requiresVerification': true,
+        });
+      }
+
+      return Left(ServerFailure('Unexpected response format'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, Map<String, dynamic>>> verifyOtp(
+  Future<Either<Failure, Map<String, dynamic>>> verifyEmail(
     String userId,
     String otp,
   ) async {
     try {
-      final response = await remoteDataSource.verifyOtp(userId, otp);
-      final user = UserModel.fromJson(response['user']);
-      await localDataSource.cacheToken(response['token']);
-      await localDataSource.cacheUser(user);
-      return Right({'user': user, 'token': response['token']});
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
+      final response = await remoteDataSource.verifyEmail(userId, otp);
 
-  @override
-  Future<Either<Failure, UserEntity>> checkAuthStatus() async {
-    try {
-      final token = await localDataSource.getLastToken();
-      if (token != null && token.isNotEmpty) {
-        final cachedUser = await localDataSource.getCachedUser();
-        if (cachedUser != null) {
-          return Right(cachedUser);
-        }
-        return await getUserProfile();
-      } else {
-        return Left(ServerFailure('No token found'));
+      if (response.containsKey('token') && response.containsKey('user')) {
+        final user = UserModel.fromJson(response['user']);
+
+        await localDataSource.cacheToken(response['token']);
+        await localDataSource.cacheUser(user);
+
+        return Right({'user': user, 'token': response['token']});
       }
+
+      return Left(ServerFailure('Verification failed'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, UserEntity>> getUserProfile() async {
+  Future<Either<Failure, Map<String, dynamic>>> resendOTP(String email) async {
     try {
-      final response = await remoteDataSource.getUserProfile();
-      final user = UserModel.fromJson(response['data']);
-      await localDataSource.cacheUser(user);
-      return Right(user);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, UserEntity>> updateProfile({
-    String? name,
-    String? phone,
-  }) async {
-    try {
-      final response = await remoteDataSource.updateProfile(
-        name: name,
-        phone: phone,
-      );
-      final user = UserModel.fromJson(response['data']);
-      await localDataSource.cacheUser(user);
-      return Right(user);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> changePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    try {
-      await remoteDataSource.changePassword(
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-      );
-      return const Right(null);
+      final response = await remoteDataSource.resendOTP(email);
+      return Right({'message': response['message']});
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -149,14 +136,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, void>> resetPassword({
-    required String userId,
-    required String token,
+    required String email,
+    required String otp,
     required String newPassword,
   }) async {
     try {
       await remoteDataSource.resetPassword(
-        userId: userId,
-        token: token,
+        email: email,
+        otp: otp,
         newPassword: newPassword,
       );
       return const Right(null);
@@ -165,16 +152,53 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  // lib/features/auth/data/repositories/auth_repository_impl.dart
+
   @override
-  Future<Either<Failure, void>> requestVerification({
-    required File imageFile,
-  }) async {
+  Future<Either<Failure, UserEntity>> checkAuthStatus() async {
     try {
-      await remoteDataSource.requestVerification(imageFile: imageFile);
-      return const Right(null);
+      final token = await localDataSource.getLastToken();
+      if (token != null && token.isNotEmpty) {
+        final cachedUser = await localDataSource.getCachedUser();
+
+        if (cachedUser != null && cachedUser.isEmailVerified) {
+          return Right(cachedUser);
+        } else if (cachedUser != null && !cachedUser.isEmailVerified) {
+          // User exists but email not verified - clear token and force re-login
+          await localDataSource.logout();
+          return Left(ServerFailure('Email not verified'));
+        }
+      }
+      return Left(ServerFailure('No authenticated user'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> getUserProfile() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> updateProfile({
+    String? name,
+    String? phone,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Either<Failure, void>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Either<Failure, void>> requestVerification({required File imageFile}) {
+    throw UnimplementedError();
   }
 
   @override

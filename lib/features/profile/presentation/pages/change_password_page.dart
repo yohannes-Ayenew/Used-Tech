@@ -1,8 +1,12 @@
 // lib/features/profile/presentation/pages/change_password_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:used_tech_client/core/constants/global_variables.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/core/utils/validators.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_event.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -20,7 +24,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -32,17 +35,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (mounted) {
-        setState(() => _isLoading = false);
-
-        // Show success dialog
-        _showSuccessDialog();
-      }
+      context.read<AuthBloc>().add(
+        ChangePasswordRequestedEvent(
+          currentPassword: _currentPasswordController.text,
+          newPassword: _newPasswordController.text,
+        ),
+      );
     }
   }
 
@@ -51,32 +49,29 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
+        title: Icon(Icons.check_circle, color: context.successColor, size: 60),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "Password Changed!",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            Text("Password Changed!", style: context.textTheme.titleLarge),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               "Your password has been updated successfully.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: context.textTheme.bodyMedium,
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to profile
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
-            child: const Text(
+            child: Text(
               "OK",
               style: TextStyle(
-                color: GlobalVariables.primaryTeal,
+                color: context.primaryColor,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -90,22 +85,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Change Password",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        title: Text("Change Password", style: context.textTheme.titleLarge),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -114,75 +100,70 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Icon
+                const SizedBox(height: 20),
+
                 Center(
                   child: Container(
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: GlobalVariables.primaryTeal.withValues(alpha: 0.1),
+                      color: context.primaryColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.lock_outline,
                       size: 50,
-                      color: GlobalVariables.primaryTeal,
+                      color: context.primaryColor,
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Title
-                const Center(
-                  child: Text(
-                    "Update Password",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                ),
+                Text("Update Password", style: context.textTheme.headlineSmall),
 
                 const SizedBox(height: 8),
 
-                // Subtitle
-                const Center(
-                  child: Text(
-                    "Choose a strong password you haven't used before",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
+                Text(
+                  "Choose a strong password you haven't used before",
+                  textAlign: TextAlign.center,
+                  style: context.textTheme.bodyMedium,
                 ),
 
                 const SizedBox(height: 32),
 
                 // Current Password
-                const Text(
+                Text(
                   "Current Password",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: TextFormField(
                     controller: _currentPasswordController,
                     obscureText: _obscureCurrent,
                     validator: Validators.required,
+                    style: context.textTheme.bodyLarge,
                     decoration: InputDecoration(
                       hintText: "Enter current password",
-                      prefixIcon: const Icon(
+                      hintStyle: context.textTheme.bodyMedium,
+                      prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: Colors.grey,
+                        color: context.greyText,
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureCurrent
                               ? Icons.visibility_off
                               : Icons.visibility,
-                          color: Colors.grey,
+                          color: context.greyText,
                         ),
                         onPressed: () {
                           setState(() {
@@ -202,31 +183,35 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 const SizedBox(height: 20),
 
                 // New Password
-                const Text(
+                Text(
                   "New Password",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: TextFormField(
                     controller: _newPasswordController,
                     obscureText: _obscureNew,
                     validator: Validators.strongPassword,
+                    style: context.textTheme.bodyLarge,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: "Enter new password",
-                      prefixIcon: const Icon(
+                      hintStyle: context.textTheme.bodyMedium,
+                      prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: Colors.grey,
+                        color: context.greyText,
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureNew ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.grey,
+                          color: context.greyText,
                         ),
                         onPressed: () {
                           setState(() {
@@ -245,32 +230,34 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                 const SizedBox(height: 12),
 
-                // Password Strength Indicators
+                // Password strength
                 Row(
                   children: [
                     _buildPasswordRequirement(
+                      context,
                       '8+ chars',
                       _newPasswordController.text.length >= 8,
                     ),
                     const SizedBox(width: 12),
                     _buildPasswordRequirement(
+                      context,
                       'Uppercase',
                       _newPasswordController.text.contains(RegExp(r'[A-Z]')),
                     ),
-                    const SizedBox(width: 12),
-                    _buildPasswordRequirement(
-                      'Number',
-                      _newPasswordController.text.contains(RegExp(r'[0-9]')),
-                    ),
                   ],
                 ),
-
                 const SizedBox(height: 4),
-
                 Row(
                   children: [
                     _buildPasswordRequirement(
-                      'Special Char',
+                      context,
+                      'Number',
+                      _newPasswordController.text.contains(RegExp(r'[0-9]')),
+                    ),
+                    const SizedBox(width: 12),
+                    _buildPasswordRequirement(
+                      context,
+                      'Special',
                       _newPasswordController.text.contains(
                         RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
                       ),
@@ -281,15 +268,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 const SizedBox(height: 20),
 
                 // Confirm Password
-                const Text(
+                Text(
                   "Confirm New Password",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: TextFormField(
                     controller: _confirmPasswordController,
@@ -303,18 +292,20 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       }
                       return null;
                     },
+                    style: context.textTheme.bodyLarge,
                     decoration: InputDecoration(
                       hintText: "Confirm new password",
-                      prefixIcon: const Icon(
+                      hintStyle: context.textTheme.bodyMedium,
+                      prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: Colors.grey,
+                        color: context.greyText,
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirm
                               ? Icons.visibility_off
                               : Icons.visibility,
-                          color: Colors.grey,
+                          color: context.greyText,
                         ),
                         onPressed: () {
                           setState(() {
@@ -333,7 +324,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                 const SizedBox(height: 16),
 
-                // Password Match Indicator
                 if (_confirmPasswordController.text.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -341,7 +331,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       color:
                           _newPasswordController.text ==
                               _confirmPasswordController.text
-                          ? Colors.green.withValues(alpha: 0.1)
+                          ? context.successColor.withValues(alpha: 0.1)
                           : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -355,7 +345,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           color:
                               _newPasswordController.text ==
                                   _confirmPasswordController.text
-                              ? Colors.green
+                              ? context.successColor
                               : Colors.red,
                           size: 18,
                         ),
@@ -369,7 +359,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             color:
                                 _newPasswordController.text ==
                                     _confirmPasswordController.text
-                                ? Colors.green
+                                ? context.successColor
                                 : Colors.red,
                             fontSize: 13,
                           ),
@@ -384,7 +374,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: GlobalVariables.lightGrey,
+                    color: context.lightGrey,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -395,31 +385,30 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           Icon(
                             Icons.security,
                             size: 18,
-                            color: GlobalVariables.primaryTeal,
+                            color: context.primaryColor,
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                          Text(
                             "Password Tips",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: context.textTheme.titleMedium,
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _buildTip(Icons.check, "Use at least 8 characters"),
                       _buildTip(
+                        context,
+                        Icons.check,
+                        "Use at least 8 characters",
+                      ),
+                      _buildTip(
+                        context,
                         Icons.check,
                         "Mix uppercase and lowercase letters",
                       ),
                       _buildTip(
+                        context,
                         Icons.check,
                         "Include numbers and special characters",
-                      ),
-                      _buildTip(
-                        Icons.check,
-                        "Don't use common words or patterns",
                       ),
                     ],
                   ),
@@ -431,25 +420,36 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 SizedBox(
                   width: double.infinity,
                   height: 52,
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          onPressed: _handleSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: GlobalVariables.primaryTeal,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                  child: BlocConsumer<AuthBloc, AuthState>(
+                    listener: (context, state) {
+                      if (state is PasswordChangeSuccess) {
+                        _showSuccessDialog();
+                      } else if (state is AuthFailure) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(state.message),
+                            backgroundColor: Colors.red,
                           ),
-                          child: const Text(
-                            "Update Password",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                        );
+                      }
+                    },
+                    builder: (context, state) {
+                      final isLoading = state is AuthLoading;
+                      return ElevatedButton(
+                        onPressed: isLoading ? null : _handleSubmit,
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text("Update Password"),
+                      );
+                    },
+                  ),
                 ),
 
                 const SizedBox(height: 16),
@@ -460,10 +460,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     onPressed: () {
                       Navigator.pushNamed(context, '/forgot-password');
                     },
-                    child: const Text(
+                    child: Text(
                       "Forgot Password?",
                       style: TextStyle(
-                        color: GlobalVariables.primaryTeal,
+                        color: context.primaryColor,
                         fontSize: 14,
                       ),
                     ),
@@ -477,14 +477,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  Widget _buildPasswordRequirement(String text, bool isMet) {
+  Widget _buildPasswordRequirement(
+    BuildContext context,
+    String text,
+    bool isMet,
+  ) {
     return Expanded(
       child: Row(
         children: [
           Icon(
             isMet ? Icons.check_circle : Icons.circle_outlined,
             size: 14,
-            color: isMet ? Colors.green : Colors.grey,
+            color: isMet ? context.successColor : context.greyText,
           ),
           const SizedBox(width: 4),
           Expanded(
@@ -492,7 +496,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               text,
               style: TextStyle(
                 fontSize: 11,
-                color: isMet ? Colors.green : Colors.grey,
+                color: isMet ? context.successColor : context.greyText,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -502,14 +506,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  Widget _buildTip(IconData icon, String text) {
+  Widget _buildTip(BuildContext context, IconData icon, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: GlobalVariables.primaryTeal),
+          Icon(icon, size: 16, color: context.primaryColor),
           const SizedBox(width: 8),
-          Text(text, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+          Text(text, style: context.textTheme.bodySmall),
         ],
       ),
     );

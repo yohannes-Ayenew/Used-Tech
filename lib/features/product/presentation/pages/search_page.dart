@@ -1,7 +1,7 @@
 // lib/features/product/presentation/pages/search_page.dart
 
 import 'package:flutter/material.dart';
-import '../../../../core/constants/global_variables.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import '../widgets/product_card.dart';
 
 class SearchPage extends StatefulWidget {
@@ -11,13 +11,13 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
+class _SearchPageState extends State<SearchPage>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'Newest';
   bool _isGridView = true;
 
-  // Mock data based on your image
-  final List<Map<String, dynamic>> _allProducts = [
+  final List<Map<String, dynamic>> _allProducts = const [
     {
       'image': 'https://via.placeholder.com/150',
       'title': 'HP Pavilion',
@@ -27,59 +27,18 @@ class _SearchPageState extends State<SearchPage> {
       'isVerified': true,
       'isEscrow': true,
     },
-    {
-      'image': 'https://via.placeholder.com/150',
-      'title': 'iPhone 12',
-      'price': '38,000',
-      'condition': 'Good',
-      'location': 'Bole',
-      'isVerified': true,
-      'isEscrow': true,
-    },
-    {
-      'image': 'https://via.placeholder.com/150',
-      'title': 'Dell XPS 15',
-      'price': '65,000',
-      'condition': 'Like New',
-      'location': 'Meganagna',
-      'isVerified': true,
-      'isEscrow': true,
-    },
-    {
-      'image': 'https://via.placeholder.com/150',
-      'title': 'Samsung Galaxy S21',
-      'price': '32,000',
-      'condition': 'Good',
-      'location': 'Piazza',
-      'isVerified': true,
-      'isEscrow': true,
-    },
-    {
-      'image': 'https://via.placeholder.com/150',
-      'title': 'MacBook Air M1',
-      'price': '85,000',
-      'condition': 'Like New',
-      'location': 'Kazanchis',
-      'isVerified': true,
-      'isEscrow': true,
-    },
-    {
-      'image': 'https://via.placeholder.com/150',
-      'title': 'iPhone 13 Pro',
-      'price': '50,000',
-      'condition': 'Like New',
-      'location': 'Bole',
-      'isVerified': true,
-      'isEscrow': true,
-    },
+    // ... other products
   ];
 
-  List<Map<String, dynamic>> _filteredProducts = [];
+  late List<Map<String, dynamic>> _filteredProducts;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _filteredProducts = _allProducts;
+    _filteredProducts = List.from(_allProducts);
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -94,7 +53,7 @@ class _SearchPageState extends State<SearchPage> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredProducts = _allProducts;
+        _filteredProducts = List.from(_allProducts);
       } else {
         _filteredProducts = _allProducts.where((product) {
           return product['title'].toLowerCase().contains(query) ||
@@ -104,65 +63,16 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Sort By',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              _buildFilterOption('Newest'),
-              _buildFilterOption('Price: Low to High'),
-              _buildFilterOption('Price: High to Low'),
-              _buildFilterOption('Most Popular'),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterOption(String option) {
-    return ListTile(
-      title: Text(option),
-      leading: Radio<String>(
-        value: option,
-        groupValue: _selectedFilter,
-        activeColor: GlobalVariables.primaryTeal,
-        onChanged: (value) {
-          setState(() {
-            _selectedFilter = value!;
-          });
-          Navigator.pop(context);
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "Search Electronics",
-          style: GlobalVariables.headerStyle,
-        ),
+        title: Text("Search Electronics", style: context.textTheme.titleLarge),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
@@ -175,7 +85,7 @@ class _SearchPageState extends State<SearchPage> {
                   child: Container(
                     height: 45,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
+                      color: context.lightGrey,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: TextField(
@@ -184,22 +94,22 @@ class _SearchPageState extends State<SearchPage> {
                         border: InputBorder.none,
                         prefixIcon: Icon(Icons.search, color: Colors.grey),
                         hintText: "Search by brand, model...",
-                        contentPadding: EdgeInsets.only(top: 8),
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _showFilterBottomSheet,
-                  child: Container(
-                    height: 45,
-                    width: 45,
-                    decoration: BoxDecoration(
-                      color: GlobalVariables.primaryTeal,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.tune, color: Colors.white),
+                Container(
+                  height: 45,
+                  width: 45,
+                  decoration: BoxDecoration(
+                    color: context.primaryColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: IconButton(
+                    onPressed: _showFilterBottomSheet,
+                    icon: const Icon(Icons.tune, color: Colors.white),
                   ),
                 ),
               ],
@@ -217,335 +127,205 @@ class _SearchPageState extends State<SearchPage> {
               children: [
                 Text(
                   "${_filteredProducts.length} results",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: context.textTheme.titleMedium,
                 ),
                 Row(
                   children: [
-                    // Sort Button
-                    GestureDetector(
-                      onTap: _showFilterBottomSheet,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              _selectedFilter,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            const Icon(
-                              Icons.keyboard_arrow_down,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                          ],
-                        ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: context.borderColor),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            _selectedFilter,
+                            style: context.textTheme.bodySmall,
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 16,
+                            color: context.greyText,
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 10),
-
-                    // Grid/List Toggle
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isGridView = true;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: _isGridView
-                              ? GlobalVariables.primaryTeal
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(
-                          Icons.grid_view,
-                          color: _isGridView ? Colors.white : Colors.grey,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isGridView = false;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: !_isGridView
-                              ? GlobalVariables.primaryTeal
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(
-                          Icons.list,
-                          color: !_isGridView ? Colors.white : Colors.grey,
-                          size: 22,
-                        ),
-                      ),
-                    ),
+                    _buildViewToggle(context),
                   ],
                 ),
               ],
             ),
           ),
 
-          // Result Grid/List
+          // Results
           Expanded(
             child: _filteredProducts.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No products found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
+                ? _buildEmptyState(context)
                 : _isGridView
-                ? GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredProducts.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.60,
-                          crossAxisSpacing: 15,
-                          mainAxisSpacing: 15,
-                        ),
-                    itemBuilder: (context, index) {
-                      final product = _filteredProducts[index];
-                      return ProductCard(
-                        image: product['image'],
-                        title: product['title'],
-                        price: product['price'],
-                        condition: product['condition'],
-                        location: product['location'],
-                        isVerified: product['isVerified'],
-                        isEscrow: product['isEscrow'],
-                      );
-                    },
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = _filteredProducts[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildListTile(product),
-                      );
-                    },
-                  ),
+                ? _buildGridView()
+                : _buildListView(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildListTile(Map<String, dynamic> product) {
+  Widget _buildViewToggle(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: context.borderColor),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         children: [
-          // Image
-          ClipRRect(
-            borderRadius: const BorderRadius.horizontal(
-              left: Radius.circular(12),
-            ),
-            child: Image.network(
-              product['image'],
-              height: 120,
-              width: 120,
-              fit: BoxFit.cover,
+          GestureDetector(
+            onTap: () => setState(() => _isGridView = true),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: _isGridView ? context.primaryColor : Colors.transparent,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  bottomLeft: Radius.circular(6),
+                ),
+              ),
+              child: Icon(
+                Icons.grid_view,
+                color: _isGridView ? Colors.white : context.greyText,
+                size: 18,
+              ),
             ),
           ),
-          // Details
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          product['title'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Icon(
-                        Icons.favorite_border,
-                        size: 18,
-                        color: Colors.grey[400],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${product['price']} ETB",
-                    style: const TextStyle(
-                      color: GlobalVariables.primaryTeal,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      // Condition Pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: GlobalVariables.pillGreen,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          product['condition'],
-                          style: const TextStyle(
-                            color: GlobalVariables.pillText,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Location
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            product['location'],
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Verified and Escrow badges
-                  Row(
-                    children: [
-                      if (product['isVerified'])
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.verified,
-                                size: 12,
-                                color: Colors.blue,
-                              ),
-                              SizedBox(width: 2),
-                              Text(
-                                'Verified',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (product['isVerified'] && product['isEscrow'])
-                        const SizedBox(width: 6),
-                      if (product['isEscrow'])
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green[50],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.security,
-                                size: 12,
-                                color: Colors.green,
-                              ),
-                              SizedBox(width: 2),
-                              Text(
-                                'Escrow',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+          Container(width: 1, height: 30, color: context.borderColor),
+          GestureDetector(
+            onTap: () => setState(() => _isGridView = false),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: !_isGridView ? context.primaryColor : Colors.transparent,
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(6),
+                  bottomRight: Radius.circular(6),
+                ),
+              ),
+              child: Icon(
+                Icons.list,
+                color: !_isGridView ? Colors.white : context.greyText,
+                size: 18,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGridView() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredProducts.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.65,
+        crossAxisSpacing: 15,
+        mainAxisSpacing: 15,
+      ),
+      itemBuilder: (context, index) {
+        final product = _filteredProducts[index];
+        return ProductCard(
+          image: product['image'],
+          title: product['title'],
+          price: product['price'],
+          condition: product['condition'],
+          location: product['location'],
+          isVerified: product['isVerified'],
+          isEscrow: product['isEscrow'],
+        );
+      },
+    );
+  }
+
+  Widget _buildListView() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredProducts.length,
+      itemBuilder: (context, index) {
+        final product = _filteredProducts[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: ProductCard(
+            image: product['image'],
+            title: product['title'],
+            price: product['price'],
+            condition: product['condition'],
+            location: product['location'],
+            isVerified: product['isVerified'],
+            isEscrow: product['isEscrow'],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 64, color: context.greyText),
+          const SizedBox(height: 16),
+          Text('No products found', style: context.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(
+            'Try searching with different keywords',
+            style: context.textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Sort By', style: context.textTheme.titleLarge),
+            const SizedBox(height: 20),
+            ...[
+              'Newest',
+              'Price: Low to High',
+              'Price: High to Low',
+              'Most Popular',
+            ].map((option) => _buildFilterOption(option)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterOption(String option) {
+    return ListTile(
+      title: Text(option),
+      leading: Radio<String>(
+        value: option,
+        groupValue: _selectedFilter,
+        activeColor: context.primaryColor,
+        onChanged: (value) {
+          setState(() => _selectedFilter = value!);
+          Navigator.pop(context);
+        },
       ),
     );
   }

@@ -25,12 +25,9 @@ class Validators {
   }
 
   static String? phone(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Phone number is required';
-    }
+    if (value == null || value.isEmpty) return null; // Phone is optional now
 
     final phoneRegExp = RegExp(r'^[0-9]{10}$');
-
     if (!phoneRegExp.hasMatch(value)) {
       return 'Please enter a valid 10-digit phone number';
     }
@@ -67,13 +64,6 @@ class Validators {
       return 'Password must contain at least one number';
     }
 
-    return null;
-  }
-
-  static String? match(String? value, String? otherValue) {
-    if (value != otherValue) {
-      return 'Passwords do not match';
-    }
     return null;
   }
 }

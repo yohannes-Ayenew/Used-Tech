@@ -15,20 +15,48 @@ import '../../features/auth/presentation/bloc/auth_state.dart';
 
 class BottomBar extends StatefulWidget {
   static const String routeName = '/actual-home';
-  const BottomBar({super.key});
+  final int? initialTab;
+
+  const BottomBar({super.key, this.initialTab});
 
   @override
   State<BottomBar> createState() => _BottomBarState();
 }
 
+// lib/common/widgets/bottom_bar.dart
+
 class _BottomBarState extends State<BottomBar> {
-  int _page = 0;
+  late int _page;
+
+  @override
+  void initState() {
+    super.initState();
+    _page = widget.initialTab ?? 0;
+    print('📱 BottomBar initialized with tab: $_page');
+  }
+
+  @override
+  void didUpdateWidget(covariant BottomBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update tab if initialTab changes
+    if (widget.initialTab != oldWidget.initialTab) {
+      setState(() {
+        _page = widget.initialTab!;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final isAuthenticated = state is AuthSuccess;
+
+        print('🔐 BottomBar building - isAuthenticated: $isAuthenticated');
+        if (isAuthenticated) {
+          final user = (state).user;
+          print('👤 User: ${user.email}, verified: ${user.isEmailVerified}');
+        }
 
         return Scaffold(
           body: IndexedStack(
@@ -52,10 +80,14 @@ class _BottomBarState extends State<BottomBar> {
             onTap: (index) {
               if (index == 2 || index == 3) {
                 authGuard(context, () {
-                  setState(() => _page = index);
+                  setState(() {
+                    _page = index;
+                  });
                 });
               } else {
-                setState(() => _page = index);
+                setState(() {
+                  _page = index;
+                });
               }
             },
             type: BottomNavigationBarType.fixed,

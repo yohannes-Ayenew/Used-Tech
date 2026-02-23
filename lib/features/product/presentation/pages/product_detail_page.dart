@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/global_variables.dart';
-import '../../../../common/widgets/auth_bottom_sheet.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
 import '../widgets/product_card.dart';
 
 class ProductDetailPage extends StatelessWidget {
@@ -15,16 +15,14 @@ class ProductDetailPage extends StatelessWidget {
     final authState = context.read<AuthBloc>().state;
 
     if (authState is AuthSuccess) {
-      // User is logged in - proceed with action
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("$action - Feature coming soon"),
-          backgroundColor: GlobalVariables.primaryTeal,
+          backgroundColor: context.primaryColor,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else {
-      // User is guest - show auth bottom sheet
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -37,14 +35,14 @@ class ProductDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. IMAGE HEADER (With Back/Heart/Share buttons)
+                // Image Header
                 Stack(
                   children: [
                     Image.network(
@@ -56,11 +54,10 @@ class ProductDetailPage extends StatelessWidget {
                         return Container(
                           height: 300,
                           width: double.infinity,
-                          color: Colors.grey[300],
-                          child: const Icon(
+                          color: context.lightGrey,
+                          child: Icon(
                             Icons.image_not_supported,
-                            size: 50,
-                            color: Colors.grey,
+                            color: context.greyText,
                           ),
                         );
                       },
@@ -69,6 +66,7 @@ class ProductDetailPage extends StatelessWidget {
                       top: 40,
                       left: 16,
                       child: _buildCircleBtn(
+                        context,
                         Icons.arrow_back,
                         () => Navigator.pop(context),
                       ),
@@ -78,11 +76,11 @@ class ProductDetailPage extends StatelessWidget {
                       right: 16,
                       child: Row(
                         children: [
-                          _buildCircleBtn(Icons.favorite_border, () {
+                          _buildCircleBtn(context, Icons.favorite_border, () {
                             _handleAction(context, "Add to favorites");
                           }),
                           const SizedBox(width: 10),
-                          _buildCircleBtn(Icons.share, () {
+                          _buildCircleBtn(context, Icons.share, () {
                             _handleAction(context, "Share");
                           }),
                         ],
@@ -96,80 +94,70 @@ class ProductDetailPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 2. TITLE & PRICE
-                      const Text(
+                      // Title & Price
+                      Text(
                         "Samsung Galaxy S21",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: context.textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           _buildTag(
+                            context,
                             "Good",
-                            GlobalVariables.pillGreen,
-                            GlobalVariables.pillText,
+                            context.pillGreen,
+                            context.pillText,
                           ),
                           const SizedBox(width: 10),
-                          const Icon(
+                          Icon(
                             Icons.location_on_outlined,
                             size: 16,
-                            color: Colors.grey,
+                            color: context.greyText,
                           ),
-                          const Text(
-                            " Piazza",
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          Text(" Piazza", style: context.textTheme.bodyMedium),
                         ],
                       ),
                       const SizedBox(height: 15),
-                      const Text(
+                      Text(
                         "32,000 ETB",
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
-                          color: GlobalVariables.primaryTeal,
+                          color: context.primaryColor,
                         ),
                       ),
                       const SizedBox(height: 10),
 
-                      // 3. ESCROW TRUST BANNER
+                      // Escrow Protection
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE0F7FA),
+                          color: context.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: GlobalVariables.primaryTeal.withOpacity(0.3),
+                            color: context.primaryColor.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.verified_user_outlined,
-                              color: GlobalVariables.primaryTeal,
+                              color: context.primaryColor,
                               size: 30,
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "Escrow Protection",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(color: context.primaryColor),
                                   ),
                                   Text(
                                     "Your payment is protected by escrow. Funds are released only after you confirm delivery.",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.black54,
-                                    ),
+                                    style: context.textTheme.bodySmall,
                                   ),
                                 ],
                               ),
@@ -179,48 +167,44 @@ class ProductDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 25),
 
-                      // 4. SELLER INFO CARD
-                      const Text(
+                      // Seller Information
+                      Text(
                         "Seller Information",
-                        style: GlobalVariables.headerStyle,
+                        style: context.textTheme.titleLarge,
                       ),
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: GlobalVariables.lightGrey,
+                          color: context.lightGrey,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
                           children: [
                             Row(
                               children: [
-                                const CircleAvatar(
+                                CircleAvatar(
                                   radius: 20,
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: context.cardBackground,
                                   child: Text(
                                     "D",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: context.textTheme.titleMedium,
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                const Column(
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
                                         Text(
                                           "Dawit Alemayehu",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          style: context.textTheme.titleMedium,
                                         ),
-                                        SizedBox(width: 4),
+                                        const SizedBox(width: 4),
                                         Icon(
                                           Icons.check_circle,
-                                          color: GlobalVariables.primaryTeal,
+                                          color: context.primaryColor,
                                           size: 14,
                                         ),
                                       ],
@@ -229,20 +213,19 @@ class ProductDetailPage extends StatelessWidget {
                                       "⭐ 4.7 • 18 Transactions",
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.orange,
+                                        color: context.secondaryColor,
                                       ),
                                     ),
                                   ],
                                 ),
                                 const Spacer(),
                                 TextButton(
-                                  onPressed: () {
-                                    _handleAction(context, "View Profile");
-                                  },
-                                  child: const Text(
+                                  onPressed: () =>
+                                      _handleAction(context, "View Profile"),
+                                  child: Text(
                                     "View Profile",
                                     style: TextStyle(
-                                      color: GlobalVariables.primaryTeal,
+                                      color: context.primaryColor,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -250,7 +233,7 @@ class ProductDetailPage extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            // Contact Info - Changes based on auth state
+                            // Contact Info
                             BlocBuilder<AuthBloc, AuthState>(
                               builder: (context, state) {
                                 final isAuthenticated = state is AuthSuccess;
@@ -262,85 +245,86 @@ class ProductDetailPage extends StatelessWidget {
                                   ),
                                   decoration: BoxDecoration(
                                     color: isAuthenticated
-                                        ? Colors.green.withOpacity(0.1)
-                                        : Colors.white,
+                                        ? context.successColor.withValues(
+                                            alpha: 0.1,
+                                          )
+                                        : context.cardBackground,
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       color: isAuthenticated
-                                          ? Colors.green.shade200
-                                          : Colors.grey.shade300,
+                                          ? context.successColor.withValues(
+                                              alpha: 0.3,
+                                            )
+                                          : context.borderColor,
                                     ),
                                   ),
                                   child: isAuthenticated
-                                      ? const Row(
+                                      ? Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
                                             Icon(
                                               Icons.phone_in_talk,
                                               size: 14,
-                                              color: Colors.green,
+                                              color: context.successColor,
                                             ),
-                                            SizedBox(width: 8),
+                                            const SizedBox(width: 8),
                                             Text(
                                               "09XXXXXXXX",
                                               style: TextStyle(
-                                                color: Colors.green,
+                                                color: context.successColor,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
-                                            SizedBox(width: 16),
+                                            const SizedBox(width: 16),
                                             Icon(
                                               Icons.email_outlined,
                                               size: 14,
-                                              color: Colors.green,
+                                              color: context.successColor,
                                             ),
-                                            SizedBox(width: 8),
+                                            const SizedBox(width: 8),
                                             Text(
                                               "seller@email.com",
                                               style: TextStyle(
-                                                color: Colors.green,
+                                                color: context.successColor,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                           ],
                                         )
-                                      : Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(
-                                              Icons.lock_outline,
-                                              size: 14,
-                                              color: Colors.grey,
-                                            ),
-                                            const SizedBox(width: 5),
-                                            GestureDetector(
-                                              onTap: () {
-                                                showModalBottomSheet(
-                                                  context: context,
-                                                  isScrollControlled: true,
-                                                  backgroundColor:
-                                                      Colors.transparent,
-                                                  builder: (context) =>
-                                                      const AuthBottomSheet(),
-                                                );
-                                              },
-                                              child: const Text(
+                                      : GestureDetector(
+                                          onTap: () {
+                                            showModalBottomSheet(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              backgroundColor:
+                                                  Colors.transparent,
+                                              builder: (context) =>
+                                                  const AuthBottomSheet(),
+                                            );
+                                          },
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.lock_outline,
+                                                size: 14,
+                                                color: context.greyText,
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Text(
                                                 "Sign in to view contact",
                                                 style: TextStyle(
-                                                  color: GlobalVariables
-                                                      .primaryTeal,
+                                                  color: context.primaryColor,
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
-                                                  decoration:
-                                                      TextDecoration.underline,
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                 );
                               },
@@ -350,36 +334,41 @@ class ProductDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 25),
 
-                      // 5. DEVICE SPECIFICATIONS
-                      const Text(
+                      // Device Specifications
+                      Text(
                         "Device Specifications",
-                        style: GlobalVariables.headerStyle,
+                        style: context.textTheme.titleLarge,
                       ),
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: GlobalVariables.lightGrey,
+                          color: context.lightGrey,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
                           children: [
-                            _buildSpecRow("Category", "Mobile"),
-                            _buildSpecRow("Brand", "Samsung"),
-                            _buildSpecRow("Model", "Galaxy S21"),
-                            _buildSpecRow("Storage", "128GB"),
-                            _buildSpecRow("RAM", "8GB"),
-                            _buildSpecRow("Condition", "Good"),
-                            _buildSpecRow("Location", "Piazza", isLast: true),
+                            _buildSpecRow(context, "Category", "Mobile"),
+                            _buildSpecRow(context, "Brand", "Samsung"),
+                            _buildSpecRow(context, "Model", "Galaxy S21"),
+                            _buildSpecRow(context, "Storage", "128GB"),
+                            _buildSpecRow(context, "RAM", "8GB"),
+                            _buildSpecRow(context, "Condition", "Good"),
+                            _buildSpecRow(
+                              context,
+                              "Location",
+                              "Piazza",
+                              isLast: true,
+                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 25),
 
-                      // 6. SIMILAR DEVICES
-                      const Text(
+                      // Similar Devices
+                      Text(
                         "Similar Devices in Piazza",
-                        style: GlobalVariables.headerStyle,
+                        style: context.textTheme.titleLarge,
                       ),
                       const SizedBox(height: 10),
                       SizedBox(
@@ -406,48 +395,6 @@ class ProductDetailPage extends StatelessWidget {
                           },
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      // 7. SAFETY REMINDER
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.orange.shade200),
-                        ),
-                        child: Row(
-                          children: const [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Safety Reminder",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: Colors.brown,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Do not send money outside the app. Escrow protects you.",
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.brown,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -456,7 +403,7 @@ class ProductDetailPage extends StatelessWidget {
             ),
           ),
 
-          // 8. STICKY BOTTOM BAR
+          // Bottom Bar
           Positioned(
             bottom: 0,
             left: 0,
@@ -464,10 +411,10 @@ class ProductDetailPage extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.cardBackground,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -479,7 +426,6 @@ class ProductDetailPage extends StatelessWidget {
 
                   return Row(
                     children: [
-                      // Chat Button
                       Expanded(
                         flex: 1,
                         child: OutlinedButton(
@@ -497,21 +443,18 @@ class ProductDetailPage extends StatelessWidget {
                           },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(
-                              color: GlobalVariables.primaryTeal,
-                            ),
+                            side: BorderSide(color: context.primaryColor),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.chat_bubble_outline,
-                            color: GlobalVariables.primaryTeal,
+                            color: context.primaryColor,
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Buy Button
                       Expanded(
                         flex: 3,
                         child: ElevatedButton(
@@ -529,8 +472,8 @@ class ProductDetailPage extends StatelessWidget {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isAuthenticated
-                                ? GlobalVariables.secondaryOrange
-                                : Colors.grey,
+                                ? context.secondaryColor
+                                : context.greyText,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -557,18 +500,27 @@ class ProductDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCircleBtn(IconData icon, VoidCallback onTap) {
+  Widget _buildCircleBtn(
+    BuildContext context,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: CircleAvatar(
         radius: 18,
-        backgroundColor: Colors.white.withOpacity(0.9),
-        child: Icon(icon, color: Colors.black87, size: 20),
+        backgroundColor: context.cardBackground.withValues(alpha: 0.9),
+        child: Icon(icon, color: context.darkText, size: 20),
       ),
     );
   }
 
-  Widget _buildTag(String text, Color bg, Color txtColor) {
+  Widget _buildTag(
+    BuildContext context,
+    String text,
+    Color bg,
+    Color txtColor,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -586,21 +538,28 @@ class ProductDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSpecRow(String key, String value, {bool isLast = false}) {
+  Widget _buildSpecRow(
+    BuildContext context,
+    String key,
+    String value, {
+    bool isLast = false,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: isLast
           ? null
           : BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              border: Border(bottom: BorderSide(color: context.borderColor)),
             ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(key, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+          Text(key, style: context.textTheme.bodyMedium),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: context.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

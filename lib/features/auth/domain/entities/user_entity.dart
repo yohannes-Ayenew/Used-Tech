@@ -8,10 +8,10 @@ class UserEntity extends Equatable {
   final String id;
   final String name;
   final String email;
-  final String phone;
+  final String? phone;
   final UserRole role;
   final String token;
-  final bool isPhoneVerified;
+  final bool isEmailVerified; // Changed from isPhoneVerified
   final double walletBalance;
   final bool isActive;
   final DateTime? lastLoginAt;
@@ -27,10 +27,10 @@ class UserEntity extends Equatable {
     required this.id,
     required this.name,
     required this.email,
-    required this.phone,
+    this.phone,
     required this.role,
     required this.token,
-    required this.isPhoneVerified,
+    required this.isEmailVerified,
     required this.walletBalance,
     required this.isActive,
     this.lastLoginAt,
@@ -51,14 +51,14 @@ class UserEntity extends Equatable {
   bool get canRequestVerification =>
       !isVerifiedSeller && kycStatus != KycStatus.pending && isActive;
 
-  bool get canSell => isPhoneVerified && isActive;
+  bool get canSell => isEmailVerified && isActive;
 
   @override
   List<Object?> get props => [
     id,
     email,
     role,
-    isPhoneVerified,
+    isEmailVerified,
     kycStatus,
     walletBalance,
     isActive,
@@ -70,7 +70,7 @@ class UserEntity extends Equatable {
     String? phone,
     UserRole? role,
     double? walletBalance,
-    bool? isPhoneVerified,
+    bool? isEmailVerified,
     bool? isActive,
     DateTime? lastLoginAt,
     KycStatus? kycStatus,
@@ -86,7 +86,7 @@ class UserEntity extends Equatable {
       phone: phone ?? this.phone,
       role: role ?? this.role,
       token: token,
-      isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       walletBalance: walletBalance ?? this.walletBalance,
       isActive: isActive ?? this.isActive,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,

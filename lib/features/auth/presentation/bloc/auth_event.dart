@@ -1,7 +1,7 @@
 // lib/features/auth/presentation/bloc/auth_event.dart
 
-import 'package:equatable/equatable.dart';
 import 'dart:io';
+import 'package:equatable/equatable.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -9,34 +9,52 @@ abstract class AuthEvent extends Equatable {
   List<Object> get props => [];
 }
 
-// Auth events
+// Login events
 class LoginRequestedEvent extends AuthEvent {
   final String email;
   final String password;
   const LoginRequestedEvent({required this.email, required this.password});
 }
 
+// Signup events
 class SignupRequestedEvent extends AuthEvent {
   final String name;
   final String email;
-  final String phone;
   final String password;
+  final String? phone;
+
   const SignupRequestedEvent({
     required this.name,
     required this.email,
-    required this.phone,
     required this.password,
+    this.phone,
   });
+
+  @override
+  List<Object> get props => [
+        name,
+        email,
+        password,
+        if (phone != null) phone!,
+      ];
 }
 
-class VerifyOtpEvent extends AuthEvent {
+// Email verification events
+class VerifyEmailEvent extends AuthEvent {
   final String userId;
   final String otp;
-  const VerifyOtpEvent({required this.userId, required this.otp});
+  const VerifyEmailEvent({required this.userId, required this.otp});
 }
 
+class ResendOTPEvent extends AuthEvent {
+  final String email;
+  const ResendOTPEvent({required this.email});
+}
+
+// App startup
 class AppStartedEvent extends AuthEvent {}
 
+// Logout
 class LogoutRequestedEvent extends AuthEvent {}
 
 // Password reset events
@@ -46,14 +64,18 @@ class ForgotPasswordRequestedEvent extends AuthEvent {
 }
 
 class ResetPasswordRequestedEvent extends AuthEvent {
-  final String userId;
-  final String token;
+  final String email;
+  final String otp;
   final String newPassword;
+
   const ResetPasswordRequestedEvent({
-    required this.userId,
-    required this.token,
+    required this.email,
+    required this.otp,
     required this.newPassword,
   });
+
+  @override
+  List<Object> get props => [email, otp, newPassword];
 }
 
 // Profile events
@@ -61,6 +83,12 @@ class UpdateProfileRequestedEvent extends AuthEvent {
   final String? name;
   final String? phone;
   const UpdateProfileRequestedEvent({this.name, this.phone});
+
+  @override
+  List<Object> get props => [
+        if (name != null) name!,
+        if (phone != null) phone!,
+      ];
 }
 
 class ChangePasswordRequestedEvent extends AuthEvent {
@@ -70,11 +98,17 @@ class ChangePasswordRequestedEvent extends AuthEvent {
     required this.currentPassword,
     required this.newPassword,
   });
+
+  @override
+  List<Object> get props => [currentPassword, newPassword];
 }
 
 class RequestVerificationEvent extends AuthEvent {
   final File imageFile;
   const RequestVerificationEvent({required this.imageFile});
+
+  @override
+  List<Object> get props => [imageFile];
 }
 
 class GetUserProfileEvent extends AuthEvent {}

@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/global_variables.dart';
-import '../../../../common/widgets/auth_bottom_sheet.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
 import '../widgets/product_card.dart';
 
 class HomePage extends StatelessWidget {
@@ -23,30 +23,19 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         title: Row(
           children: [
-            const Icon(
-              Icons.location_on_outlined,
-              color: Colors.black87,
-              size: 20,
-            ),
+            Icon(Icons.location_on_outlined, size: 20, color: context.greyText),
             const SizedBox(width: 5),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Delivering to",
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-                const Text(
+                Text("Delivering to", style: context.textTheme.bodySmall),
+                Text(
                   "Bole",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black,
+                  style: context.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -58,43 +47,28 @@ class HomePage extends StatelessWidget {
           BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
               if (state is AuthSuccess) {
-                // Show user avatar when logged in
                 return Padding(
                   padding: const EdgeInsets.only(right: 16.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      // Switch to profile tab in bottom bar
-                      // This would require accessing the bottom bar state
-                      // For now, just show a message
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Go to Profile tab"),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: GlobalVariables.primaryTeal.withOpacity(0.1),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _getInitials(state.user.name),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: GlobalVariables.primaryTeal,
-                          ),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: context.primaryColor.withValues(alpha: 0.1),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _getInitials(state.user.name),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: context.primaryColor,
                         ),
                       ),
                     ),
                   ),
                 );
               } else {
-                // Show Sign In button when guest
                 return TextButton(
                   onPressed: () {
                     showModalBottomSheet(
@@ -104,10 +78,10 @@ class HomePage extends StatelessWidget {
                       builder: (context) => const AuthBottomSheet(),
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     "Sign In",
                     style: TextStyle(
-                      color: GlobalVariables.primaryTeal,
+                      color: context.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -123,25 +97,23 @@ class HomePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. SEARCH BAR (Navigates to Search Page)
+              // Search Bar
               GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/search');
-                },
+                onTap: () => Navigator.pushNamed(context, '/search'),
                 child: Container(
                   height: 45,
                   decoration: BoxDecoration(
-                    color: GlobalVariables.lightGrey,
+                    color: context.lightGrey,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      SizedBox(width: 12),
-                      Icon(Icons.search, color: Colors.grey),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 12),
+                      Icon(Icons.search, color: context.greyText),
+                      const SizedBox(width: 8),
                       Text(
                         "Search iPhone, Mac...",
-                        style: TextStyle(color: Colors.grey),
+                        style: context.textTheme.bodyMedium,
                       ),
                     ],
                   ),
@@ -149,25 +121,28 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // 2. CATEGORIES
+              // Categories
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildCategoryItem(Icons.phone_android, "Phones"),
-                  _buildCategoryItem(Icons.laptop, "Laptops"),
-                  _buildCategoryItem(Icons.tablet_android, "Tablets"),
-                  _buildCategoryItem(Icons.gamepad, "Consoles"),
+                  _buildCategoryItem(context, Icons.phone_android, "Phones"),
+                  _buildCategoryItem(context, Icons.laptop, "Laptops"),
+                  _buildCategoryItem(context, Icons.tablet_android, "Tablets"),
+                  _buildCategoryItem(context, Icons.gamepad, "Consoles"),
                 ],
               ),
               const SizedBox(height: 25),
 
-              // 3. HERO BANNER
+              // Hero Banner
               Container(
                 width: double.infinity,
                 height: 160,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF9800), Color(0xFFF57C00)],
+                  gradient: LinearGradient(
+                    colors: [
+                      context.secondaryColor,
+                      context.secondaryColor.withValues(alpha: 0.8),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -187,7 +162,7 @@ class HomePage extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
@@ -232,20 +207,20 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 25),
 
-              // 4. FRESH RECOMMENDATIONS
+              // Fresh Recommendations
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Fresh Recommendations",
-                    style: GlobalVariables.headerStyle,
+                    style: context.textTheme.titleLarge,
                   ),
-                  const Icon(Icons.tune, color: Colors.grey),
+                  Icon(Icons.tune, color: context.greyText),
                 ],
               ),
               const SizedBox(height: 15),
 
-              // 5. GRID
+              // Product Grid
               GridView.builder(
                 physics: const NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
@@ -275,18 +250,20 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryItem(IconData icon, String label) {
+  Widget _buildCategoryItem(BuildContext context, IconData icon, String label) {
     return Column(
       children: [
         CircleAvatar(
           radius: 28,
-          backgroundColor: const Color(0xFFE0F7FA),
-          child: Icon(icon, color: GlobalVariables.primaryTeal),
+          backgroundColor: context.primaryColor.withValues(alpha: 0.1),
+          child: Icon(icon, color: context.primaryColor),
         ),
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          style: context.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );

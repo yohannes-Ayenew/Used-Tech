@@ -2,12 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:used_tech_client/core/constants/global_variables.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_event.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
-import 'edit_profile_page.dart';
+import 'package:used_tech_client/features/profile/presentation/widgets/verification_badge.dart';
 import 'verification_page.dart';
+import 'settings_page.dart';
 
 class AuthenticatedProfilePage extends StatelessWidget {
   const AuthenticatedProfilePage({super.key});
@@ -16,20 +17,19 @@ class AuthenticatedProfilePage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text(
-          "Logout",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
+        title: Text("Logout", style: context.textTheme.titleLarge),
+        content: Text(
           "Are you sure you want to logout?",
-          style: TextStyle(fontSize: 16),
+          style: context.textTheme.bodyLarge,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               "Cancel",
-              style: TextStyle(color: Colors.grey, fontSize: 16),
+              style: context.textTheme.bodyLarge?.copyWith(
+                color: context.greyText,
+              ),
             ),
           ),
           TextButton(
@@ -37,17 +37,20 @@ class AuthenticatedProfilePage extends StatelessWidget {
               Navigator.pop(context);
               context.read<AuthBloc>().add(LogoutRequestedEvent());
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Logged out successfully"),
-                  backgroundColor: Colors.green,
+                SnackBar(
+                  content: const Text("Logged out successfully"),
+                  backgroundColor: context.successColor,
                   behavior: SnackBarBehavior.floating,
                 ),
               );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text(
+            child: Text(
               "Logout",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: context.textTheme.bodyLarge?.copyWith(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -76,28 +79,17 @@ class AuthenticatedProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "Profile",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        title: Text("Profile", style: context.textTheme.titleLarge),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Color(0xFF1F2937)),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const EditProfilePage(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
               );
             },
           ),
@@ -106,7 +98,12 @@ class AuthenticatedProfilePage extends StatelessWidget {
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           if (state is! AuthSuccess) {
-            return const Center(child: Text("User not authenticated"));
+            return Center(
+              child: Text(
+                "User not authenticated",
+                style: context.textTheme.bodyLarge,
+              ),
+            );
           }
 
           final user = state.user;
@@ -117,12 +114,11 @@ class AuthenticatedProfilePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Header with Name, Email and Verification Badge
+                // Profile Header
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
-                      // Profile Picture
                       Stack(
                         children: [
                           Container(
@@ -130,21 +126,23 @@ class AuthenticatedProfilePage extends StatelessWidget {
                             height: 70,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFFE0F7FA),
+                              color: context.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
                             ),
                             child: Center(
                               child: Text(
                                 initials,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: GlobalVariables.primaryTeal,
+                                  color: context.primaryColor,
                                 ),
                               ),
                             ),
                           ),
                           if (user.isVerifiedSeller)
-                            const Positioned(
+                            Positioned(
                               bottom: 0,
                               right: 0,
                               child: VerificationBadge(
@@ -155,31 +153,22 @@ class AuthenticatedProfilePage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(width: 16),
-                      // Name, Email and Verification Status
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               user.name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1F2937),
-                              ),
+                              style: context.textTheme.titleLarge,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               user.email,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
+                              style: context.textTheme.bodyMedium,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
-                            // Verification Status
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
@@ -225,17 +214,16 @@ class AuthenticatedProfilePage extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // Stats Cards Row
+                // Stats Cards
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-                      // Available Balance Card
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
+                            color: context.lightGrey,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -243,31 +231,23 @@ class AuthenticatedProfilePage extends StatelessWidget {
                             children: [
                               Text(
                                 formattedBalance,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1F2937),
-                                ),
+                                style: context.textTheme.headlineSmall,
                               ),
                               const SizedBox(height: 4),
-                              const Text(
+                              Text(
                                 "ETB Available",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
+                                style: context.textTheme.bodySmall,
                               ),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Active Orders Card
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
+                            color: context.lightGrey,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -278,16 +258,12 @@ class AuthenticatedProfilePage extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1F2937),
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
+                              Text(
                                 "Active Orders",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
+                                style: context.textTheme.bodySmall,
                               ),
                             ],
                           ),
@@ -301,28 +277,32 @@ class AuthenticatedProfilePage extends StatelessWidget {
 
                 // Menu Items
                 _buildMenuItem(
+                  context,
                   icon: Icons.inventory,
                   title: "My Listings",
                   subtitle: "5 active items",
                   showViewAll: true,
-                  onTap: () {},
+                  onTap: () => _showComingSoon(context, "My Listings"),
                 ),
 
                 _buildMenuItem(
+                  context,
                   icon: Icons.shopping_bag,
                   title: "Orders",
                   subtitle: "Buying & Selling",
-                  onTap: () {},
+                  onTap: () => _showComingSoon(context, "Orders"),
                 ),
 
                 _buildMenuItem(
+                  context,
                   icon: Icons.account_balance_wallet,
                   title: "Wallet",
                   subtitle: "Available: $formattedBalance ETB",
-                  onTap: () {},
+                  onTap: () => _showComingSoon(context, "Wallet"),
                 ),
 
                 _buildMenuItem(
+                  context,
                   icon: Icons.verified,
                   title: "Verification Status",
                   subtitle: user.kycStatus.displayName,
@@ -366,6 +346,7 @@ class AuthenticatedProfilePage extends StatelessWidget {
                 ),
 
                 _buildMenuItem(
+                  context,
                   icon: Icons.settings,
                   title: "Settings",
                   subtitle: "App preferences and account",
@@ -373,13 +354,14 @@ class AuthenticatedProfilePage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const EditProfilePage(),
+                        builder: (context) => const SettingsPage(),
                       ),
                     );
                   },
                 ),
 
                 _buildMenuItem(
+                  context,
                   icon: Icons.logout,
                   title: "Logout",
                   subtitle: "Sign out of your account",
@@ -396,7 +378,8 @@ class AuthenticatedProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem({
+  Widget _buildMenuItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
@@ -411,55 +394,49 @@ class AuthenticatedProfilePage extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: context.borderColor),
         ),
         child: Row(
           children: [
-            // Icon
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isLogout
-                    ? const Color(0xFFFEE2E2)
-                    : const Color(0xFFF5F5F5),
+                    ? Colors.red.withValues(alpha: 0.1)
+                    : context.lightGrey,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: isLogout ? Colors.red : Colors.grey,
+                color: isLogout ? Colors.red : context.greyText,
                 size: 22,
               ),
             ),
             const SizedBox(width: 16),
-            // Title and Subtitle
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isLogout ? Colors.red : const Color(0xFF1F2937),
+                    style: context.textTheme.titleMedium?.copyWith(
+                      color: isLogout ? Colors.red : context.darkText,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: context.textTheme.bodySmall?.copyWith(
                       color: isLogout
                           ? Colors.red.withValues(alpha: 0.7)
-                          : Colors.grey[600],
+                          : context.greyText,
                     ),
                   ),
                 ],
               ),
             ),
-            // Trailing widget or arrow
             if (trailing != null)
               trailing
             else if (showViewAll)
@@ -469,41 +446,32 @@ class AuthenticatedProfilePage extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: GlobalVariables.primaryTeal,
+                  color: context.primaryColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
+                child: Text(
                   "View All",
-                  style: TextStyle(
+                  style: context.textTheme.bodySmall?.copyWith(
                     color: Colors.white,
-                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               )
             else if (!isLogout)
-              Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+              Icon(Icons.arrow_forward_ios, size: 14, color: context.greyText),
           ],
         ),
       ),
     );
   }
-}
 
-class VerificationPage extends StatelessWidget {
-  const VerificationPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verification'),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1F2937),
-        elevation: 0,
-      ),
-      body: const Center(
-        child: Text('Verification page', style: TextStyle(fontSize: 16)),
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("$feature page coming soon"),
+        backgroundColor: context.primaryColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
       ),
     );
   }

@@ -12,14 +12,14 @@ class SignupUser {
   Future<Either<Failure, Map<String, dynamic>>> call({
     required String name,
     required String email,
-    required String phone,
     required String password,
+    String? phone,
   }) async {
     return await repository.signup(
       name: name,
       email: email,
-      phone: phone,
       password: password,
+      phone: phone,
     );
   }
 }
