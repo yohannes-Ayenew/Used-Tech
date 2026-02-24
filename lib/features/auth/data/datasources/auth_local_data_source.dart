@@ -26,15 +26,25 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
 
   @override
   Future<void> cacheToken(String token) async {
+    print('📝 Caching token: ${token.substring(0, 10)}...');
     _tokenCache = token;
-    // Fire and forget
-    sharedPreferences.setString(CACHED_TOKEN, token);
+    await sharedPreferences.setString(CACHED_TOKEN, token);
+    print('✅ Token cached successfully');
   }
 
   @override
   Future<String?> getLastToken() async {
-    if (_tokenCache != null) return _tokenCache;
+    if (_tokenCache != null) {
+      print('📝 Returning cached token from memory');
+      return _tokenCache;
+    }
+    print('📝 Getting token from SharedPreferences');
     _tokenCache = sharedPreferences.getString(CACHED_TOKEN);
+    if (_tokenCache != null) {
+      print('✅ Token found: ${_tokenCache!.substring(0, 10)}...');
+    } else {
+      print('❌ No token found in storage');
+    }
     return _tokenCache;
   }
 

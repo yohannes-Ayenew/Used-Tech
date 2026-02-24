@@ -51,11 +51,16 @@ class _BottomBarState extends State<BottomBar> {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final isAuthenticated = state is AuthSuccess;
-
         print('🔐 BottomBar building - isAuthenticated: $isAuthenticated');
+
         if (isAuthenticated) {
           final user = (state).user;
-          print('👤 User: ${user.email}, verified: ${user.isEmailVerified}');
+          final token = (state).token;
+          print('👤 User: ${user.email}');
+          print('🔑 Token exists: ${token.isNotEmpty}');
+          if (token.isNotEmpty) {
+            print('🔑 Token preview: ${token.substring(0, 10)}...');
+          }
         }
 
         return Scaffold(

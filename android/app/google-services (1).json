@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "440923132786",
+    "project_id": "used-tech-market",
+    "storage_bucket": "used-tech-market.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:440923132786:android:24ef3e66dd71d4da17c3eb",
+        "android_client_info": {
+          "package_name": "com.UsedElec.used_tech_client"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "440923132786-8rv31b9bhqhtllfj1ok22skbc1u1kdv3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCk_YoclWHTJujovMqEypK4wD3ifcapSOE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "440923132786-8rv31b9bhqhtllfj1ok22skbc1u1kdv3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

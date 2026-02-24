@@ -11,6 +11,7 @@ import 'package:used_tech_client/features/auth/domain/repositories/auth_reposito
 
 // Use Cases
 import 'package:used_tech_client/features/auth/domain/usecases/login_user.dart';
+import 'package:used_tech_client/features/auth/domain/usecases/signin_with_google.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/signup_user.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/verify_email.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/resend_otp.dart';
@@ -21,8 +22,6 @@ import 'package:used_tech_client/features/auth/domain/usecases/update_profile.da
 import 'package:used_tech_client/features/auth/domain/usecases/change_password.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/request_verification.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/get_user_profile.dart';
-
-// Bloc
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 
 final sl = GetIt.instance;
@@ -35,7 +34,7 @@ Future<void> init() async {
 
   // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
-     () => AuthRemoteDataSourceImpl(client: sl()),
+    () => AuthRemoteDataSourceImpl(client: sl()),
   );
   sl.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
@@ -43,15 +42,13 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-    ),
+    () => AuthRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
   );
 
   // Use Cases
   sl.registerLazySingleton(() => LoginUser(sl()));
   sl.registerLazySingleton(() => SignupUser(sl()));
+  sl.registerLazySingleton(() => SignInWithGoogle(sl()));
   sl.registerLazySingleton(() => VerifyEmail(sl()));
   sl.registerLazySingleton(() => ResendOTP(sl()));
   sl.registerLazySingleton(() => CheckAuthStatus(sl()));
@@ -72,6 +69,8 @@ Future<void> init() async {
       checkAuthStatus: sl(),
       forgotPassword: sl(),
       resetPassword: sl(),
+      changePassword: sl(),
+      authRepository: sl(),
     ),
   );
 }

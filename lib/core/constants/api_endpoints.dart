@@ -8,6 +8,7 @@ class ApiEndpoints {
   // Auth endpoints
   static const String test = '$baseUrl/users/test';
   static const String register = '$baseUrl/users/register';
+  static const String googleLogin = '$baseUrl/users/google';
   static const String verifyEmail = '$baseUrl/users/verify-email';
   static const String resendOTP = '$baseUrl/users/resend-otp';
   static const String login = '$baseUrl/users/login';

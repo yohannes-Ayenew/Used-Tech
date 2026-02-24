@@ -17,9 +17,11 @@ import 'features/auth/presentation/pages/reset_password_page.dart';
 import 'features/profile/presentation/pages/settings_page.dart';
 import 'features/sell/presentation/pages/sell_page.dart';
 import 'injection_container.dart' as di;
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await di.init();
   runApp(const MyApp());
 }
@@ -71,27 +73,8 @@ class MyApp extends StatelessWidget {
                 message: '',
               ),
               '/forgot-password': (context) => const ForgotPasswordPage(),
-              '/reset-password': (context) {
-                // Get arguments from route settings
-                final args =
-                    ModalRoute.of(context)?.settings.arguments
-                        as Map<String, dynamic>?;
-
-                if (args != null) {
-                  return ResetPasswordPage(
-                    userId: args['userId'] ?? '',
-                    token: args['token'] ?? '',
-                    email: args['email'] ?? '',
-                  );
-                }
-
-                // Fallback if no arguments provided
-                return const ResetPasswordPage(
-                  userId: '',
-                  token: '',
-                  email: '',
-                );
-              },
+              '/reset-password': (context) =>
+                  const ResetPasswordPage(email: '', userId: null, token: null),
               '/settings': (context) => const SettingsPage(),
             },
             onGenerateRoute: (settings) {
