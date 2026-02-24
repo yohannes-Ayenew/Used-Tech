@@ -1,8 +1,5 @@
-// lib/features/auth/presentation/pages/email_verification_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:used_tech_client/common/widgets/bottom_bar.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -61,17 +58,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
   void _verifyOtp() {
     String otp = _otpController.text.trim();
-
-    if (otp.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter the 6-digit code"),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
+    if (otp.length < 6) return;
     setState(() => _isLoading = true);
     context.read<AuthBloc>().add(
       VerifyEmailEvent(userId: widget.userId, otp: otp),
@@ -80,7 +67,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
 
   void _resendOtp() {
     if (!_canResend) return;
-
     setState(() => _isLoading = true);
     context.read<AuthBloc>().add(ResendOTPEvent(email: widget.email));
   }
@@ -116,25 +102,22 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                 backgroundColor: context.successColor,
               ),
             );
-          } else if (state is EmailVerified) {
-            print('✅ Email verified - auto-login successful!');
-            print('👤 User: ${state.user.email}');
-            print('🔑 Token: ${state.token.substring(0, 10)}...');
+          } else if (state is AuthSuccess) {
+            print('✅ Verification Success - Auto Logging In');
 
-            // Instead of pushing a new BottomBar, pop back to the existing one
-            // and let the AuthBloc state update it automatically
+            // 1. Clear navigation stack down to the root
             Navigator.popUntil(context, (route) => route.isFirst);
 
-            // Then navigate to home with sell tab
-            Navigator.pushReplacementNamed(
-              context,
-              '/',
-              arguments: {'initialTab': 2},
-            );
+            // 2. Since AuthBloc is global and now emits AuthSuccess,
+            // the Root Widget (MyApp/BottomBar) will automatically
+            // see the authenticated user.
+
+            // Optional: You can force a pushReplacement to ensure fresh state
+            // Navigator.pushReplacementNamed(context, '/');
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("Welcome ${state.user.name}! Start selling now!"),
+                content: Text("Welcome ${state.user.name}!"),
                 backgroundColor: Colors.green,
                 behavior: SnackBarBehavior.floating,
               ),
@@ -170,38 +153,21 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                   "Enter the 6-digit code sent to",
                   style: context.textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.lightGrey,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    widget.email,
-                    style: TextStyle(
-                      color: context.primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                Text(
+                  widget.email,
+                  style: TextStyle(
+                    color: context.primaryColor,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // OTP Input Field
+                // OTP INPUT
                 Container(
                   decoration: BoxDecoration(
                     color: context.lightGrey,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _otpController.text.isNotEmpty
-                          ? context.primaryColor
-                          : context.borderColor,
-                      width: 1.5,
-                    ),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: TextField(
                     controller: _otpController,
@@ -213,93 +179,45 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
                       fontWeight: FontWeight.bold,
                     ),
                     maxLength: 6,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: "000000",
-                      hintStyle: TextStyle(
-                        fontSize: 32,
-                        letterSpacing: 8,
-                        color: context.greyText.withValues(alpha: 0.3),
-                      ),
                       counterText: "",
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
+                      contentPadding: EdgeInsets.all(16),
                     ),
                     onChanged: (value) {
-                      if (value.length == 6) {
-                        _verifyOtp();
-                      }
-                      setState(() {});
+                      if (value.length == 6) _verifyOtp();
                     },
                   ),
                 ),
 
-                const SizedBox(height: 8),
-
-                // Paste hint
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.content_paste,
-                      size: 14,
-                      color: context.greyText,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "You can paste the entire code (Ctrl+V)",
-                      style: context.textTheme.bodySmall?.copyWith(
-                        color: context.greyText,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Resend timer
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Didn't receive code? ",
-                      style: context.textTheme.bodySmall,
-                    ),
-                    GestureDetector(
-                      onTap: _canResend ? _resendOtp : null,
-                      child: Text(
-                        _canResend ? "Resend" : "Resend in $_resendTimer s",
-                        style: TextStyle(
-                          color: _canResend
-                              ? context.primaryColor
-                              : context.greyText,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
                 const SizedBox(height: 32),
 
-                // Verify Button
+                // BUTTON
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
                     onPressed: _verifyOtp,
                     child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
+                        ? const CircularProgressIndicator(color: Colors.white)
                         : const Text("Verify Email"),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // RESEND
+                GestureDetector(
+                  onTap: _canResend ? _resendOtp : null,
+                  child: Text(
+                    _canResend ? "Resend Code" : "Resend in $_resendTimer s",
+                    style: TextStyle(
+                      color: _canResend
+                          ? context.primaryColor
+                          : context.greyText,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -307,22 +225,6 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-// Create a new wrapper widget for BottomBar with initial tab
-class BottomBarWithInitialTab extends StatelessWidget {
-  final int initialTab;
-
-  const BottomBarWithInitialTab({super.key, required this.initialTab});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        return BottomBar(initialTab: initialTab);
-      },
     );
   }
 }

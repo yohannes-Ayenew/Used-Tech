@@ -19,7 +19,6 @@ class SignupUser {
       name: name,
       email: email,
       password: password,
-      phone: phone,
     );
   }
 }
