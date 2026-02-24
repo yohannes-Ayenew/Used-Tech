@@ -4,7 +4,10 @@ import '../entities/user_entity.dart';
 import 'dart:io';
 
 abstract class AuthRepository {
-  Future<Either<Failure, Map<String, dynamic>>> login(String email, String password);
+  Future<Either<Failure, Map<String, dynamic>>> login(
+    String email,
+    String password,
+  );
 
   Future<Either<Failure, Map<String, dynamic>>> signup({
     required String name,
@@ -12,16 +15,17 @@ abstract class AuthRepository {
     required String password,
     String? phone,
   });
-
-  Future<Either<Failure, Map<String, dynamic>>> verifyEmail(String userId, String otp);
+  Future<Either<Failure, Map<String, dynamic>>> signInWithGoogle();
+  Future<Either<Failure, Map<String, dynamic>>> verifyEmail(
+    String userId,
+    String otp,
+  );
 
   Future<Either<Failure, Map<String, dynamic>>> resendOTP(String email);
 
   Future<Either<Failure, UserEntity>> checkAuthStatus();
-
-  Future<Either<Failure, void>> forgotPassword(String email);
-
-   Future<Either<Failure, void>> resetPassword({
+  Future<Either<Failure, Map<String, dynamic>>> forgotPassword(String email);
+  Future<Either<Failure, Map<String, dynamic>>> resetPassword({
     required String email,
     required String otp,
     required String newPassword,
@@ -29,7 +33,10 @@ abstract class AuthRepository {
 
   Future<Either<Failure, UserEntity>> getUserProfile();
 
-  Future<Either<Failure, UserEntity>> updateProfile({String? name, String? phone});
+  Future<Either<Failure, UserEntity>> updateProfile({
+    String? name,
+    String? phone,
+  });
 
   Future<Either<Failure, void>> changePassword({
     required String currentPassword,

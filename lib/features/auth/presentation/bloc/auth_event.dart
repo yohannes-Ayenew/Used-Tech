@@ -31,12 +31,11 @@ class SignupRequestedEvent extends AuthEvent {
   });
 
   @override
-  List<Object> get props => [
-        name,
-        email,
-        password,
-        if (phone != null) phone!,
-      ];
+  List<Object> get props => [name, email, password, ?phone];
+}
+
+class GoogleSignInRequestedEvent extends AuthEvent {
+  String? get email => null;
 }
 
 // Email verification events
@@ -85,10 +84,7 @@ class UpdateProfileRequestedEvent extends AuthEvent {
   const UpdateProfileRequestedEvent({this.name, this.phone});
 
   @override
-  List<Object> get props => [
-        if (name != null) name!,
-        if (phone != null) phone!,
-      ];
+  List<Object> get props => [?name, ?phone];
 }
 
 class ChangePasswordRequestedEvent extends AuthEvent {

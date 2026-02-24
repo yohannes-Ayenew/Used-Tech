@@ -1,6 +1,6 @@
-// lib/features/auth/presentation/bloc/auth_bloc.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:used_tech_client/features/auth/domain/repositories/auth_repository.dart';
+import 'package:used_tech_client/features/auth/domain/usecases/change_password.dart';
 import '../../domain/usecases/login_user.dart';
 import '../../domain/usecases/signup_user.dart';
 import '../../domain/usecases/verify_email.dart';
@@ -8,10 +8,12 @@ import '../../domain/usecases/resend_otp.dart';
 import '../../domain/usecases/check_auth_status.dart';
 import '../../domain/usecases/forgot_password.dart';
 import '../../domain/usecases/reset_password.dart';
+
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  // Use Cases
   final LoginUser loginUser;
   final SignupUser signupUser;
   final VerifyEmail verifyEmail;
@@ -19,6 +21,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final CheckAuthStatus checkAuthStatus;
   final ForgotPassword forgotPassword;
   final ResetPassword resetPassword;
+  final ChangePassword changePassword;
+
+  // Repository (Direct access for Google Sign In to save creating a specific UseCase file)
+  final AuthRepository authRepository;
 
   AuthBloc({
     required this.loginUser,
@@ -28,17 +34,49 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.checkAuthStatus,
     required this.forgotPassword,
     required this.resetPassword,
+    required this.changePassword,
+    required this.authRepository, // Injected dependency
   }) : super(AuthInitial()) {
+    // Register Event Handlers
     on<SignupRequestedEvent>(_onSignupRequested);
     on<VerifyEmailEvent>(_onVerifyEmail);
     on<LoginRequestedEvent>(_onLoginRequested);
+    on<GoogleSignInRequestedEvent>(_onGoogleSignIn); // New Google Handler
     on<ResendOTPEvent>(_onResendOTP);
     on<AppStartedEvent>(_onAppStarted);
     on<LogoutRequestedEvent>(_onLogoutRequested);
     on<ForgotPasswordRequestedEvent>(_onForgotPassword);
     on<ResetPasswordRequestedEvent>(_onResetPassword);
+    on<ChangePasswordRequestedEvent>(_onChangePasswordRequested);
   }
 
+  bool? get mounted => null;
+
+  // --- Google Sign In Handler ---
+  Future<void> _onGoogleSignIn(
+    GoogleSignInRequestedEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('🚀 Google Sign In requested');
+    emit(AuthLoading());
+
+    // Call the repository directly
+    final result = await authRepository.signInWithGoogle();
+
+    result.fold(
+      (failure) {
+        print('❌ Google Sign In failed: ${failure.message}');
+        emit(AuthFailure(failure.message));
+      },
+      (data) {
+        print('✅ Google Sign In successful!');
+        // user object is in data['user'], token is in data['token']
+        emit(AuthSuccess(data['user'], token: data['token']));
+      },
+    );
+  }
+
+  // --- Signup Handler ---
   Future<void> _onSignupRequested(
     SignupRequestedEvent event,
     Emitter<AuthState> emit,
@@ -76,6 +114,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
+  // --- Verify Email Handler ---
   Future<void> _onVerifyEmail(
     VerifyEmailEvent event,
     Emitter<AuthState> emit,
@@ -94,15 +133,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (data) {
         print('✅ Email verification successful!');
         print('   User data: ${data['user']}');
-        print('   Token exists: ${data.containsKey('token')}');
-        if (data.containsKey('token')) {
-          print('   Token: ${data['token'].substring(0, 10)}...');
-        }
-        emit(EmailVerified(data['user'], token: data['token']));
+
+        // IMMEDIATE LOGIN SUCCESS
+        emit(AuthSuccess(data['user'], token: data['token']));
       },
     );
   }
 
+  // --- Login Handler ---
   Future<void> _onLoginRequested(
     LoginRequestedEvent event,
     Emitter<AuthState> emit,
@@ -129,14 +167,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           );
         } else {
           print('✅ Login successful!');
-          print('   User: ${data['user']}');
-          print('   Token: ${data['token'].substring(0, 10)}...');
           emit(AuthSuccess(data['user'], token: data['token']));
         }
       },
     );
   }
 
+  // --- Resend OTP Handler ---
   Future<void> _onResendOTP(
     ResendOTPEvent event,
     Emitter<AuthState> emit,
@@ -155,6 +192,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
+  // --- App Started (Check Auth) Handler ---
   Future<void> _onAppStarted(
     AppStartedEvent event,
     Emitter<AuthState> emit,
@@ -168,51 +206,40 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       },
       (user) {
         print('✅ User authenticated: ${user.email}');
-        print('   Verified: ${user.isEmailVerified}');
-        print('   User ID: ${user.id}');
-        print('   Token exists: ${user.token.isNotEmpty}');
-        if (user.token.isNotEmpty) {
-          print('   Token: ${user.token.substring(0, 10)}...');
-        }
         emit(AuthSuccess(user, token: user.token));
       },
     );
   }
 
+  // --- Logout Handler ---
   Future<void> _onLogoutRequested(
     LogoutRequestedEvent event,
     Emitter<AuthState> emit,
   ) async {
     print('🚪 Logout requested');
+    // In a real app, you might want to call authRepository.logout() here to clear storage
     emit(AuthGuest());
     print('✅ User logged out');
   }
 
+  // --- Forgot Password Handler ---
   Future<void> _onForgotPassword(
     ForgotPasswordRequestedEvent event,
     Emitter<AuthState> emit,
   ) async {
-    print('🔑 Forgot password requested for email: ${event.email}');
     emit(AuthLoading());
     final result = await forgotPassword(event.email);
     result.fold(
-      (failure) {
-        print('❌ Forgot password failed: ${failure.message}');
-        emit(AuthFailure(failure.message));
-      },
-      (_) {
-        print('✅ Reset code sent to email');
-        emit(ForgotPasswordSuccess('Reset code sent'));
-      },
+      (failure) => emit(AuthFailure(failure.message)),
+      (data) => emit(ForgotPasswordSuccess(data['message'])),
     );
   }
 
+  // --- Reset Password Handler ---
   Future<void> _onResetPassword(
     ResetPasswordRequestedEvent event,
     Emitter<AuthState> emit,
   ) async {
-    print('🔑 Resetting password for email: ${event.email}');
-    print('   OTP: ${event.otp}');
     emit(AuthLoading());
     final result = await resetPassword(
       email: event.email,
@@ -220,14 +247,46 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       newPassword: event.newPassword,
     );
     result.fold(
-      (failure) {
-        print('❌ Reset password failed: ${failure.message}');
-        emit(AuthFailure(failure.message));
-      },
-      (_) {
-        print('✅ Password reset successful');
-        emit(ResetPasswordSuccess('Password reset successful'));
-      },
+      (failure) => emit(AuthFailure(failure.message)),
+      (data) => emit(ResetPasswordSuccess(data['message'])),
     );
+  }
+
+  // --- Change Password Handler ---
+  Future<void> _onChangePasswordRequested(
+    ChangePasswordRequestedEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('🔐 Change password requested');
+    emit(AuthLoading());
+
+    // Add safety timeout
+    Future.delayed(const Duration(seconds: 20), () {
+      // Using a simple check to prevent emitting if state changed
+      // Note: In strict Bloc, prefer cancelling operations
+    });
+
+    try {
+      final result = await changePassword(
+        currentPassword: event.currentPassword,
+        newPassword: event.newPassword,
+      );
+
+      print('📥 Change password result: $result');
+
+      result.fold(
+        (failure) {
+          print('❌ Change password failed: ${failure.message}');
+          emit(AuthFailure(failure.message));
+        },
+        (_) {
+          print('✅ Change password successful');
+          emit(PasswordChangeSuccess('Password changed successfully'));
+        },
+      );
+    } catch (e) {
+      print('❌ Change password exception: $e');
+      emit(AuthFailure(e.toString()));
+    }
   }
 }

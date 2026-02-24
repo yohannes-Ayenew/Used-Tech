@@ -18,6 +18,22 @@ class AuthRepositoryImpl implements AuthRepository {
     required this.remoteDataSource,
     required this.localDataSource,
   });
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> signInWithGoogle() async {
+    try {
+      final response = await remoteDataSource.signInWithGoogle();
+
+      if (response.containsKey('token') && response.containsKey('user')) {
+        final user = UserModel.fromJson(response['user']);
+        await localDataSource.cacheToken(response['token']);
+        await localDataSource.cacheUser(user);
+        return Right({'user': user, 'token': response['token']});
+      }
+      return Left(ServerFailure('Invalid response from server'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> login(
@@ -125,34 +141,34 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> forgotPassword(String email) async {
+  Future<Either<Failure, Map<String, dynamic>>> forgotPassword(
+    String email,
+  ) async {
     try {
-      await remoteDataSource.forgotPassword(email);
-      return const Right(null);
+      final response = await remoteDataSource.forgotPassword(email);
+      return Right(response);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, void>> resetPassword({
+  Future<Either<Failure, Map<String, dynamic>>> resetPassword({
     required String email,
     required String otp,
     required String newPassword,
   }) async {
     try {
-      await remoteDataSource.resetPassword(
+      final response = await remoteDataSource.resetPassword(
         email: email,
         otp: otp,
         newPassword: newPassword,
       );
-      return const Right(null);
+      return Right(response);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
-
-  // lib/features/auth/data/repositories/auth_repository_impl.dart
 
   @override
   Future<Either<Failure, UserEntity>> checkAuthStatus() async {
@@ -192,8 +208,19 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, void>> changePassword({
     required String currentPassword,
     required String newPassword,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    try {
+      print('📝 AuthRepositoryImpl.changePassword called');
+      await remoteDataSource.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      print('✅ Password changed successfully in repository');
+      return const Right(null);
+    } catch (e) {
+      print('❌ Change password error in repository: $e');
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override

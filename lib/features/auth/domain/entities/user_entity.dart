@@ -11,7 +11,7 @@ class UserEntity extends Equatable {
   final String? phone;
   final UserRole role;
   final String token;
-  final bool isEmailVerified; // Changed from isPhoneVerified
+  final bool isEmailVerified;
   final double walletBalance;
   final bool isActive;
   final DateTime? lastLoginAt;
