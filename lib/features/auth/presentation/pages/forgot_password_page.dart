@@ -58,9 +58,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               MaterialPageRoute(
                 builder: (context) => ResetPasswordPage(
                   email: _emailController.text.trim(),
-                  userId: '',
-                  token: '',
+                  userId: null,
+                  token: null,
                 ),
+              ),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
               ),
             );
           } else if (state is AuthFailure) {
@@ -106,7 +112,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Email
                   TextFormField(
                     controller: _emailController,
                     validator: Validators.email,

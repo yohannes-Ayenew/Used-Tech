@@ -10,14 +10,12 @@ import 'login_page.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   final String email;
-  final String userId;
-  final String token;
 
   const ResetPasswordPage({
     super.key,
     required this.email,
-    required this.userId,
-    required this.token,
+    required userId,
+    required token,
   });
 
   @override
@@ -26,67 +24,24 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final List<TextEditingController> _otpControllers = List.generate(
-    6,
-    (index) => TextEditingController(),
-  );
-  final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
+  final TextEditingController _otpController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
-  int _resendTimer = 60;
-  bool _canResend = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startResendTimer();
-  }
 
   @override
   void dispose() {
-    for (var controller in _otpControllers) {
-      controller.dispose();
-    }
-    for (var node in _focusNodes) {
-      node.dispose();
-    }
+    _otpController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _startResendTimer() {
-    _canResend = false;
-    _resendTimer = 60;
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return false;
-      setState(() {
-        if (_resendTimer > 0) {
-          _resendTimer--;
-        } else {
-          _canResend = true;
-        }
-      });
-      return _resendTimer > 0 && mounted;
-    });
-  }
-
-  void _handleResendOTP() {
-    if (!_canResend) return;
-
-    setState(() => _isLoading = true);
-    context.read<AuthBloc>().add(
-      ForgotPasswordRequestedEvent(email: widget.email),
-    );
-  }
-
   void _handleSubmit() {
-    String otp = _otpControllers.map((c) => c.text).join();
+    String otp = _otpController.text.trim();
 
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -147,14 +102,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
           if (state is ResetPasswordSuccess) {
             _showSuccessDialog();
-          } else if (state is ForgotPasswordSuccess) {
-            _startResendTimer();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: context.successColor,
-              ),
-            );
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -215,69 +162,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // OTP Fields
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(6, (index) {
-                      return Container(
-                        width: 45,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: context.lightGrey,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _otpControllers[index].text.isNotEmpty
-                                ? context.primaryColor
-                                : context.borderColor,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _otpControllers[index],
-                          focusNode: _focusNodes[index],
-                          textAlign: TextAlign.center,
-                          keyboardType: TextInputType.number,
-                          maxLength: 1,
-                          style: context.textTheme.titleLarge,
-                          decoration: const InputDecoration(
-                            counterText: '',
-                            border: InputBorder.none,
-                          ),
-                          onChanged: (value) {
-                            if (value.length == 1 && index < 5) {
-                              _focusNodes[index + 1].requestFocus();
-                            } else if (value.isEmpty && index > 0) {
-                              _focusNodes[index - 1].requestFocus();
-                            }
-                          },
-                        ),
-                      );
-                    }),
+                  // OTP Field
+                  TextFormField(
+                    controller: _otpController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 24, letterSpacing: 4),
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                      hintText: "000000",
+                      counterText: "",
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 16),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Didn't receive code? ",
-                        style: context.textTheme.bodySmall,
-                      ),
-                      GestureDetector(
-                        onTap: _canResend ? _handleResendOTP : null,
-                        child: Text(
-                          _canResend ? "Resend" : "Resend in $_resendTimer s",
-                          style: TextStyle(
-                            color: _canResend
-                                ? context.primaryColor
-                                : context.greyText,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
 
                   // New Password
                   TextFormField(
