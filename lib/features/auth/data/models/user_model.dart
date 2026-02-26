@@ -69,4 +69,38 @@ class UserModel extends UserEntity {
       },
     };
   }
+
+  UserModel copyWith({
+    String? name,
+    String? email,
+    String? phone,
+    UserRole? role,
+    double? walletBalance,
+    bool? isEmailVerified,
+    bool? isActive,
+    DateTime? lastLoginAt,
+    KycStatus? kycStatus,
+    String? kycIdImage,
+    DateTime? kycSubmittedAt,
+    DateTime? kycReviewedAt,
+    String? kycRejectionReason,
+  }) {
+    return UserModel(
+      id: id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      role: role ?? this.role,
+      token: token,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      walletBalance: walletBalance ?? this.walletBalance,
+      isActive: isActive ?? this.isActive,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      kycStatus: kycStatus ?? this.kycStatus,
+      kycIdImage: kycIdImage ?? this.kycIdImage,
+      kycSubmittedAt: kycSubmittedAt ?? this.kycSubmittedAt,
+      kycReviewedAt: kycReviewedAt ?? this.kycReviewedAt,
+      kycRejectionReason: kycRejectionReason ?? this.kycRejectionReason,
+    );
+  }
 }

@@ -1,7 +1,8 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';  
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 import 'common/widgets/bottom_bar.dart';
 import 'common/widgets/splash_screen.dart';
 import 'core/theme/theme_bloc.dart';
@@ -17,11 +18,32 @@ import 'features/auth/presentation/pages/reset_password_page.dart';
 import 'features/profile/presentation/pages/settings_page.dart';
 import 'features/sell/presentation/pages/sell_page.dart';
 import 'injection_container.dart' as di;
-import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  try {
+    if (kIsWeb) {
+      // 🌐 WEB CONFIGURATION (Using keys you provided)
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: "AIzaSyCIJH5XcrBuFYU-vvHEK0QmWGzV9QgP7eo",
+          authDomain: "used-tech-market.firebaseapp.com",
+          projectId: "used-tech-market",
+          storageBucket: "used-tech-market.firebasestorage.app",
+          messagingSenderId: "440923132786",
+          appId: "1:440923132786:web:b11e21908ee28e0817c3eb",
+          measurementId: "G-B06BQ79C5V",
+        ),
+      );
+    } else {
+      await Firebase.initializeApp();
+    }
+    print('✅ Firebase initialized successfully');
+  } catch (e) {
+    print('❌ Firebase initialization error: $e');
+  }
+
   await di.init();
   runApp(const MyApp());
 }
@@ -47,7 +69,6 @@ class MyApp extends StatelessWidget {
             initialRoute: '/',
             routes: {
               '/': (context) {
-                // Get initial tab from arguments
                 final args = ModalRoute.of(context)?.settings.arguments;
                 int initialTab = 0;
 
@@ -73,8 +94,24 @@ class MyApp extends StatelessWidget {
                 message: '',
               ),
               '/forgot-password': (context) => const ForgotPasswordPage(),
-              '/reset-password': (context) =>
-                  const ResetPasswordPage(email: '', userId: null, token: null),
+              // Fixed Reset Password Route logic
+              '/reset-password': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments;
+                
+                if (args is Map<String, dynamic>) {
+                  return ResetPasswordPage(
+                    userId: args['userId'] ?? '',
+                    token: args['token'] ?? '',
+                    email: args['email'] ?? '',
+                  );
+                }
+                
+                return const ResetPasswordPage(
+                  userId: '',
+                  token: '',
+                  email: '',
+                );
+              },
               '/settings': (context) => const SettingsPage(),
             },
             onGenerateRoute: (settings) {
@@ -89,6 +126,7 @@ class MyApp extends StatelessWidget {
                   ),
                 );
               }
+              // Fallback for reset password if pushNamed is used differently
               if (settings.name == '/reset-password' &&
                   settings.arguments != null) {
                 final args = settings.arguments as Map<String, dynamic>;

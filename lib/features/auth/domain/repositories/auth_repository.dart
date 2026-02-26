@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:used_tech_client/core/error/failures.dart';
 import '../entities/user_entity.dart';
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, Map<String, dynamic>>> login(
@@ -43,7 +43,11 @@ abstract class AuthRepository {
     required String newPassword,
   });
 
-  Future<Either<Failure, void>> requestVerification({required File imageFile});
+  Future<Either<Failure, void>> requestVerification({
+    required XFile frontImage,
+    required XFile backImage,
+    required XFile faceImage,
+  });
 
   Future<Either<Failure, void>> logout();
 }

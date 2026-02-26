@@ -1,5 +1,3 @@
-// lib/common/widgets/bottom_bar.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/utils/auth_guard.dart';
@@ -22,8 +20,6 @@ class BottomBar extends StatefulWidget {
   @override
   State<BottomBar> createState() => _BottomBarState();
 }
-
-// lib/common/widgets/bottom_bar.dart
 
 class _BottomBarState extends State<BottomBar> {
   late int _page;
@@ -48,79 +44,105 @@ class _BottomBarState extends State<BottomBar> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        final isAuthenticated = state is AuthSuccess;
-        print('🔐 BottomBar building - isAuthenticated: $isAuthenticated');
-
-        if (isAuthenticated) {
-          final user = (state).user;
-          final token = (state).token;
-          print('👤 User: ${user.email}');
-          print('🔑 Token exists: ${token.isNotEmpty}');
-          if (token.isNotEmpty) {
-            print('🔑 Token preview: ${token.substring(0, 10)}...');
-          }
+    // 1. Wrap everything in BlocListener to listen for ONE-TIME events (Errors/Success)
+    // This runs even if the Auth Bottom Sheet is closed.
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthFailure) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        } else if (state is AuthSuccess) {
+          // Check if this is a fresh login (optional logic could go here)
+          // For now, just show a welcome message
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Welcome back, ${state.user.name}!"),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
+      },
+      // 2. BlocBuilder handles building the UI based on state (Authenticated vs Guest)
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          final isAuthenticated = state is AuthSuccess;
+          
+          // Debug prints
+          // print('🔍 BottomBar building - isAuthenticated: $isAuthenticated');
+          // if (isAuthenticated) {
+          //   final user = (state).user;
+          //   print('👤 User: ${user.email}');
+          // }
 
-        return Scaffold(
-          body: IndexedStack(
-            index: _page,
-            children: [
-              const HomePage(),
-              const SearchPage(),
-              const SellPage(),
-              const InboxPage(),
-              isAuthenticated
-                  ? const AuthenticatedProfilePage()
-                  : const ProfilePage(),
-            ],
-          ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _page,
-            selectedItemColor: context.primaryColor,
-            unselectedItemColor: context.greyText,
-            backgroundColor: context.cardBackground,
-            iconSize: 24,
-            onTap: (index) {
-              if (index == 2 || index == 3) {
-                authGuard(context, () {
+          return Scaffold(
+            body: IndexedStack(
+              index: _page,
+              children: [
+                const HomePage(),
+                const SearchPage(),
+                const SellPage(),
+                const InboxPage(),
+                isAuthenticated
+                    ? const AuthenticatedProfilePage()
+                    : const ProfilePage(),
+              ],
+            ),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: _page,
+              selectedItemColor: context.primaryColor,
+              unselectedItemColor: context.greyText,
+              backgroundColor: context.cardBackground,
+              iconSize: 24,
+              onTap: (index) {
+                // Protect Sell (2) and Inbox (3) tabs
+                if (index == 2 || index == 3) {
+                  authGuard(context, () {
+                    setState(() {
+                      _page = index;
+                    });
+                  });
+                } else {
                   setState(() {
                     _page = index;
                   });
-                });
-              } else {
-                setState(() {
-                  _page = index;
-                });
-              }
-            },
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                label: 'Home',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.search_outlined),
-                label: 'Search',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.add_circle_outline),
-                label: 'Sell',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.chat_outlined),
-                label: 'Inbox',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                label: 'Profile',
-              ),
-            ],
-          ),
-        );
-      },
+                }
+              },
+              type: BottomNavigationBarType.fixed,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.search_outlined),
+                  label: 'Search',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.add_circle_outline),
+                  label: 'Sell',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.chat_outlined),
+                  label: 'Inbox',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  label: 'Profile',
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -1,9 +1,10 @@
 // lib/features/auth/data/repositories/auth_repository_impl.dart
 
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/enums/kyc_status.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_data_source.dart';
@@ -224,8 +225,29 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> requestVerification({required File imageFile}) {
-    throw UnimplementedError();
+  Future<Either<Failure, void>> requestVerification({
+    required XFile frontImage,
+    required XFile backImage,
+    required XFile faceImage,
+  }) async {
+    try {
+      await remoteDataSource.requestVerification(
+        frontImage: frontImage,
+        backImage: backImage,
+        faceImage: faceImage,
+      );
+
+      // OPTIONAL: Update local cached user status to PENDING so UI updates immediately
+      final currentUser = await localDataSource.getCachedUser();
+      if (currentUser != null) {
+        final updatedUser = currentUser.copyWith(kycStatus: KycStatus.pending);
+        await localDataSource.cacheUser(updatedUser as UserModel);
+      }
+
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override

@@ -3,12 +3,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api_endpoints.dart';
 import 'auth_local_data_source.dart';
 import '../../../../injection_container.dart' as di;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 
 abstract class AuthRemoteDataSource {
   // Auth methods
@@ -38,12 +41,22 @@ abstract class AuthRemoteDataSource {
     required String currentPassword,
     required String newPassword,
   });
-  Future<void> requestVerification({required File imageFile});
+  Future<void> requestVerification({
+    required XFile frontImage,
+    required XFile backImage,
+    required XFile faceImage,
+  });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final http.Client client;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    // 💡 Client ID for Web support (from index.html)
+    // For Mobile, it will automatically use the one from google-services.json
+    clientId: kIsWeb 
+      ? '440923132786-ljsa2h08f61512lc1fdqflg0nnrq5cu3.apps.googleusercontent.com' 
+      : '440923132786-8rv31b9bhqhtllfj1ok22skbc1u1kdv3.apps.googleusercontent.com',
+  );
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   AuthRemoteDataSourceImpl({required this.client});
@@ -133,7 +146,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<Map<String, dynamic>> signInWithGoogle() async {
     try {
       // 1. Trigger Google Sign In flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      GoogleSignInAccount? googleUser;
+
+      if (kIsWeb) {
+        // For web, try silent sign-in first, then popup
+        googleUser = await _googleSignIn.signInSilently();
+        if (googleUser == null) {
+          googleUser = await _googleSignIn.signIn();
+        }
+      } else {
+        // Mobile flow
+        googleUser = await _googleSignIn.signIn();
+      }
+
       if (googleUser == null) throw Exception('Google Sign In cancelled');
 
       // 2. Obtain the auth details
@@ -321,7 +346,69 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> requestVerification({required File imageFile}) {
-    throw UnimplementedError('requestVerification not implemented yet');
+  Future<void> requestVerification({
+    required XFile frontImage,
+    required XFile backImage,
+    required XFile faceImage,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Not authenticated');
+      }
+
+      print('🚀 Uploading verification images...');
+      
+      // 1. Create Multipart Request
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiEndpoints.requestVerification),
+      );
+
+      // 2. Add Headers (Authorization)
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Helper function to add file compatible with Web and Mobile
+      Future<void> addFile(String fieldName, XFile file) async {
+        if (kIsWeb) {
+          // WEB: Read bytes
+          final bytes = await file.readAsBytes();
+          request.files.add(http.MultipartFile.fromBytes(
+            fieldName,
+            bytes,
+            filename: file.name,
+            contentType: MediaType('image', 'jpeg'), 
+          ));
+        } else {
+          // MOBILE: Use path
+          request.files.add(await http.MultipartFile.fromPath(
+            fieldName,
+            file.path,
+          ));
+        }
+      }
+
+      // 3. Add all 3 files
+      await addFile('frontImage', frontImage);
+      await addFile('backImage', backImage);
+      await addFile('faceImage', faceImage);
+
+      // 4. Send
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      print('📥 Upload Status: ${response.statusCode}');
+      print('📥 Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final data = jsonDecode(response.body);
+        throw Exception(data['message'] ?? 'Upload failed');
+      }
+    } catch (e) {
+      print('❌ Upload Error: $e');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
   }
 }
