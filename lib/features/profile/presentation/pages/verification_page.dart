@@ -1,12 +1,12 @@
-// lib/features/profile/presentation/pages/verification_page.dart
-
 import 'dart:io';
+import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import '../../../auth/domain/enums/kyc_status.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 
 class VerificationPage extends StatefulWidget {
@@ -17,14 +17,18 @@ class VerificationPage extends StatefulWidget {
 }
 
 class _VerificationPageState extends State<VerificationPage> {
-  File? _selectedImage;
+  // Use XFile for cross-platform compatibility (Web & Mobile)
+  XFile? _frontImage;
+  XFile? _backImage;
+  XFile? _faceImage;
+  
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(String type, ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,
@@ -32,91 +36,35 @@ class _VerificationPageState extends State<VerificationPage> {
 
       if (image != null) {
         setState(() {
-          _selectedImage = File(image.path);
+          if (type == 'front') _frontImage = image;
+          else if (type == 'back') _backImage = image;
+          else if (type == 'face') _faceImage = image;
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to pick image: $e"),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );
     }
   }
 
-  Future<void> _takePhoto() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to take photo: $e"),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  void _showImagePickerOptions() {
+  void _showOptions(String type) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: context.cardBackground),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Upload ID", style: context.textTheme.titleLarge),
-            const SizedBox(height: 20),
             ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: context.primaryColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.photo_library, color: context.primaryColor),
-              ),
-              title: Text(
-                "Choose from Gallery",
-                style: context.textTheme.bodyLarge,
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage();
-              },
+              leading: const Icon(Icons.photo_library),
+              title: const Text("Gallery"),
+              onTap: () { Navigator.pop(context); _pickImage(type, ImageSource.gallery); },
             ),
             ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: context.primaryColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.camera_alt, color: context.primaryColor),
-              ),
-              title: Text("Take a Photo", style: context.textTheme.bodyLarge),
-              onTap: () {
-                Navigator.pop(context);
-                _takePhoto();
-              },
+              leading: const Icon(Icons.camera_alt),
+              title: const Text("Camera"),
+              onTap: () { Navigator.pop(context); _pickImage(type, ImageSource.camera); },
             ),
           ],
         ),
@@ -124,275 +72,153 @@ class _VerificationPageState extends State<VerificationPage> {
     );
   }
 
-  Future<void> _submitVerification() async {
-    if (_selectedImage == null) {
+  void _submitVerification() {
+    if (_frontImage == null || _backImage == null || _faceImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please select an ID image"),
+          content: Text("Please upload all 3 photos (Front, Back, Face)"),
           backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    setState(() => _isLoading = true);
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Verification request sent to admin"),
-          backgroundColor: context.successColor,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      Navigator.pop(context);
-    }
+    context.read<AuthBloc>().add(
+      RequestVerificationEvent(
+        frontImage: _frontImage!,
+        backImage: _backImage!,
+        faceImage: _faceImage!,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AuthBloc>().state;
+    // Safely access user (handle Guest state)
     final user = state is AuthSuccess ? state.user : null;
 
-    return Scaffold(
-      backgroundColor: context.theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text("ID Verification", style: context.textTheme.titleLarge),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Status Card (if user exists)
-            if (user != null && user.kycStatus != KycStatus.none)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: user.kycStatus.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: user.kycStatus.color.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      user.kycStatus.icon,
-                      color: user.kycStatus.color,
-                      size: 30,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.kycStatus.displayName,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: user.kycStatus.color,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            user.kycStatus.message,
-                            style: context.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthLoading) setState(() => _isLoading = true);
+        else setState(() => _isLoading = false);
 
-            const SizedBox(height: 24),
+        if (state is VerificationRequestSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+          );
+          Navigator.pop(context);
+        } else if (state is AuthFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text("ID Verification")),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (user != null && user.kycStatus != KycStatus.none)
+                _buildStatusCard(user.kycStatus),
+              
+              const SizedBox(height: 20),
+              const Text("1. National ID (Front)", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              _buildUploadBox('front', _frontImage),
 
-            // Info Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: context.primaryColor.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: context.primaryColor),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Verification Required",
-                          style: context.textTheme.titleMedium?.copyWith(
-                            color: context.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Upload a clear photo of your government ID (Kebele ID, Passport, or Driver's License) to get verified.",
-                          style: context.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+              const SizedBox(height: 20),
+              const Text("2. National ID (Back)", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              _buildUploadBox('back', _backImage),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              const Text("3. Selfie / Face Photo", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              _buildUploadBox('face', _faceImage),
 
-            // Upload Section
-            Text("Upload ID", style: context.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              "Make sure the image is clear and all details are visible",
-              style: context.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
-
-            // Image Picker
-            GestureDetector(
-              onTap: _showImagePickerOptions,
-              child: Container(
+              const SizedBox(height: 30),
+              SizedBox(
                 width: double.infinity,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: context.lightGrey,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _selectedImage != null
-                        ? context.primaryColor
-                        : context.borderColor,
-                    width: 2,
-                  ),
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _submitVerification,
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Submit Verification"),
                 ),
-                child: _selectedImage != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            size: 50,
-                            color: context.greyText,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Tap to upload ID image",
-                            style: context.textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "PNG, JPG (Max 5MB)",
-                            style: context.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
               ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Requirements
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.lightGrey,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Requirements:", style: context.textTheme.titleMedium),
-                  const SizedBox(height: 12),
-                  _buildRequirementItem(
-                    context,
-                    Icons.check_circle,
-                    "Clear photo of your ID",
-                  ),
-                  _buildRequirementItem(
-                    context,
-                    Icons.check_circle,
-                    "All four corners visible",
-                  ),
-                  _buildRequirementItem(
-                    context,
-                    Icons.check_circle,
-                    "Information must be readable",
-                  ),
-                  _buildRequirementItem(
-                    context,
-                    Icons.check_circle,
-                    "ID must be valid and not expired",
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _submitVerification,
-                      child: const Text("Submit for Review"),
-                    ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Note
-            Center(
-              child: Text(
-                "Your ID will be reviewed within 24-48 hours",
-                style: context.textTheme.bodySmall,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildRequirementItem(
-    BuildContext context,
-    IconData icon,
-    String text,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+  Widget _buildUploadBox(String type, XFile? file) {
+    return GestureDetector(
+      onTap: () => _showOptions(type),
+      child: Container(
+        height: 150,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey),
+        ),
+        child: file != null
+            // ✅ THE FIX: Use this widget instead of Image.file
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: PlatformAwareImage(file: file),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.cloud_upload, size: 40, color: Colors.grey),
+                  const SizedBox(height: 8),
+                  Text("Tap to Upload ${type.toUpperCase()}", style: TextStyle(color: Colors.grey[600])),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(KycStatus status) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: status.color.withOpacity(0.1),
+        border: Border.all(color: status.color),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: context.successColor),
-          const SizedBox(width: 8),
-          Text(text, style: context.textTheme.bodySmall),
+          Icon(status.icon, color: status.color),
+          const SizedBox(width: 10),
+          Text(status.displayName, style: TextStyle(color: status.color, fontWeight: FontWeight.bold)),
         ],
       ),
     );
+  }
+}
+
+// ✅ HELPER WIDGET TO FIX RED SCREEN
+class PlatformAwareImage extends StatelessWidget {
+  final XFile file;
+  const PlatformAwareImage({super.key, required this.file});
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) {
+      // On Web, XFile.path is a Blob URL (e.g., blob:http://localhost:...)
+      // Image.network handles this correctly.
+      return Image.network(file.path, fit: BoxFit.cover);
+    } else {
+      // On Mobile, XFile.path is a real file path.
+      return Image.file(File(file.path), fit: BoxFit.cover);
+    }
   }
 }

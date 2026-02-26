@@ -1,7 +1,7 @@
 // lib/features/auth/presentation/bloc/auth_event.dart
 
-import 'dart:io';
 import 'package:equatable/equatable.dart';
+import 'package:image_picker/image_picker.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -31,12 +31,10 @@ class SignupRequestedEvent extends AuthEvent {
   });
 
   @override
-  List<Object> get props => [name, email, password, ?phone];
+  List<Object> get props => [name, email, password, phone ?? ''];
 }
 
-class GoogleSignInRequestedEvent extends AuthEvent {
-  String? get email => null;
-}
+class GoogleSignInRequestedEvent extends AuthEvent {}
 
 // Email verification events
 class VerifyEmailEvent extends AuthEvent {
@@ -84,7 +82,7 @@ class UpdateProfileRequestedEvent extends AuthEvent {
   const UpdateProfileRequestedEvent({this.name, this.phone});
 
   @override
-  List<Object> get props => [?name, ?phone];
+  List<Object> get props => [name ?? '', phone ?? ''];
 }
 
 class ChangePasswordRequestedEvent extends AuthEvent {
@@ -100,11 +98,18 @@ class ChangePasswordRequestedEvent extends AuthEvent {
 }
 
 class RequestVerificationEvent extends AuthEvent {
-  final File imageFile;
-  const RequestVerificationEvent({required this.imageFile});
+  final XFile frontImage;
+  final XFile backImage;
+  final XFile faceImage;
+
+  const RequestVerificationEvent({
+    required this.frontImage,
+    required this.backImage,
+    required this.faceImage,
+  });
 
   @override
-  List<Object> get props => [imageFile];
+  List<Object> get props => [frontImage, backImage, faceImage];
 }
 
 class GetUserProfileEvent extends AuthEvent {}

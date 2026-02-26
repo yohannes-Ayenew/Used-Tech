@@ -265,6 +265,49 @@ class _SignupPageState extends State<SignupPage> {
                   ),
 
                   const SizedBox(height: 16),
+                  
+                  // OR Divider
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.grey.withValues(alpha: 0.3))),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text("OR", style: context.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                      ),
+                      Expanded(child: Divider(color: Colors.grey.withValues(alpha: 0.3))),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Google Sign Up Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        context.read<AuthBloc>().add(GoogleSignInRequestedEvent());
+                      },
+                      icon: Image.network(
+                        'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg',
+                        height: 24,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.g_mobiledata,
+                            color: Colors.red,
+                            size: 32,
+                          );
+                        },
+                      ),
+                      label: const Text("Sign up with Google"),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
 
                   // 🔥 NEW: Login Link
                   Row(

@@ -48,6 +48,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ForgotPasswordRequestedEvent>(_onForgotPassword);
     on<ResetPasswordRequestedEvent>(_onResetPassword);
     on<ChangePasswordRequestedEvent>(_onChangePasswordRequested);
+    on<RequestVerificationEvent>(_onRequestVerification);
   }
 
   bool? get mounted => null;
@@ -288,5 +289,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       print('❌ Change password exception: $e');
       emit(AuthFailure(e.toString()));
     }
+  }
+
+  Future<void> _onRequestVerification(
+    RequestVerificationEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+
+    final result = await authRepository.requestVerification(
+      frontImage: event.frontImage,
+      backImage: event.backImage,
+      faceImage: event.faceImage,
+    );
+
+    result.fold(
+      (failure) {
+        emit(AuthFailure(failure.message));
+        // Important: Reload current user state so the UI doesn't get stuck in loading
+        add(AppStartedEvent());
+      },
+      (_) async {
+        // Success!
+        emit(const VerificationRequestSuccess(
+            "Verification submitted successfully"));
+
+        // Refresh user data to show "Pending" status in UI immediately
+        add(AppStartedEvent());
+      },
+    );
   }
 }
