@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart'; // For kIsWeb
+import 'package:flutter/foundation.dart';  
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,7 +17,6 @@ class VerificationPage extends StatefulWidget {
 }
 
 class _VerificationPageState extends State<VerificationPage> {
-  // Use XFile for cross-platform compatibility (Web & Mobile)
   XFile? _frontImage;
   XFile? _backImage;
   XFile? _faceImage;
@@ -95,9 +94,58 @@ class _VerificationPageState extends State<VerificationPage> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AuthBloc>().state;
-    // Safely access user (handle Guest state)
     final user = state is AuthSuccess ? state.user : null;
 
+    // 1. CHECK STATUS: If Approved or Pending, DO NOT show the form
+    if (user != null && (user.kycStatus == KycStatus.approved || user.kycStatus == KycStatus.pending)) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("Verification Status")),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Big Icon
+                Icon(
+                  user.kycStatus == KycStatus.approved ? Icons.verified : Icons.hourglass_top,
+                  size: 100,
+                  color: user.kycStatus.color,
+                ),
+                const SizedBox(height: 24),
+                // Title
+                Text(
+                  user.kycStatus.displayName,
+                  style: context.textTheme.headlineMedium?.copyWith(
+                    color: user.kycStatus.color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Message
+                Text(
+                  user.kycStatus.message,
+                  textAlign: TextAlign.center,
+                  style: context.textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 40),
+                // Back Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Go Back to Profile"),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 2. DEFAULT VIEW: Show Upload Form (For 'none' or 'rejected')
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthLoading) setState(() => _isLoading = true);
@@ -121,10 +169,24 @@ class _VerificationPageState extends State<VerificationPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (user != null && user.kycStatus != KycStatus.none)
-                _buildStatusCard(user.kycStatus),
+              if (user != null && user.kycStatus == KycStatus.rejected)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(user.kycStatus.message, style: const TextStyle(color: Colors.red))),
+                    ],
+                  ),
+                ),
               
-              const SizedBox(height: 20),
               const Text("1. National ID (Front)", style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               _buildUploadBox('front', _frontImage),
@@ -169,7 +231,6 @@ class _VerificationPageState extends State<VerificationPage> {
           border: Border.all(color: Colors.grey),
         ),
         child: file != null
-            // ✅ THE FIX: Use this widget instead of Image.file
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: PlatformAwareImage(file: file),
@@ -185,27 +246,8 @@ class _VerificationPageState extends State<VerificationPage> {
       ),
     );
   }
-
-  Widget _buildStatusCard(KycStatus status) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: status.color.withOpacity(0.1),
-        border: Border.all(color: status.color),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(status.icon, color: status.color),
-          const SizedBox(width: 10),
-          Text(status.displayName, style: TextStyle(color: status.color, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
 }
 
-// ✅ HELPER WIDGET TO FIX RED SCREEN
 class PlatformAwareImage extends StatelessWidget {
   final XFile file;
   const PlatformAwareImage({super.key, required this.file});
@@ -213,11 +255,8 @@ class PlatformAwareImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (kIsWeb) {
-      // On Web, XFile.path is a Blob URL (e.g., blob:http://localhost:...)
-      // Image.network handles this correctly.
       return Image.network(file.path, fit: BoxFit.cover);
     } else {
-      // On Mobile, XFile.path is a real file path.
       return Image.file(File(file.path), fit: BoxFit.cover);
     }
   }

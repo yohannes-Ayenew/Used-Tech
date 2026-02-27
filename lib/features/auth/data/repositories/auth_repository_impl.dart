@@ -193,16 +193,41 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserEntity>> getUserProfile() {
-    throw UnimplementedError();
+  Future<Either<Failure, UserEntity>> getUserProfile() async {
+    try {
+      final response = await remoteDataSource.getUserProfile();
+      final user = UserModel.fromJson(response);
+      
+      // CRITICAL: Update the local cache with new data (Approved Status)
+      await localDataSource.cacheUser(user);
+      
+      return Right(user);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
   Future<Either<Failure, UserEntity>> updateProfile({
     String? name,
     String? phone,
-  }) {
-    throw UnimplementedError();
+    XFile? profileImage,
+  }) async {
+    try {
+      final response = await remoteDataSource.updateProfile(
+        name: name,
+        phone: phone,
+        profileImage: profileImage,
+      );
+      final user = UserModel.fromJson(response);
+      
+      // Update local cache
+      await localDataSource.cacheUser(user);
+      
+      return Right(user);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
@@ -254,6 +279,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, void>> logout() async {
     try {
       await localDataSource.logout();
+      await remoteDataSource.logout();  
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(e.toString()));

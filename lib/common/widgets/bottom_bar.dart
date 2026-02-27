@@ -59,17 +59,28 @@ class _BottomBarState extends State<BottomBar> {
             ),
           );
         } else if (state is AuthSuccess) {
-          // Check if this is a fresh login (optional logic could go here)
-          // For now, just show a welcome message
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Welcome back, ${state.user.name}!"),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          // 💡 IMPROVEMENT: Only show "Welcome back" if we are the current route.
+          // This prevents duplicate snackbars when EditProfilePage/etc are on top.
+          if (ModalRoute.of(context)?.isCurrent == true) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Welcome back, ${state.user.name}!"),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
         }
+      },
+      listenWhen: (previous, current) {
+        // 🚀 CRITICAL: Only fire "Welcome back" if we wasn't already logged in.
+        // This prevents the snackbar from showing up on every profile update.
+        if (current is AuthSuccess && previous is! AuthSuccess) {
+          return true;
+        }
+        if (current is AuthFailure) return true;
+        return false;
       },
       // 2. BlocBuilder handles building the UI based on state (Authenticated vs Guest)
       child: BlocBuilder<AuthBloc, AuthState>(

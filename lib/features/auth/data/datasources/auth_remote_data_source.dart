@@ -22,7 +22,8 @@ abstract class AuthRemoteDataSource {
     required String password,
     String? phone,
   });
-  Future<Map<String, dynamic>> signInWithGoogle(); // ADDED
+  Future<Map<String, dynamic>> signInWithGoogle();
+  Future<void> logout(); // ADDED
   Future<Map<String, dynamic>> verifyEmail(String userId, String otp);
   Future<Map<String, dynamic>> resendOTP(String email);
 
@@ -36,7 +37,7 @@ abstract class AuthRemoteDataSource {
 
   // Profile methods
   Future<Map<String, dynamic>> getUserProfile();
-  Future<Map<String, dynamic>> updateProfile({String? name, String? phone});
+  Future<Map<String, dynamic>> updateProfile({String? name, String? phone, XFile? profileImage});
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -149,13 +150,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       GoogleSignInAccount? googleUser;
 
       if (kIsWeb) {
-        // For web, try silent sign-in first, then popup
-        googleUser = await _googleSignIn.signInSilently();
-        if (googleUser == null) {
-          googleUser = await _googleSignIn.signIn();
-        }
+        // For web, ALWAYS sign out first or use a method that forces account selection
+        // This ensures the account picker shows up
+        await _googleSignIn.signOut();
+        googleUser = await _googleSignIn.signIn();
       } else {
-        // Mobile flow
+        // Mobile flow: ensure we aren't silently signed in if the user wants to switch
         googleUser = await _googleSignIn.signIn();
       }
 
@@ -180,11 +180,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       // 5. Send ID Token to YOUR Backend
       print('🚀 Sending Google Token to Backend...');
-      final response = await client.post(
-        Uri.parse(ApiEndpoints.googleLogin),
-        body: jsonEncode({'idToken': idToken}),
-        headers: _getHeaders(),
-      );
+      final response = await client
+          .post(
+            Uri.parse(ApiEndpoints.googleLogin),
+            body: jsonEncode({'idToken': idToken}),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 
@@ -301,12 +303,92 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getUserProfile() async {
-    throw UnimplementedError('getUserProfile not implemented yet');
+    try {
+      final token = await _getToken();
+      if (token == null) throw Exception('No token found');
+
+      final response = await client.get(
+        Uri.parse(ApiEndpoints.getProfile),
+        headers: _getHeaders(token: token),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return data['data']; // Assuming backend returns { success: true, data: { ...user } }
+      } else {
+        throw Exception(data['message'] ?? 'Failed to fetch profile');
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
   }
 
   @override
-  Future<Map<String, dynamic>> updateProfile({String? name, String? phone}) {
-    throw UnimplementedError('updateProfile not implemented yet');
+  Future<Map<String, dynamic>> updateProfile({String? name, String? phone, XFile? profileImage}) async {
+    try {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Not authenticated');
+      }
+
+      print('🚀 Updating profile...');
+
+      // 1. Create Multipart Request (PUT)
+      var request = http.MultipartRequest(
+        'PUT',
+        Uri.parse(ApiEndpoints.updateProfile),
+      );
+
+      // 2. Add Headers (Authorization)
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // 3. Add Fields
+      if (name != null) request.fields['name'] = name;
+      if (phone != null) request.fields['phone'] = phone;
+
+      // 4. Add Image if provided
+      if (profileImage != null) {
+        if (kIsWeb) {
+          final bytes = await profileImage.readAsBytes();
+          request.files.add(http.MultipartFile.fromBytes(
+            'profileImage',
+            bytes,
+            filename: profileImage.name,
+            contentType: MediaType('image', 'jpeg'),
+          ));
+        } else {
+          // MOBILE: Use path
+          final ext = profileImage.path.split('.').last.toLowerCase();
+          String mimeType = 'image/jpeg'; // Default
+          if (ext == 'png') mimeType = 'image/png';
+          if (ext == 'webp') mimeType = 'image/webp';
+          if (ext == 'gif') mimeType = 'image/gif';
+
+          request.files.add(await http.MultipartFile.fromPath(
+            'profileImage',
+            profileImage.path,
+            contentType: MediaType('image', ext == 'jpg' ? 'jpeg' : ext),
+          ));
+        }
+      }
+
+      // 5. Send
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      print('📥 Profile Update Status: ${response.statusCode}');
+      
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return data['data']; // Returns updated user object
+      } else {
+        throw Exception(data['message'] ?? 'Profile update failed');
+      }
+    } catch (e) {
+      print('❌ Profile Update Error: $e');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
   }
 
   @override
@@ -409,6 +491,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       print('❌ Upload Error: $e');
       throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    try {
+      print('🚪 Performing full logout (Google + Firebase)...');
+      await _googleSignIn.signOut();
+      await _firebaseAuth.signOut();
+      print('✅ Third-party auth sessions cleared');
+    } catch (e) {
+      print('⚠️ Error during third-party logout: $e');
     }
   }
 }

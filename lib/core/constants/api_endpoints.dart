@@ -7,11 +7,12 @@ class ApiEndpoints {
   // WE REMOVED "static const String baseUrl = ..." to avoid the duplicate error
   static String get baseUrl {
     if (kIsWeb) {
-      // For Browser (Edge/Chrome)
       return 'http://localhost:3000/api';
     } else {
-      // For Android Emulator
-      return 'http://10.0.2.2:3000/api'; 
+      // 💡 TIP: Your IP changed from 10.232.201.96 to 10.232.201.120
+      // Run 'ipconfig' and look for Ethernet adapter IPv4 Address
+      const String localIp = '10.232.201.120';   
+      return 'http://$localIp:3000/api'; 
     }
   }
 

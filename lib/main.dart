@@ -77,8 +77,18 @@ class MyApp extends StatelessWidget {
                 }
 
                 return BlocBuilder<AuthBloc, AuthState>(
+                  buildWhen: (previous, current) {
+                    // 🚀 MORE ROBUST: Never rebuild the root to SplashScreen if we are already logged in
+                    // and just doing a background task (AuthLoading).
+                    if (previous is AuthSuccess && current is AuthLoading) {
+                      return false;
+                    }
+                    // Rebuild for fresh login, logout, or initial load
+                    return true;
+                  },
                   builder: (context, state) {
-                    if (state is AuthLoading) {
+                    if (state is AuthInitial ||
+                        state is AuthLoading && ModalRoute.of(context)?.isCurrent == true) {
                       return const SplashScreen();
                     }
                     return BottomBar(initialTab: initialTab);
