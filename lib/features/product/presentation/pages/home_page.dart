@@ -233,7 +233,7 @@ class HomePage extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   return const ProductCard(
-                    image: "https://via.placeholder.com/150",
+                    image: "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200",
                     title: "iPhone 13 Pro",
                     price: "50,000",
                     condition: "Like New",

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_event.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
@@ -130,24 +131,43 @@ class AuthenticatedProfilePage extends StatelessWidget {
                                 alpha: 0.1,
                               ),
                             ),
-                            child: Center(
-                              child: Text(
-                                initials,
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: context.primaryColor,
-                                ),
-                              ),
-                            ),
+                            child: user.profileImage != null
+                                ? ClipOval(
+                                    child: Image.network(
+                                      "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${user.profileImage}",
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Center(
+                                        child: Text(
+                                          initials,
+                                          style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: context.primaryColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Text(
+                                      initials,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: context.primaryColor,
+                                      ),
+                                    ),
+                                  ),
                           ),
-                          if (user.isVerifiedSeller)
+                            if (user.isVerifiedSeller)
                             Positioned(
                               bottom: 0,
                               right: 0,
                               child: VerificationBadge(
                                 isVerified: true,
-                                size: 20,
+                                size: 24,  
+                                color: user.kycStatus.color,  
                               ),
                             ),
                         ],

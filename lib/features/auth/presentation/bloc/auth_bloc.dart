@@ -49,6 +49,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ResetPasswordRequestedEvent>(_onResetPassword);
     on<ChangePasswordRequestedEvent>(_onChangePasswordRequested);
     on<RequestVerificationEvent>(_onRequestVerification);
+    on<UpdateProfileRequestedEvent>(_onUpdateProfile);
   }
 
   bool? get mounted => null;
@@ -199,15 +200,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     print('🔄 AppStartedEvent - checking auth status');
+    
+    // 1. Check Local Cache (Fast)
     final result = await checkAuthStatus();
-    result.fold(
-      (failure) {
-        print('❌ No authenticated user: ${failure.message}');
+    
+    await result.fold(
+      (failure) async {
+        print('❌ No local user found: ${failure.message}');
         emit(AuthGuest());
       },
-      (user) {
-        print('✅ User authenticated: ${user.email}');
+      (user) async {
+        print('✅ Local user found. Showing immediate UI.');
+        // Show cached data immediately so user doesn't wait
         emit(AuthSuccess(user, token: user.token));
+
+        // 2. Fetch Fresh Data from Server (Background)
+        try {
+          final freshResult = await authRepository.getUserProfile();
+          
+          freshResult.fold(
+            (l) => print('⚠️ Failed to refresh profile: ${l.message}'),
+            (freshUser) {
+              print('✨ Profile refreshed! Status: ${freshUser.kycStatus}');
+              // Emit new state with updated user (Blue Badge)
+              emit(AuthSuccess(freshUser, token: freshUser.token));
+            },
+          );
+        } catch (e) {
+          print('⚠️ Error refreshing profile: $e');
+        }
       },
     );
   }
@@ -218,7 +239,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     print('🚪 Logout requested');
-    // In a real app, you might want to call authRepository.logout() here to clear storage
+    await authRepository.logout();
     emit(AuthGuest());
     print('✅ User logged out');
   }
@@ -316,6 +337,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         // Refresh user data to show "Pending" status in UI immediately
         add(AppStartedEvent());
+      },
+    );
+  }
+
+  Future<void> _onUpdateProfile(
+    UpdateProfileRequestedEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('👤 Updating profile...');
+    emit(AuthLoading());
+
+    final result = await authRepository.updateProfile(
+      name: event.name,
+      phone: event.phone,
+      profileImage: event.profileImage,
+    );
+
+    result.fold(
+      (failure) {
+        print('❌ Profile update failed: ${failure.message}');
+        emit(AuthFailure(failure.message));
+        // Add AppStartedEvent to restore previous authenticated state
+        add(AppStartedEvent());
+      },
+      (user) {
+        print('✅ Profile updated successfully!');
+        emit(AuthSuccess(user, token: user.token));
       },
     );
   }

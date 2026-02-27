@@ -36,6 +36,7 @@ abstract class AuthRepository {
   Future<Either<Failure, UserEntity>> updateProfile({
     String? name,
     String? phone,
+    XFile? profileImage,
   });
 
   Future<Either<Failure, void>> changePassword({

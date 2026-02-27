@@ -88,37 +88,37 @@ class ProductCard extends StatelessWidget {
 
             // Content with proper spacing
             Padding(
-              padding: const EdgeInsets.all(8.0), // Reduced from 10 to 8
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Title
                   Text(
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.textTheme.titleMedium?.copyWith(
-                      fontSize: 13, // Slightly smaller
+                      fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 2), // Reduced spacing
-                  // Price
+                  const SizedBox(height: 2),
                   Text(
                     "$price ETB",
+                    maxLines: 1, // Add this
+                    overflow: TextOverflow.ellipsis, // Add this
                     style: TextStyle(
                       color: context.primaryColor,
                       fontWeight: FontWeight.w900,
-                      fontSize: 14, // Slightly smaller
+                      fontSize: 14,
                     ),
                   ),
-                  const SizedBox(height: 4), // Reduced spacing
+                  const SizedBox(height: 4),
                   // Condition Pill
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 6,
                       vertical: 2,
-                    ), // Smaller padding
+                    ),
                     decoration: BoxDecoration(
                       color: _getConditionColor(
                         context,
@@ -130,12 +130,12 @@ class ProductCard extends StatelessWidget {
                       condition,
                       style: TextStyle(
                         color: _getConditionColor(context, condition),
-                        fontSize: 9, // Smaller font
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4), // Reduced spacing
+                  const SizedBox(height: 4),
                   // Location & Badges
                   Row(
                     children: [
@@ -143,10 +143,9 @@ class ProductCard extends StatelessWidget {
                         Icons.location_on_outlined,
                         size: 10,
                         color: context.greyText,
-                      ), // Smaller icon
+                      ),
                       const SizedBox(width: 2),
                       Expanded(
-                        // Wrap location in Expanded to prevent overflow
                         child: Text(
                           location,
                           style: context.textTheme.bodySmall?.copyWith(
@@ -156,37 +155,23 @@ class ProductCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 4), // Increased from 2
                       // Badges
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (isVerified)
-                            Container(
-                              padding: const EdgeInsets.all(1),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.verified,
-                                size: 10,
-                                color: Colors.blue,
-                              ),
+                            Icon(
+                              Icons.verified,
+                              size: 12, // Slightly larger
+                              color: Colors.blue,
                             ),
                           if (isVerified && isEscrow) const SizedBox(width: 2),
                           if (isEscrow)
-                            Container(
-                              padding: const EdgeInsets.all(1),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.security,
-                                size: 10,
-                                color: Colors.green,
-                              ),
+                            Icon(
+                              Icons.security,
+                              size: 12, // Slightly larger
+                              color: Colors.green,
                             ),
                         ],
                       ),

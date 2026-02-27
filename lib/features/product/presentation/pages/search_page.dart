@@ -19,7 +19,7 @@ class _SearchPageState extends State<SearchPage>
 
   final List<Map<String, dynamic>> _allProducts = const [
     {
-      'image': 'https://via.placeholder.com/150',
+      'image': "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=400",
       'title': 'HP Pavilion',
       'price': '42,000',
       'condition': 'Fair',

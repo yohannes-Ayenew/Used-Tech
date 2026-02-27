@@ -1,5 +1,3 @@
-// lib/features/auth/domain/enums/kyc_status.dart
-
 import 'package:flutter/material.dart';
 
 enum KycStatus {
@@ -8,11 +6,16 @@ enum KycStatus {
   approved,
   rejected;
 
+  // Converts Database String to Dart Enum
   static KycStatus fromString(String value) {
+    // Handle case insensitivity (Approved, approved, APPROVED)
     switch (value.toUpperCase()) {
       case 'PENDING':
         return KycStatus.pending;
       case 'APPROVED':
+        return KycStatus.approved;
+      case 'VERIFIEDSELLER': // Just in case
+      case 'VERIFIED_SELLER': 
         return KycStatus.approved;
       case 'REJECTED':
         return KycStatus.rejected;
@@ -21,6 +24,7 @@ enum KycStatus {
     }
   }
 
+  // Converts Enum back to Database String
   String toJson() {
     switch (this) {
       case KycStatus.pending:
@@ -34,12 +38,13 @@ enum KycStatus {
     }
   }
 
+  // Text shown on the Profile Badge
   String get displayName {
     switch (this) {
       case KycStatus.pending:
         return 'Pending Review';
       case KycStatus.approved:
-        return 'Verified Seller';
+        return 'Verified Seller'; // <--- The text you want
       case KycStatus.rejected:
         return 'Rejected';
       default:
@@ -47,12 +52,13 @@ enum KycStatus {
     }
   }
 
+  // Color of the Badge
   Color get color {
     switch (this) {
       case KycStatus.pending:
         return Colors.orange;
       case KycStatus.approved:
-        return Colors.green;
+        return Colors.blue; // <--- The Blue you want
       case KycStatus.rejected:
         return Colors.red;
       default:
@@ -60,29 +66,31 @@ enum KycStatus {
     }
   }
 
+  // Icon inside the Badge
   IconData get icon {
     switch (this) {
       case KycStatus.pending:
         return Icons.hourglass_empty;
       case KycStatus.approved:
-        return Icons.verified;
+        return Icons.verified; // <--- The Checkmark
       case KycStatus.rejected:
         return Icons.error_outline;
       default:
-        return Icons.verified_outlined;
+        return Icons.gpp_bad_outlined;
     }
   }
 
+  // Message shown on Verification Page
   String get message {
     switch (this) {
       case KycStatus.pending:
-        return 'Your ID is being reviewed by admin';
+        return 'Your ID is currently being reviewed by our admins. This usually takes 24 hours.';
       case KycStatus.approved:
-        return 'You are a verified seller!';
+        return 'You are fully verified! You can now sell products and withdraw funds.';
       case KycStatus.rejected:
-        return 'Verification rejected. Please submit a valid ID';
+        return 'Your verification was rejected. Please ensure your ID photos are clear and valid.';
       default:
-        return 'Verify your ID to get a blue badge';
+        return 'Verify your ID to get a blue badge and unlock selling features.';
     }
   }
 }

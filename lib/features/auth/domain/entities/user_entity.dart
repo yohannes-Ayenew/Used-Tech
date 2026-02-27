@@ -9,6 +9,7 @@ class UserEntity extends Equatable {
   final String name;
   final String email;
   final String? phone;
+  final String? profileImage;
   final UserRole role;
   final String token;
   final bool isEmailVerified;
@@ -28,6 +29,7 @@ class UserEntity extends Equatable {
     required this.name,
     required this.email,
     this.phone,
+    this.profileImage,
     required this.role,
     required this.token,
     required this.isEmailVerified,
@@ -68,6 +70,7 @@ class UserEntity extends Equatable {
     String? name,
     String? email,
     String? phone,
+    String? profileImage,
     UserRole? role,
     double? walletBalance,
     bool? isEmailVerified,
@@ -84,6 +87,7 @@ class UserEntity extends Equatable {
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      profileImage: profileImage ?? this.profileImage,
       role: role ?? this.role,
       token: token,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,

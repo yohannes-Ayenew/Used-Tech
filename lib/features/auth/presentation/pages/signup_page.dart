@@ -284,28 +284,36 @@ class _SignupPageState extends State<SignupPage> {
                   SizedBox(
                     width: double.infinity,
                     height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        context.read<AuthBloc>().add(GoogleSignInRequestedEvent());
-                      },
-                      icon: Image.network(
-                        'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg',
-                        height: 24,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.g_mobiledata,
-                            color: Colors.red,
-                            size: 32,
-                          );
-                        },
-                      ),
-                      label: const Text("Sign up with Google"),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : OutlinedButton.icon(
+                            onPressed: () {
+                              setState(() => _isLoading = true);
+                              context
+                                  .read<AuthBloc>()
+                                  .add(GoogleSignInRequestedEvent());
+                            },
+                            icon: Image.network(
+                              'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png',
+                              height: 24,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.login,
+                                  color: Colors.blue,
+                                );
+                              },
+                            ),
+                            label: const Text("Sign up with Google"),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
                   ),
+
+                  const SizedBox(height: 40), // Extra space for keyboard smoothness
 
                   const SizedBox(height: 16),
 
@@ -338,6 +346,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 40), // More bottom padding
                 ],
               ),
             ),
