@@ -29,4 +29,6 @@ class ApiEndpoints {
   static String get updateProfile => '$baseUrl/users/profile';
   static String get changePassword => '$baseUrl/users/change-password';
   static String get requestVerification => '$baseUrl/users/request-verification';
+  static String get createProduct => '$baseUrl/products';
+  static String get getProducts => '$baseUrl/products';
 }

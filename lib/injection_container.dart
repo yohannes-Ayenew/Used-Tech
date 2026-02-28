@@ -23,6 +23,16 @@ import 'package:used_tech_client/features/auth/domain/usecases/change_password.d
 import 'package:used_tech_client/features/auth/domain/usecases/request_verification.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/get_user_profile.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+
+// Product Feature Imports
+import 'package:used_tech_client/features/product/data/datasources/product_remote_data_source.dart';
+import 'package:used_tech_client/features/product/data/repositories/product_repository_impl.dart';
+import 'package:used_tech_client/features/product/domain/repositories/product_repository.dart';
+import 'package:used_tech_client/features/product/domain/usecases/create_product.dart';
+
+// Sell Feature Imports
+import 'package:used_tech_client/features/sell/presentation/bloc/sell_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -39,10 +49,16 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(sharedPreferences: sl()),
   );
+  sl.registerLazySingleton<ProductRemoteDataSource>(
+    () => ProductRemoteDataSourceImpl(client: sl(), sharedPreferences: sl()),
+  );
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
+  );
+  sl.registerLazySingleton<ProductRepository>(
+    () => ProductRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Use Cases
@@ -58,6 +74,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ChangePassword(sl()));
   sl.registerLazySingleton(() => RequestVerification(sl()));
   sl.registerLazySingleton(() => GetUserProfile(sl()));
+  
+  // Product Use Cases
+  sl.registerLazySingleton(() => CreateProduct(sl()));
 
   // Bloc
   sl.registerFactory(
@@ -71,6 +90,18 @@ Future<void> init() async {
       resetPassword: sl(),
       changePassword: sl(),
       authRepository: sl(),
+    ),
+  );
+  
+  sl.registerFactory(
+    () => SellBloc(
+      createProduct: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => ProductBloc(
+      productRepository: sl(),
     ),
   );
 }

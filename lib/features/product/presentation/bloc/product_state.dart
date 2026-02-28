@@ -54,3 +54,13 @@ class ProductError extends ProductState {
   @override
   List<Object> get props => [message];
 }
+
+class ProductCreating extends ProductState {}
+
+class ProductCreated extends ProductState {
+  final ProductEntity product;
+  const ProductCreated(this.product);
+
+  @override
+  List<Object> get props => [product];
+}

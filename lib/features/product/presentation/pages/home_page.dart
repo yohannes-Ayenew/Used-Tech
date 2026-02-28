@@ -6,10 +6,24 @@ import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_event.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import '../widgets/product_card.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ProductBloc>().add(const GetProductsEvent());
+  }
 
   String _getInitials(String name) {
     if (name.isEmpty) return "U";
@@ -221,26 +235,43 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 15),
 
               // Product Grid
-              GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: 4,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.65,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                ),
-                itemBuilder: (context, index) {
-                  return const ProductCard(
-                    image: "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200",
-                    title: "iPhone 13 Pro",
-                    price: "50,000",
-                    condition: "Like New",
-                    location: "Bole",
-                    isVerified: true,
-                    isEscrow: true,
-                  );
+              BlocBuilder<ProductBloc, ProductState>(
+                builder: (context, state) {
+                  if (state is ProductLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is ProductError) {
+                    return Center(child: Text(state.message));
+                  } else if (state is ProductsLoaded) {
+                    final products = state.products;
+                    if (products.isEmpty) {
+                      return const Center(child: Text("No products found"));
+                    }
+                    return GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: products.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.65,
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
+                      ),
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                        final imageUrl = product.images.isNotEmpty ? product.images.first : "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200";
+                        return ProductCard(
+                          image: imageUrl,
+                          title: product.title,
+                          price: product.price.toStringAsFixed(0),
+                          condition: product.condition.toString().split('.').last,
+                          location: product.location,
+                          isVerified: product.isVerified,
+                          isEscrow: product.isEscrow,
+                        );
+                      },
+                    );
+                  }
+                  return const SizedBox();
                 },
               ),
             ],

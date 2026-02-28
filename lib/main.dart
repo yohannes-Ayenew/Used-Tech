@@ -10,6 +10,8 @@ import 'core/theme/app_themes.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
+import 'features/product/presentation/bloc/product_bloc.dart';
+import 'features/sell/presentation/bloc/sell_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/email_verification_page.dart';
@@ -17,6 +19,7 @@ import 'features/auth/presentation/pages/forgot_password_page.dart';
 import 'features/auth/presentation/pages/reset_password_page.dart';
 import 'features/profile/presentation/pages/settings_page.dart';
 import 'features/sell/presentation/pages/sell_page.dart';
+import 'features/sell/presentation/pages/success_page.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
@@ -56,6 +59,8 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => di.sl<AuthBloc>()..add(AppStartedEvent())),
+        BlocProvider(create: (_) => di.sl<ProductBloc>()),
+        BlocProvider(create: (_) => di.sl<SellBloc>()),
         BlocProvider(create: (_) => ThemeCubit()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
@@ -123,6 +128,7 @@ class MyApp extends StatelessWidget {
                 );
               },
               '/settings': (context) => const SettingsPage(),
+              '/success': (context) => const SuccessPage(),
             },
             onGenerateRoute: (settings) {
               if (settings.name == '/email-verification' &&

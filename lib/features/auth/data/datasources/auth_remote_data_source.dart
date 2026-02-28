@@ -150,13 +150,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       GoogleSignInAccount? googleUser;
 
       if (kIsWeb) {
-        // For web, ALWAYS sign out first or use a method that forces account selection
-        // This ensures the account picker shows up
-        await _googleSignIn.signOut();
-        googleUser = await _googleSignIn.signIn();
+        googleUser = await _googleSignIn.signInSilently();
+        if (googleUser == null) {
+          await _googleSignIn.signOut();
+          googleUser = await _googleSignIn.signIn();
+        }
       } else {
-        // Mobile flow: ensure we aren't silently signed in if the user wants to switch
-        googleUser = await _googleSignIn.signIn();
+        googleUser = await _googleSignIn.signInSilently();
+        if (googleUser == null) {
+          googleUser = await _googleSignIn.signIn();
+        }
       }
 
       if (googleUser == null) throw Exception('Google Sign In cancelled');
@@ -174,17 +177,22 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // 4. Sign in to Firebase to get the Firebase ID Token
       final UserCredential userCredential = await _firebaseAuth
           .signInWithCredential(credential);
-      final String? idToken = await userCredential.user?.getIdToken();
+      // Force refresh to guarantee a valid token, preventing backend verification bugs
+      final String? idToken = await userCredential.user?.getIdToken(true);
 
       if (idToken == null) throw Exception('Failed to get Google ID Token');
 
       // 5. Send ID Token to YOUR Backend
       print('🚀 Sending Google Token to Backend...');
+      
+      final headers = _getHeaders();
+      headers['Connection'] = 'close'; // Prevent TCP connection reuse issues
+
       final response = await client
           .post(
             Uri.parse(ApiEndpoints.googleLogin),
             body: jsonEncode({'idToken': idToken}),
-            headers: _getHeaders(),
+            headers: headers,
           )
           .timeout(const Duration(seconds: 15));
 
@@ -197,7 +205,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
     } catch (e) {
       print('❌ Google Sign In Error: $e');
-      throw Exception(e.toString());
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
     }
   }
 

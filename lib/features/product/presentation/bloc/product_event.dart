@@ -1,6 +1,7 @@
 // lib/features/product/presentation/bloc/product_event.dart
 
 import 'package:equatable/equatable.dart';
+import 'package:image_picker/image_picker.dart';
 
 abstract class ProductEvent extends Equatable {
   const ProductEvent();
@@ -60,4 +61,50 @@ class SearchProductsEvent extends ProductEvent {
 
   @override
   List<Object> get props => [query];
+}
+
+class CreateProductEvent extends ProductEvent {
+  final String category;
+  final String brand;
+  final String model;
+  final String condition;
+  final String title;
+  final String description;
+  final double price;
+  final String location;
+  final String? storage;
+  final String? ram;
+  final String? processor;
+  final List<XFile> images;
+
+  const CreateProductEvent({
+    required this.category,
+    required this.brand,
+    required this.model,
+    required this.condition,
+    required this.title,
+    required this.description,
+    required this.price,
+    required this.location,
+    this.storage,
+    this.ram,
+    this.processor,
+    required this.images,
+  });
+
+  @override
+  List<Object> get props => [
+        category,
+        brand,
+        model,
+        condition,
+        title,
+        description,
+        price,
+        location,
+        if (storage != null) storage!,
+        if (ram != null) ram!,
+        if (processor != null) processor!,
+        images,
+      ];
 }
