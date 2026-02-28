@@ -1,7 +1,6 @@
-// lib/features/sell/presentation/pages/step2_brand_model_page.dart
-
 import 'package:flutter/material.dart';
-import 'package:used_tech_client/core/constants/global_variables.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'step3_condition_specs_page.dart';
 
 class Step2BrandModelPage extends StatefulWidget {
   final String category;
@@ -20,8 +19,11 @@ class Step2BrandModelPage extends StatefulWidget {
 class _Step2BrandModelPageState extends State<Step2BrandModelPage> {
   String? _selectedBrand;
   String? _selectedModel;
+  
+  // Controllers for "Other" input
+  final TextEditingController _customBrandController = TextEditingController();
+  final TextEditingController _customModelController = TextEditingController();
 
-  // Brand data based on category
   late final List<Map<String, dynamic>> _brands;
   late final Map<String, List<String>> _models;
 
@@ -31,196 +33,101 @@ class _Step2BrandModelPageState extends State<Step2BrandModelPage> {
     _initializeData();
   }
 
+  @override
+  void dispose() {
+    _customBrandController.dispose();
+    _customModelController.dispose();
+    super.dispose();
+  }
+
   void _initializeData() {
-    switch (widget.category) {
-      case 'mobile':
-        _brands = const [
-          {'name': 'Apple', 'icon': '🍎', 'popular': true},
-          {'name': 'Samsung', 'icon': '📱', 'popular': true},
-          {'name': 'Xiaomi', 'icon': '📱', 'popular': true},
-          {'name': 'Huawei', 'icon': '📱'},
-          {'name': 'Tecno', 'icon': '📱'},
-          {'name': 'Infinix', 'icon': '📱'},
-          {'name': 'Oppo', 'icon': '📱'},
-          {'name': 'Vivo', 'icon': '📱'},
-          {'name': 'Nokia', 'icon': '📱'},
-          {'name': 'Google Pixel', 'icon': '📱'},
-          {'name': 'OnePlus', 'icon': '📱'},
-        ];
-        _models = {
-          'Apple': [
-            'iPhone 14 Pro Max',
-            'iPhone 14 Pro',
-            'iPhone 14',
-            'iPhone 13 Pro Max',
-            'iPhone 13 Pro',
-            'iPhone 13',
-            'iPhone 12 Pro Max',
-            'iPhone 12 Pro',
-            'iPhone 12',
-            'iPhone SE',
-          ],
-          'Samsung': [
-            'Galaxy S23 Ultra',
-            'Galaxy S23+',
-            'Galaxy S23',
-            'Galaxy S22 Ultra',
-            'Galaxy S22+',
-            'Galaxy S22',
-            'Galaxy Note 20',
-            'Galaxy A54',
-            'Galaxy A34',
-            'Galaxy A14',
-          ],
-          'Xiaomi': [
-            'Xiaomi 13 Pro',
-            'Xiaomi 13',
-            'Redmi Note 12 Pro',
-            'Redmi Note 12',
-            'Redmi Note 11',
-            'Poco X5',
-            'Poco F4',
-            'Mi 11',
-          ],
-          'Huawei': ['P60 Pro', 'P50 Pro', 'Mate 50 Pro', 'Nova 11', 'Nova 10'],
-          'Tecno': [
-            'Camon 20 Pro',
-            'Camon 19',
-            'Spark 10 Pro',
-            'Spark 9',
-            'Pop 7',
-          ],
-          'Infinix': ['Note 30 Pro', 'Note 30', 'Zero 20', 'Hot 30', 'Smart 7'],
-          'Oppo': ['Find X5 Pro', 'Reno 10', 'Reno 8', 'A78', 'A58'],
-          'Vivo': ['X90 Pro', 'V27', 'Y100', 'Y36'],
-          'Nokia': ['G22', 'G21', 'X30', 'C32'],
-          'Google Pixel': ['Pixel 7 Pro', 'Pixel 7', 'Pixel 6a', 'Pixel 6'],
-          'OnePlus': [
-            'OnePlus 11',
-            'OnePlus 10 Pro',
-            'OnePlus Nord',
-            'OnePlus 9',
-          ],
-        };
-        break;
+    if (widget.category == 'mobile') {
+      _brands = [
+        {'name': 'Apple', 'icon': Icons.apple},
+        {'name': 'Samsung', 'icon': Icons.phone_android},
+        {'name': 'Xiaomi', 'icon': Icons.phone_android},
+        {'name': 'Google', 'icon': Icons.android},
+        {'name': 'Huawei', 'icon': Icons.phone_android},
+        {'name': 'Other', 'icon': Icons.add},
+      ];
+      _models = {
+        'Apple': ['iPhone 14 Pro Max', 'iPhone 14', 'iPhone 13', 'iPhone 12', 'iPhone 11', 'Other'],
+        'Samsung': ['Galaxy S23 Ultra', 'Galaxy S22', 'Galaxy A54', 'Galaxy A14', 'Other'],
+        'Xiaomi': ['Redmi Note 12', 'Poco X5', 'Mi 11', 'Other'],
+      };
+    } else {
+      // Laptop / Tablet
+      _brands = [
+        {'name': 'Dell', 'icon': Icons.laptop},
+        {'name': 'HP', 'icon': Icons.laptop},
+        {'name': 'Apple', 'icon': Icons.apple},
+        {'name': 'Lenovo', 'icon': Icons.laptop},
+        {'name': 'Other', 'icon': Icons.add},
+      ];
+      _models = {
+        'Apple': ['MacBook Pro M2', 'MacBook Air M1', 'MacBook Pro Intel', 'Other'],
+        'Dell': ['XPS 15', 'XPS 13', 'Inspiron', 'Latitude', 'Other'],
+        'HP': ['Pavilion', 'Envy', 'Spectre', 'EliteBook', 'Other'],
+      };
+    }
+  }
 
-      case 'laptop':
-        _brands = const [
-          {'name': 'Apple', 'icon': '💻', 'popular': true},
-          {'name': 'Dell', 'icon': '💻', 'popular': true},
-          {'name': 'HP', 'icon': '💻', 'popular': true},
-          {'name': 'Lenovo', 'icon': '💻', 'popular': true},
-          {'name': 'Acer', 'icon': '💻'},
-          {'name': 'Asus', 'icon': '💻'},
-          {'name': 'MSI', 'icon': '💻'},
-          {'name': 'Microsoft', 'icon': '💻'},
-          {'name': 'Razer', 'icon': '💻'},
-          {'name': 'Samsung', 'icon': '💻'},
-        ];
-        _models = {
-          'Apple': [
-            'MacBook Pro 16"',
-            'MacBook Pro 14"',
-            'MacBook Air 15"',
-            'MacBook Air 13"',
-            'MacBook Pro 13"',
-          ],
-          'Dell': [
-            'XPS 15',
-            'XPS 13',
-            'Inspiron 15',
-            'Inspiron 14',
-            'Latitude 7430',
-            'Precision Workstation',
-          ],
-          'HP': [
-            'Spectre x360',
-            'Envy 15',
-            'Pavilion 15',
-            'Pavilion 14',
-            'Omen 16',
-            'EliteBook',
-          ],
-          'Lenovo': [
-            'ThinkPad X1 Carbon',
-            'ThinkPad T14',
-            'IdeaPad 5',
-            'Legion 5 Pro',
-            'Yoga 9i',
-          ],
-          'Acer': ['Swift 3', 'Aspire 5', 'Predator Helios', 'Nitro 5'],
-          'Asus': ['ZenBook 14', 'VivoBook 15', 'ROG Zephyrus', 'TUF Gaming'],
-          'MSI': ['Stealth 15', 'Raider GE78', 'Pulse 15', 'Cyborg 15'],
-          'Microsoft': ['Surface Laptop 5', 'Surface Pro 9', 'Surface Book 3'],
-          'Razer': ['Blade 15', 'Blade 14', 'Blade Stealth 13'],
-          'Samsung': ['Galaxy Book3 Ultra', 'Galaxy Book3 Pro', 'Galaxy Book2'],
-        };
-        break;
+  void _nextStep() {
+    // 1. Determine Final Brand
+    final finalBrand = _selectedBrand == 'Other' 
+        ? _customBrandController.text.trim() 
+        : _selectedBrand;
 
-      case 'tablet':
-        _brands = const [
-          {'name': 'Apple', 'icon': '📱', 'popular': true},
-          {'name': 'Samsung', 'icon': '📱', 'popular': true},
-          {'name': 'Amazon', 'icon': '📱'},
-          {'name': 'Lenovo', 'icon': '📱'},
-          {'name': 'Huawei', 'icon': '📱'},
-          {'name': 'Xiaomi', 'icon': '📱'},
-        ];
-        _models = {
-          'Apple': [
-            'iPad Pro 12.9"',
-            'iPad Pro 11"',
-            'iPad Air 5',
-            'iPad 10th Gen',
-            'iPad mini 6',
-          ],
-          'Samsung': [
-            'Galaxy Tab S9 Ultra',
-            'Galaxy Tab S9+',
-            'Galaxy Tab S9',
-            'Galaxy Tab A8',
-            'Galaxy Tab S6 Lite',
-          ],
-          'Amazon': ['Fire Max 11', 'Fire HD 10', 'Fire HD 8', 'Fire 7'],
-          'Lenovo': ['Tab P12 Pro', 'Tab P11', 'Tab M10', 'Tab M8'],
-          'Huawei': ['MatePad Pro', 'MatePad 11', 'MediaPad T5'],
-          'Xiaomi': ['Pad 6', 'Pad 5', 'Redmi Pad'],
-        };
-        break;
+    // 2. Determine Final Model
+    final finalModel = (_selectedBrand == 'Other' || _selectedModel == 'Other') 
+        ? _customModelController.text.trim() 
+        : _selectedModel;
 
-      default:
-        _brands = [];
-        _models = {};
+    // 3. Validation
+    if (finalBrand != null && finalBrand.isNotEmpty && 
+        finalModel != null && finalModel.isNotEmpty) {
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Step3ConditionSpecsPage(
+            category: widget.category,
+            onNext: (data) {
+              // Combine brand/model with specs and pass to parent
+              final combinedData = {
+                'brand': finalBrand,
+                'model': finalModel,
+                ...data
+              };
+              widget.onNext(combinedData);
+            },
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in Brand and Model")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Get the list of models for the selected brand, default to empty list if not found
+    // If "Other" brand is selected, we don't show the dropdown at all (logic handled below)
+    final modelsList = _models[_selectedBrand] ?? [];
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "Select Brand & Model",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text("List Your Device", style: context.textTheme.titleLarge),
       ),
       body: Column(
         children: [
-          // Progress indicator
           LinearProgressIndicator(
             value: 2 / 5,
-            backgroundColor: GlobalVariables.lightGrey,
-            valueColor: AlwaysStoppedAnimation(GlobalVariables.primaryTeal),
+            backgroundColor: context.lightGrey,
+            valueColor: AlwaysStoppedAnimation(context.primaryColor),
           ),
 
           Expanded(
@@ -229,111 +136,154 @@ class _Step2BrandModelPageState extends State<Step2BrandModelPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Step 2 of 5",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+                  Text("Step 2 of 5", style: context.textTheme.bodySmall),
                   const SizedBox(height: 8),
-                  const Text(
-                    "What brand and model?",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Select the brand and model of your ${widget.category}",
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
+                  Text("Device Details", style: context.textTheme.headlineSmall),
+                  const SizedBox(height: 32),
 
-                  const SizedBox(height: 24),
-
-                  // Brand Selection
-                  const Text(
-                    "Brand",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  // 1. BRAND SELECTION
+                  Text("Brand *", style: context.textTheme.titleMedium),
                   const SizedBox(height: 12),
-
-                  // Popular brands first
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: _brands.map((brand) {
+                  
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 1.4,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: _brands.length,
+                    itemBuilder: (context, index) {
+                      final brand = _brands[index];
                       final isSelected = _selectedBrand == brand['name'];
-                      return FilterChip(
-                        selected: isSelected,
-                        label: Text(brand['name']),
-                        avatar: Text(brand['icon']),
-                        showCheckmark: false,
-                        backgroundColor: Colors.white,
-                        selectedColor: GlobalVariables.primaryTeal.withValues(
-                          alpha: 0.1,
-                        ),
-                        checkmarkColor: GlobalVariables.primaryTeal,
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? GlobalVariables.primaryTeal
-                              : Colors.black87,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                        side: BorderSide(
-                          color: isSelected
-                              ? GlobalVariables.primaryTeal
-                              : Colors.grey.shade300,
-                        ),
-                        onSelected: (selected) {
+                      
+                      return GestureDetector(
+                        onTap: () {
                           setState(() {
                             _selectedBrand = brand['name'];
                             _selectedModel = null;
+                            _customBrandController.clear();
+                            _customModelController.clear();
                           });
                         },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected ? context.primaryColor : context.cardBackground,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? context.primaryColor : context.borderColor,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                brand['icon'], 
+                                color: isSelected ? Colors.white : context.greyText,
+                                size: 24,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                brand['name'],
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : context.darkText,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       );
-                    }).toList(),
+                    },
                   ),
 
+                  // Custom Brand Input
+                  if (_selectedBrand == 'Other') ...[
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _customBrandController,
+                      decoration: InputDecoration(
+                        labelText: "Enter Brand Name",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: context.lightGrey,
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  // 2. MODEL SELECTION
                   if (_selectedBrand != null) ...[
-                    const SizedBox(height: 24),
-
-                    // Model Selection
-                    const Text(
-                      "Model",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text("Model *", style: context.textTheme.titleMedium),
                     const SizedBox(height: 12),
-
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: _models[_selectedBrand]!.map((model) {
-                          final isSelected = _selectedModel == model;
-                          return ListTile(
-                            title: Text(model),
-                            leading: Radio<String>(
-                              value: model,
-                              groupValue: _selectedModel,
-                              activeColor: GlobalVariables.primaryTeal,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedModel = value;
-                                });
-                              },
+                    
+                    if (_selectedBrand == 'Other') 
+                      // If Brand is "Other", Model must be typed manually
+                      TextField(
+                        controller: _customModelController,
+                        decoration: InputDecoration(
+                          labelText: "Enter Model Name",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: context.lightGrey,
+                        ),
+                      )
+                    else 
+                      // If Brand is selected, show Dropdown
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: context.cardBackground,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: context.borderColor),
                             ),
-                            tileColor: isSelected
-                                ? GlobalVariables.primaryTeal.withValues(
-                                    alpha: 0.05,
-                                  )
-                                : null,
-                          );
-                        }).toList(),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedModel,
+                                hint: Text("Select Model", style: context.textTheme.bodyMedium),
+                                isExpanded: true,
+                                dropdownColor: context.cardBackground,
+                                // ✅ FIX: Use the list directly since it already contains 'Other'
+                                items: modelsList.map((model) {
+                                  return DropdownMenuItem(
+                                    value: model,
+                                    child: Text(model, style: context.textTheme.bodyLarge),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedModel = value;
+                                    if (value != 'Other') {
+                                      _customModelController.text = '';
+                                    }
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                          
+                          // Custom Model Input if "Other" selected in dropdown
+                          if (_selectedModel == 'Other') ...[
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _customModelController,
+                              decoration: InputDecoration(
+                                labelText: "Enter Model Name",
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                filled: true,
+                                fillColor: context.lightGrey,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
                   ],
                 ],
               ),
@@ -344,34 +294,16 @@ class _Step2BrandModelPageState extends State<Step2BrandModelPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              color: context.cardBackground,
+              border: Border(top: BorderSide(color: context.borderColor)),
             ),
             child: SafeArea(
               child: SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _selectedModel == null
-                      ? null
-                      : () {
-                          widget.onNext({
-                            'brand': _selectedBrand,
-                            'model': _selectedModel,
-                          });
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: GlobalVariables.primaryTeal,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    "Next",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  onPressed: _selectedBrand != null ? _nextStep : null,
+                  child: const Text("Next"),
                 ),
               ),
             ),
