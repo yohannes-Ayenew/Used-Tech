@@ -1,7 +1,6 @@
 // lib/features/sell/presentation/bloc/sell_event.dart
 
 import 'package:equatable/equatable.dart';
-import 'dart:io';
 
 abstract class SellEvent extends Equatable {
   const SellEvent();
@@ -10,44 +9,17 @@ abstract class SellEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class CreateListingEvent extends SellEvent {
-  final String category;
-  final String brand;
-  final String model;
-  final String condition;
-  final String? storage;
-  final String? ram;
-  final String? processor;
-  final int price;
-  final String description;
-  final List<File> images;
+class CacheDraftListingEvent extends SellEvent {
+  final Map<String, dynamic> draftData;
 
-  const CreateListingEvent({
-    required this.category,
-    required this.brand,
-    required this.model,
-    required this.condition,
-    this.storage,
-    this.ram,
-    this.processor,
-    required this.price,
-    required this.description,
-    required this.images,
-  });
+  const CacheDraftListingEvent(this.draftData);
 
   @override
-  List<Object> get props => [
-        category,
-        brand,
-        model,
-        condition,
-        if (storage != null) storage!,
-        if (ram != null) ram!,
-        if (processor != null) processor!,
-        price,
-        description,
-        ...images,
-      ];
+  List<Object> get props => [draftData];
+}
+
+class SubmitListingEvent extends SellEvent {
+  const SubmitListingEvent();
 }
 
 class UpdateListingEvent extends SellEvent {

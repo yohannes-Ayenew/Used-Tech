@@ -1,7 +1,11 @@
 // lib/features/product/presentation/pages/search_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_event.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import '../widgets/product_card.dart';
 
 class SearchPage extends StatefulWidget {
@@ -17,28 +21,13 @@ class _SearchPageState extends State<SearchPage>
   String _selectedFilter = 'Newest';
   bool _isGridView = true;
 
-  final List<Map<String, dynamic>> _allProducts = const [
-    {
-      'image': "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=400",
-      'title': 'HP Pavilion',
-      'price': '42,000',
-      'condition': 'Fair',
-      'location': 'Arat Kilo',
-      'isVerified': true,
-      'isEscrow': true,
-    },
-    // ... other products
-  ];
-
-  late List<Map<String, dynamic>> _filteredProducts;
-
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _filteredProducts = List.from(_allProducts);
+    context.read<ProductBloc>().add(const GetProductsEvent());
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -50,17 +39,7 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredProducts = List.from(_allProducts);
-      } else {
-        _filteredProducts = _allProducts.where((product) {
-          return product['title'].toLowerCase().contains(query) ||
-              product['condition'].toLowerCase().contains(query);
-        }).toList();
-      }
-    });
+    setState(() {}); // Trigger rebuild to filter products
   }
 
   @override
@@ -117,60 +96,81 @@ class _SearchPageState extends State<SearchPage>
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // Filter Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: BlocBuilder<ProductBloc, ProductState>(
+        builder: (context, state) {
+          if (state is ProductLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is ProductError) {
+            return Center(child: Text(state.message));
+          } else if (state is ProductsLoaded) {
+            final query = _searchController.text.toLowerCase();
+            var filteredList = state.products;
+
+            if (query.isNotEmpty) {
+              filteredList = filteredList.where((product) {
+                return product.title.toLowerCase().contains(query) ||
+                        product.condition.toString().toLowerCase().contains(query);
+              }).toList();
+            }
+
+            return Column(
               children: [
-                Text(
-                  "${_filteredProducts.length} results",
-                  style: context.textTheme.titleMedium,
-                ),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
+                // Filter Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${filteredList.length} results",
+                        style: context.textTheme.titleMedium,
                       ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: context.borderColor),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
+                      Row(
                         children: [
-                          Text(
-                            _selectedFilter,
-                            style: context.textTheme.bodySmall,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: context.borderColor),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  _selectedFilter,
+                                  style: context.textTheme.bodySmall,
+                                ),
+                                Icon(
+                                  Icons.keyboard_arrow_down,
+                                  size: 16,
+                                  color: context.greyText,
+                                ),
+                              ],
+                            ),
                           ),
-                          Icon(
-                            Icons.keyboard_arrow_down,
-                            size: 16,
-                            color: context.greyText,
-                          ),
+                          const SizedBox(width: 10),
+                          _buildViewToggle(context),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    _buildViewToggle(context),
-                  ],
+                    ],
+                  ),
+                ),
+
+                // Results
+                Expanded(
+                  child: filteredList.isEmpty
+                      ? _buildEmptyState(context)
+                      : (_isGridView
+                          ? _buildGridView(filteredList)
+                          : _buildListView(filteredList)),
                 ),
               ],
-            ),
-          ),
-
-          // Results
-          Expanded(
-            child: _filteredProducts.isEmpty
-                ? _buildEmptyState(context)
-                : _isGridView
-                ? _buildGridView()
-                : _buildListView(),
-          ),
-        ],
+            );
+          }
+          return const SizedBox();
+        },
       ),
     );
   }
@@ -225,10 +225,10 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  Widget _buildGridView() {
+  Widget _buildGridView(List products) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _filteredProducts.length,
+      itemCount: products.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 0.65,
@@ -236,36 +236,38 @@ class _SearchPageState extends State<SearchPage>
         mainAxisSpacing: 15,
       ),
       itemBuilder: (context, index) {
-        final product = _filteredProducts[index];
+        final product = products[index];
+        final imageUrl = product.images.isNotEmpty ? product.images.first : "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200";
         return ProductCard(
-          image: product['image'],
-          title: product['title'],
-          price: product['price'],
-          condition: product['condition'],
-          location: product['location'],
-          isVerified: product['isVerified'],
-          isEscrow: product['isEscrow'],
+          image: imageUrl,
+          title: product.title,
+          price: product.price.toStringAsFixed(0),
+          condition: product.condition.toString().split('.').last,
+          location: product.location,
+          isVerified: product.isVerified,
+          isEscrow: product.isEscrow,
         );
       },
     );
   }
 
-  Widget _buildListView() {
+  Widget _buildListView(List products) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _filteredProducts.length,
+      itemCount: products.length,
       itemBuilder: (context, index) {
-        final product = _filteredProducts[index];
+        final product = products[index];
+        final imageUrl = product.images.isNotEmpty ? product.images.first : "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200";
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: ProductCard(
-            image: product['image'],
-            title: product['title'],
-            price: product['price'],
-            condition: product['condition'],
-            location: product['location'],
-            isVerified: product['isVerified'],
-            isEscrow: product['isEscrow'],
+            image: imageUrl,
+            title: product.title,
+            price: product.price.toStringAsFixed(0),
+            condition: product.condition.toString().split('.').last,
+            location: product.location,
+            isVerified: product.isVerified,
+            isEscrow: product.isEscrow,
           ),
         );
       },
