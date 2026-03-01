@@ -8,6 +8,8 @@ import 'package:used_tech_client/features/auth/data/datasources/auth_local_data_
 import 'package:used_tech_client/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:used_tech_client/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:used_tech_client/features/auth/domain/repositories/auth_repository.dart';
+import 'package:used_tech_client/features/product/data/datasources/product_remote_data_source.dart';
+import 'package:used_tech_client/features/sell/presentation/bloc/sell_bloc.dart';
 
 // Use Cases
 import 'package:used_tech_client/features/auth/domain/usecases/login_user.dart';
@@ -26,13 +28,11 @@ import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart'
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
 
 // Product Feature Imports
-import 'package:used_tech_client/features/product/data/datasources/product_remote_data_source.dart';
 import 'package:used_tech_client/features/product/data/repositories/product_repository_impl.dart';
 import 'package:used_tech_client/features/product/domain/repositories/product_repository.dart';
 import 'package:used_tech_client/features/product/domain/usecases/create_product.dart';
 
 // Sell Feature Imports
-import 'package:used_tech_client/features/sell/presentation/bloc/sell_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -74,7 +74,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ChangePassword(sl()));
   sl.registerLazySingleton(() => RequestVerification(sl()));
   sl.registerLazySingleton(() => GetUserProfile(sl()));
-  
+
   // Product Use Cases
   sl.registerLazySingleton(() => CreateProduct(sl()));
 
@@ -92,16 +92,12 @@ Future<void> init() async {
       authRepository: sl(),
     ),
   );
-  
+
+  // Sell Feature
   sl.registerFactory(
-    () => SellBloc(
-      createProduct: sl(),
-    ),
+    () => SellBloc(createProductUseCase: sl()),
   );
 
-  sl.registerFactory(
-    () => ProductBloc(
-      productRepository: sl(),
-    ),
-  );
+  // Product Bloc
+  sl.registerFactory(() => ProductBloc(productRepository: sl()));
 }

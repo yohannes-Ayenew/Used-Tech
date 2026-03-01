@@ -2,26 +2,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import '../../../../core/constants/api_endpoints.dart';
+import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import '../pages/product_detail_page.dart';
 
 class ProductCard extends StatelessWidget {
-  final String image;
-  final String title;
-  final String price;
-  final String condition;
-  final String location;
-  final bool isVerified;
-  final bool isEscrow;
+  final ProductEntity product;
 
   const ProductCard({
     super.key,
-    required this.image,
-    required this.title,
-    required this.price,
-    required this.condition,
-    required this.location,
-    required this.isVerified,
-    this.isEscrow = true,
+    required this.product,
   });
 
   Color _getConditionColor(BuildContext context, String condition) {
@@ -43,7 +33,9 @@ class ProductCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ProductDetailPage()),
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(product: product),
+          ),
         );
       },
       child: Container(
@@ -71,7 +63,7 @@ class ProductCard extends StatelessWidget {
                   top: Radius.circular(12),
                 ),
                 child: Image.network(
-                  image,
+                  ApiEndpoints.resolveImageUrl(product.coverImage),
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
@@ -94,7 +86,7 @@ class ProductCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    title,
+                    product.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.textTheme.titleMedium?.copyWith(
@@ -103,7 +95,7 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    "$price ETB",
+                    "${product.formattedPrice} ETB",
                     maxLines: 1, // Add this
                     overflow: TextOverflow.ellipsis, // Add this
                     style: TextStyle(
@@ -122,14 +114,17 @@ class ProductCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: _getConditionColor(
                         context,
-                        condition,
+                        product.condition.displayName,
                       ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      condition,
+                      product.condition.displayName,
                       style: TextStyle(
-                        color: _getConditionColor(context, condition),
+                        color: _getConditionColor(
+                          context,
+                          product.condition.displayName,
+                        ),
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
                       ),
@@ -146,8 +141,10 @@ class ProductCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 2),
                       Expanded(
-                        child: Text(
-                          location,
+                         child: Text(
+                          (product.sellerLocation != null && product.sellerLocation!.isNotEmpty)
+                              ? product.sellerLocation!
+                              : product.location,
                           style: context.textTheme.bodySmall?.copyWith(
                             fontSize: 9,
                           ),
@@ -160,15 +157,16 @@ class ProductCard extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (isVerified)
-                            Icon(
+                          if (product.isSellerVerified)
+                            const Icon(
                               Icons.verified,
                               size: 12, // Slightly larger
                               color: Colors.blue,
                             ),
-                          if (isVerified && isEscrow) const SizedBox(width: 2),
-                          if (isEscrow)
-                            Icon(
+                          if (product.isSellerVerified && product.isEscrow)
+                            const SizedBox(width: 2),
+                          if (product.isEscrow)
+                            const Icon(
                               Icons.security,
                               size: 12, // Slightly larger
                               color: Colors.green,

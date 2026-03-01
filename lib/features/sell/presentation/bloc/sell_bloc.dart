@@ -1,107 +1,107 @@
 // lib/features/sell/presentation/bloc/sell_bloc.dart
 
+import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
-import '../../../product/domain/usecases/create_product.dart';
-import 'sell_event.dart';
-import 'sell_state.dart';
+import 'package:equatable/equatable.dart';
+import 'package:used_tech_client/features/product/domain/usecases/create_product.dart';
 
+// --- EVENTS ---
+abstract class SellEvent extends Equatable {
+  @override
+  List<Object> get props => [];
+}
+
+class UpdateSellDataEvent extends SellEvent {
+  final Map<String, dynamic> data;
+  UpdateSellDataEvent(this.data);
+}
+
+class AddImagesEvent extends SellEvent {
+  final List<File> images;
+  AddImagesEvent(this.images);
+}
+
+class SubmitListingEvent extends SellEvent {}
+
+// --- STATES ---
+abstract class SellState extends Equatable {
+  @override
+  List<Object> get props => [];
+}
+
+class SellInitial extends SellState {}
+
+class SellLoading extends SellState {}
+
+class SellSuccess extends SellState {}
+
+class SellFailure extends SellState {
+  final String message;
+  SellFailure(this.message);
+}
+
+// --- BLOC ---
 class SellBloc extends Bloc<SellEvent, SellState> {
-  final CreateProduct createProduct;
+  final CreateProduct createProductUseCase; // ✅ Use Domain UseCase
 
-  SellBloc({required this.createProduct}) : super(const SellInitial()) {
-    on<CacheDraftListingEvent>(_onCacheDraftListing);
-    on<SubmitListingEvent>(_onSubmitListing);
-    on<UpdateListingEvent>(_onUpdateListing);
-    on<DeleteListingEvent>(_onDeleteListing);
-    on<GetMyListingsEvent>(_onGetMyListings);
+  // Draft Data
+  final Map<String, dynamic> _listingData = {};
+  List<File> _images = [];
+
+  SellBloc({
+    required this.createProductUseCase,
+  }) : super(SellInitial()) {
+    on<UpdateSellDataEvent>(_onUpdateData);
+    on<AddImagesEvent>(_onAddImages);
+    on<SubmitListingEvent>(_onSubmit);
   }
 
-  void _onCacheDraftListing(
-    CacheDraftListingEvent event,
-    Emitter<SellState> emit,
-  ) {
-    final updatedData = Map<String, dynamic>.from(state.draftData)
-      ..addAll(event.draftData);
-    emit(SellDraftUpdated(updatedData));
+  void _onUpdateData(UpdateSellDataEvent event, Emitter<SellState> emit) {
+    _listingData.addAll(event.data);
+    print("📦 Updated Draft Data: $_listingData");
   }
 
-  Future<void> _onSubmitListing(
+  void _onAddImages(AddImagesEvent event, Emitter<SellState> emit) {
+    _images = event.images;
+    print("📸 Images Updated: ${_images.length}");
+  }
+
+  Future<void> _onSubmit(
     SubmitListingEvent event,
     Emitter<SellState> emit,
   ) async {
-    emit(SellLoading(state.draftData));
-    
-    try {
-      final draft = state.draftData;
-      
-      // Extract XFile list
-      final List<XFile> images = List<XFile>.from(draft['images'] ?? []);
-      
-      final params = CreateProductParams(
-        category: draft['category'] ?? '',
-        brand: draft['brand'] ?? '',
-        model: draft['model'] ?? '',
-        condition: draft['condition'] ?? '',
-        title: "${draft['brand']} ${draft['model']}", 
-        description: draft['description'] ?? '',
-        price: draft['price'] is String ? double.tryParse(draft['price']) ?? 0.0 : (draft['price'] ?? 0.0),
-        location: 'Not specified', // Temporarily hardcoded until location is added to UI
-        storage: draft['storage'],
-        ram: draft['ram'],
-        processor: draft['processor'],
-        images: images,
-      );
+    emit(SellLoading());
 
-      final result = await createProduct(params);
-
-      result.fold(
-        (failure) => emit(SellError(failure.message, state.draftData)),
-        (product) {
-          // Clear draft data upon successful creation
-          emit(ListingCreated(product, const {}));
-        },
-      );
-    } catch (e) {
-      emit(SellError(e.toString(), state.draftData));
+    if (_images.length < 3) {
+      emit(SellFailure("Please upload at least 3 images"));
+      return;
     }
-  }
 
-  Future<void> _onUpdateListing(
-    UpdateListingEvent event,
-    Emitter<SellState> emit,
-  ) async {
-    emit(SellLoading(state.draftData));
-    try {
-      // TODO: Implement update listing
-    } catch (e) {
-      emit(SellError(e.toString(), state.draftData));
+    // 🚀 Auto-generate Title if missing
+    if (_listingData['title'] == null || _listingData['title'].toString().isEmpty) {
+      final brand = _listingData['brand'] ?? '';
+      final model = _listingData['model'] ?? '';
+      _listingData['title'] = "$brand $model".trim();
     }
-  }
 
-  Future<void> _onDeleteListing(
-    DeleteListingEvent event,
-    Emitter<SellState> emit,
-  ) async {
-    emit(SellLoading(state.draftData));
-    try {
-      // TODO: Implement delete listing
-      emit(ListingDeleted(event.listingId, draftData: state.draftData));
-    } catch (e) {
-      emit(SellError(e.toString(), state.draftData));
-    }
-  }
+    print("🚀 Submitting Product: ${_listingData['title']}");
 
-  Future<void> _onGetMyListings(
-    GetMyListingsEvent event,
-    Emitter<SellState> emit,
-  ) async {
-    emit(SellLoading(state.draftData));
-    try {
-      // TODO: Implement get my listings
-      emit(MyListingsLoaded(const [], draftData: state.draftData));
-    } catch (e) {
-      emit(SellError(e.toString(), state.draftData));
-    }
+    final result = await createProductUseCase(
+      productData: _listingData,
+      images: _images,
+    );
+
+    result.fold(
+      (failure) {
+        print("❌ Submission Failed: ${failure.message}");
+        emit(SellFailure(failure.message));
+      },
+      (_) {
+        print("✅ Submission Successful");
+        _listingData.clear();
+        _images = [];
+        emit(SellSuccess());
+      },
+    );
   }
 }

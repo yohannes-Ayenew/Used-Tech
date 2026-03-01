@@ -3,9 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
-import 'package:used_tech_client/features/product/presentation/bloc/product_event.dart';
-import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import '../widgets/product_card.dart';
 
 class SearchPage extends StatefulWidget {
@@ -27,6 +26,7 @@ class _SearchPageState extends State<SearchPage>
   @override
   void initState() {
     super.initState();
+    // Load products if not already loaded
     context.read<ProductBloc>().add(const GetProductsEvent());
     _searchController.addListener(_onSearchChanged);
   }
@@ -39,7 +39,8 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _onSearchChanged() {
-    setState(() {}); // Trigger rebuild to filter products
+    // Trigger UI rebuild to filter the list locally
+    setState(() {});
   }
 
   @override
@@ -104,20 +105,23 @@ class _SearchPageState extends State<SearchPage>
             return Center(child: Text(state.message));
           } else if (state is ProductsLoaded) {
             final query = _searchController.text.toLowerCase();
-            var filteredList = state.products;
 
-            if (query.isNotEmpty) {
-              filteredList = filteredList.where((product) {
-                return product.title.toLowerCase().contains(query) ||
-                        product.condition.toString().toLowerCase().contains(query);
-              }).toList();
-            }
+            // Client-side filtering logic
+            final filteredList = state.products.where((product) {
+              final titleMatch = product.title.toLowerCase().contains(query);
+              final brandMatch = product.brand.toLowerCase().contains(query);
+              final modelMatch = product.model.toLowerCase().contains(query);
+              return titleMatch || brandMatch || modelMatch;
+            }).toList();
 
             return Column(
               children: [
                 // Filter Bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 10,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -158,13 +162,13 @@ class _SearchPageState extends State<SearchPage>
                   ),
                 ),
 
-                // Results
+                // Results List
                 Expanded(
                   child: filteredList.isEmpty
                       ? _buildEmptyState(context)
                       : (_isGridView
-                          ? _buildGridView(filteredList)
-                          : _buildListView(filteredList)),
+                            ? _buildGridView(filteredList)
+                            : _buildListView(filteredList)),
                 ),
               ],
             );
@@ -225,49 +229,35 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  Widget _buildGridView(List products) {
+  Widget _buildGridView(List<ProductEntity> products) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: products.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.65,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 220,
+        childAspectRatio: 0.55,
         crossAxisSpacing: 15,
         mainAxisSpacing: 15,
       ),
       itemBuilder: (context, index) {
         final product = products[index];
-        final imageUrl = product.images.isNotEmpty ? product.images.first : "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200";
         return ProductCard(
-          image: imageUrl,
-          title: product.title,
-          price: product.price.toStringAsFixed(0),
-          condition: product.condition.toString().split('.').last,
-          location: product.location,
-          isVerified: product.isVerified,
-          isEscrow: product.isEscrow,
+          product: product,
         );
       },
     );
   }
 
-  Widget _buildListView(List products) {
+  Widget _buildListView(List<ProductEntity> products) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: products.length,
       itemBuilder: (context, index) {
         final product = products[index];
-        final imageUrl = product.images.isNotEmpty ? product.images.first : "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200";
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: ProductCard(
-            image: imageUrl,
-            title: product.title,
-            price: product.price.toStringAsFixed(0),
-            condition: product.condition.toString().split('.').last,
-            location: product.location,
-            isVerified: product.isVerified,
-            isEscrow: product.isEscrow,
+            product: product,
           ),
         );
       },

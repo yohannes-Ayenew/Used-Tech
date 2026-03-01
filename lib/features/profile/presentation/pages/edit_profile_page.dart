@@ -8,12 +8,11 @@ import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/core/utils/validators.dart';
 import 'package:used_tech_client/features/auth/presentation/pages/email_verification_page.dart';
 import 'package:used_tech_client/core/constants/api_endpoints.dart';
-import 'package:path/path.dart' as p;
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/domain/entities/user_entity.dart';
-import 'package:used_tech_client/injection_container.dart' as di;
+import '../../../product/presentation/bloc/product_bloc.dart';
 import 'change_password_page.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -27,10 +26,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _locationController = TextEditingController(); // Keep for backward compatibility if needed, but we'll use _selectedSubCity
+  String? _selectedSubCity;
+  final List<String> _subCities = [
+    'Addis Ketema',
+    'Akaky Kaliti',
+    'Arada',
+    'Bole',
+    'Gullele',
+    'Kirkos',
+    'Kolfe Keranio',
+    'Lideta',
+    'Nifas Silk-Lafto',
+    'Yeka',
+  ];
   File? _profileImage;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
-  
+
   // 🚀 CUSTOM STATE: Cache user to prevent UI flickering during AuthLoading
   UserEntity? _currentUser;
 
@@ -42,6 +55,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _currentUser = state.user;
       _nameController.text = _currentUser!.name;
       _phoneController.text = _currentUser!.phone ?? '';
+      
+      // Initialize dropdown value
+      if (_currentUser!.location != null && _subCities.contains(_currentUser!.location)) {
+        _selectedSubCity = _currentUser!.location;
+      }
+      _locationController.text = _currentUser!.location ?? '';
     }
   }
 
@@ -49,6 +68,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -184,14 +204,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
     return name[0].toUpperCase();
   }
-  
+
   void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -228,7 +250,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       },
     );
-    
+
     // Auto-pop the dialog AND the page
     Future.delayed(const Duration(milliseconds: 2000), () {
       if (mounted) {
@@ -241,36 +263,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
-            UpdateProfileRequestedEvent(
-              name: _nameController.text,
-              phone: _phoneController.text,
-              profileImage: _profileImage != null ? XFile(_profileImage!.path) : null,
-            ),
-          );
+        UpdateProfileRequestedEvent(
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          location: _selectedSubCity ?? _locationController.text.trim(),
+          profileImage: _profileImage != null
+              ? XFile(_profileImage!.path)
+              : null,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AuthBloc>().state;
-    
+
     // 💡 IMPROVED LOGIC: Use local cache if global state is loading
     final user = (state is AuthSuccess) ? state.user : _currentUser;
 
     if (user == null) {
-      // If we don't have a user in local state OR in the BLoC state, 
+      // If we don't have a user in local state OR in the BLoC state,
       // check if the BLoC state is Guest or Initial.
       if (state is AuthGuest || state is AuthInitial) {
         return Scaffold(
           body: Center(
-            child: Text("Not authenticated", style: context.textTheme.bodyLarge),
+            child: Text(
+              "Not authenticated",
+              style: context.textTheme.bodyLarge,
+            ),
           ),
         );
       }
       // Otherwise, we are likely in an initial loading phase.
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final initials = _getInitials(user.name);
@@ -303,6 +329,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
               _isLoading = false;
               _currentUser = state.user; // Update local cache
             });
+            // Refresh products so the new location reflects on user's own listings
+            context.read<ProductBloc>().add(GetProductsEvent());
             _showSuccessDialog();
           }
         },
@@ -332,11 +360,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             child: _profileImage != null
                                 ? Image.file(_profileImage!, fit: BoxFit.cover)
                                 : user.profileImage != null
-                                    ? Image.network(
-                                        "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${user.profileImage}",
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            Center(
+                                ? Image.network(
+                                    "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${user.profileImage}",
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) => Center(
                                           child: Text(
                                             initials,
                                             style: TextStyle(
@@ -346,17 +374,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                             ),
                                           ),
                                         ),
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          initials,
-                                          style: TextStyle(
-                                            fontSize: 40,
-                                            fontWeight: FontWeight.bold,
-                                            color: context.primaryColor,
-                                          ),
-                                        ),
+                                  )
+                                : Center(
+                                    child: Text(
+                                      initials,
+                                      style: TextStyle(
+                                        fontSize: 40,
+                                        fontWeight: FontWeight.bold,
+                                        color: context.primaryColor,
                                       ),
+                                    ),
+                                  ),
                           ),
                         ),
                         Positioned(
@@ -513,11 +541,60 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
 
                   const SizedBox(height: 20),
+
+                  // Location (Sub-city)
+                  Text(
+                    "Sub-city / Location",
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: context.borderColor),
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedSubCity,
+                      items: _subCities.map((city) {
+                        return DropdownMenuItem(
+                          value: city,
+                          child: Text(city),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedSubCity = value;
+                        });
+                      },
+                      style: context.textTheme.bodyLarge,
+                      decoration: InputDecoration(
+                        hintText: "Select your sub-city",
+                        hintStyle: context.textTheme.bodyMedium,
+                        prefixIcon: Icon(
+                          Icons.location_on_outlined,
+                          color: context.greyText,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                      ),
+                      dropdownColor: context.cardBackground,
+                      icon: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: context.greyText,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color:
-                          user.isEmailVerified
+                      color: user.isEmailVerified
                           ? context.successColor.withValues(alpha: 0.1)
                           : Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -572,7 +649,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   builder: (context) => EmailVerificationPage(
                                     userId: user.id,
                                     email: user.email,
-                                    message: "Please verify your email to continue",
+                                    message:
+                                        "Please verify your email to continue",
                                   ),
                                 ),
                               );
@@ -609,7 +687,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: context.primaryColor.withValues(alpha: 0.1),
+                              color: context.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -667,4 +747,3 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 }
-

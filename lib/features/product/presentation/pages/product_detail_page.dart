@@ -6,10 +6,21 @@ import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/core/constants/api_endpoints.dart';
+import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import '../widgets/product_card.dart';
 
 class ProductDetailPage extends StatelessWidget {
-  const ProductDetailPage({super.key});
+  final ProductEntity product;
+
+  const ProductDetailPage({super.key, required this.product});
+
+  String _getDisplayLocation() {
+    if (product.sellerLocation != null && product.sellerLocation!.isNotEmpty) {
+      return product.sellerLocation!;
+    }
+    return product.location;
+  }
 
   void _handleAction(BuildContext context, String action) {
     final authState = context.read<AuthBloc>().state;
@@ -46,7 +57,7 @@ class ProductDetailPage extends StatelessWidget {
                 Stack(
                   children: [
                     Image.network(
-                      "https://via.placeholder.com/400x300",
+                      ApiEndpoints.resolveImageUrl(product.coverImage),
                       height: 300,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -96,7 +107,7 @@ class ProductDetailPage extends StatelessWidget {
                     children: [
                       // Title & Price
                       Text(
-                        "Samsung Galaxy S21",
+                        product.title,
                         style: context.textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
@@ -104,9 +115,9 @@ class ProductDetailPage extends StatelessWidget {
                         children: [
                           _buildTag(
                             context,
-                            "Good",
-                            context.pillGreen,
-                            context.pillText,
+                            product.condition.displayName,
+                            product.condition.color.withValues(alpha: 0.1),
+                            product.condition.color,
                           ),
                           const SizedBox(width: 10),
                           Icon(
@@ -114,12 +125,15 @@ class ProductDetailPage extends StatelessWidget {
                             size: 16,
                             color: context.greyText,
                           ),
-                          Text(" Piazza", style: context.textTheme.bodyMedium),
+                          Text(
+                            " ${_getDisplayLocation()}",
+                            style: context.textTheme.bodyMedium,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 15),
                       Text(
-                        "32,000 ETB",
+                        "${product.formattedPrice} ETB",
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
@@ -127,6 +141,20 @@ class ProductDetailPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
+
+                      // Description
+                      if (product.description.isNotEmpty) ...[
+                        Text(
+                          "Description",
+                          style: context.textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          product.description,
+                          style: context.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 25),
+                      ],
 
                       // Escrow Protection
                       Container(
@@ -187,7 +215,9 @@ class ProductDetailPage extends StatelessWidget {
                                   radius: 20,
                                   backgroundColor: context.cardBackground,
                                   child: Text(
-                                    "D",
+                                    product.sellerName.isNotEmpty
+                                        ? product.sellerName[0].toUpperCase()
+                                        : "U",
                                     style: context.textTheme.titleMedium,
                                   ),
                                 ),
@@ -198,24 +228,46 @@ class ProductDetailPage extends StatelessWidget {
                                     Row(
                                       children: [
                                         Text(
-                                          "Dawit Alemayehu",
+                                          product.sellerName,
                                           style: context.textTheme.titleMedium,
                                         ),
-                                        const SizedBox(width: 4),
-                                        Icon(
-                                          Icons.check_circle,
-                                          color: context.primaryColor,
-                                          size: 14,
-                                        ),
+                                        if (product.isSellerVerified) ...[
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: context.primaryColor,
+                                            size: 14,
+                                          ),
+                                        ],
                                       ],
                                     ),
-                                    Text(
-                                      "⭐ 4.7 • 18 Transactions",
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: context.secondaryColor,
+                                      Text(
+                                        product.isSellerVerified
+                                            ? "Verified Seller"
+                                            : "Member",
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: context.secondaryColor,
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.location_on_outlined,
+                                            size: 10,
+                                            color: context.greyText,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _getDisplayLocation(),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: context.greyText,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                   ],
                                 ),
                                 const Spacer(),
@@ -270,24 +322,24 @@ class ProductDetailPage extends StatelessWidget {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              "09XXXXXXXX",
+                                              product.sellerPhone ?? "Contact Verified",
                                               style: TextStyle(
-                                                color: context.successColor,
+                                                color: Colors.green,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                             const SizedBox(width: 16),
                                             Icon(
-                                              Icons.email_outlined,
+                                              Icons.chat_outlined,
                                               size: 14,
                                               color: context.successColor,
                                             ),
                                             const SizedBox(width: 8),
-                                            Text(
-                                              "seller@email.com",
+                                            const Text(
+                                              "Available for Chat",
                                               style: TextStyle(
-                                                color: context.successColor,
+                                                color: Colors.green,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -316,7 +368,7 @@ class ProductDetailPage extends StatelessWidget {
                                               ),
                                               const SizedBox(width: 5),
                                               Text(
-                                                "Sign in to view contact",
+                                                "Sign in to contact seller",
                                                 style: TextStyle(
                                                   color: context.primaryColor,
                                                   fontSize: 12,
@@ -348,16 +400,37 @@ class ProductDetailPage extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            _buildSpecRow(context, "Category", "Mobile"),
-                            _buildSpecRow(context, "Brand", "Samsung"),
-                            _buildSpecRow(context, "Model", "Galaxy S21"),
-                            _buildSpecRow(context, "Storage", "128GB"),
-                            _buildSpecRow(context, "RAM", "8GB"),
-                            _buildSpecRow(context, "Condition", "Good"),
+                            _buildSpecRow(
+                              context,
+                              "Category",
+                              product.category.displayName,
+                            ),
+                            _buildSpecRow(context, "Brand", product.brand),
+                            _buildSpecRow(context, "Model", product.model),
+                            if (product.hasStorage)
+                              _buildSpecRow(
+                                context,
+                                "Storage",
+                                product.storage!,
+                              ),
+                            if (product.hasRam)
+                              _buildSpecRow(context, "RAM", product.ram!),
+                            if (product.processor != null &&
+                                product.processor!.isNotEmpty)
+                              _buildSpecRow(
+                                context,
+                                "Processor",
+                                product.processor!,
+                              ),
+                            _buildSpecRow(
+                              context,
+                              "Condition",
+                              product.condition.displayName,
+                            ),
                             _buildSpecRow(
                               context,
                               "Location",
-                              "Piazza",
+                              _getDisplayLocation(),
                               isLast: true,
                             ),
                           ],
@@ -365,9 +438,8 @@ class ProductDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 25),
 
-                      // Similar Devices
                       Text(
-                        "Similar Devices in Piazza",
+                        "Similar Devices in ${_getDisplayLocation()}",
                         style: context.textTheme.titleLarge,
                       ),
                       const SizedBox(height: 10),
@@ -382,14 +454,7 @@ class ProductDetailPage extends StatelessWidget {
                               child: SizedBox(
                                 width: 160,
                                 child: ProductCard(
-                                  image:
-                                      "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=450",
-                                  title: "iPhone 13 Pro",
-                                  price: "50,000",
-                                  condition: "Like New",
-                                  location: "Bole",
-                                  isVerified: true,
-                                  isEscrow: true,
+                                  product: product, // In a real app, this would be a similar product entity
                                 ),
                               ),
                             );

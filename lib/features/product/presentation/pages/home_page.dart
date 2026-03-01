@@ -7,8 +7,6 @@ import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
-import 'package:used_tech_client/features/product/presentation/bloc/product_event.dart';
-import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import '../widgets/product_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -22,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Fetch products when Home Page loads
     context.read<ProductBloc>().add(const GetProductsEvent());
   }
 
@@ -47,11 +46,18 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Delivering to", style: context.textTheme.bodySmall),
-                Text(
-                  "Bole",
-                  style: context.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                BlocBuilder<AuthBloc, AuthState>(
+                  builder: (context, state) {
+                    final location = (state is AuthSuccess)
+                        ? (state.user.location ?? "Addis Ababa")
+                        : "Addis Ababa";
+                    return Text(
+                      location,
+                      style: context.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -105,176 +111,185 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search Bar
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/search'),
-                child: Container(
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: context.lightGrey,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      Icon(Icons.search, color: context.greyText),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Search iPhone, Mac...",
-                        style: context.textTheme.bodyMedium,
-                      ),
-                    ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<ProductBloc>().add(const GetProductsEvent());
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Search Bar
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/search',
+                  ), // Make sure this route exists in main.dart or use push
+                  child: Container(
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: context.lightGrey,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 12),
+                        Icon(Icons.search, color: context.greyText),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Search iPhone, Mac...",
+                          style: context.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Categories
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildCategoryItem(context, Icons.phone_android, "Phones"),
-                  _buildCategoryItem(context, Icons.laptop, "Laptops"),
-                  _buildCategoryItem(context, Icons.tablet_android, "Tablets"),
-                  _buildCategoryItem(context, Icons.gamepad, "Consoles"),
-                ],
-              ),
-              const SizedBox(height: 25),
-
-              // Hero Banner
-              Container(
-                width: double.infinity,
-                height: 160,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      context.secondaryColor,
-                      context.secondaryColor.withValues(alpha: 0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Stack(
+                // Categories
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Positioned(
-                      left: 20,
-                      top: 30,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                    _buildCategoryItem(context, Icons.phone_android, "Phones"),
+                    _buildCategoryItem(context, Icons.laptop, "Laptops"),
+                    _buildCategoryItem(
+                      context,
+                      Icons.tablet_android,
+                      "Tablets",
+                    ),
+                    _buildCategoryItem(context, Icons.gamepad, "Consoles"),
+                  ],
+                ),
+                const SizedBox(height: 25),
+
+                // Hero Banner
+                Container(
+                  width: double.infinity,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        context.secondaryColor,
+                        context.secondaryColor.withValues(alpha: 0.8),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 20,
+                        top: 30,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text(
+                                "DEAL OF THE DAY",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              "DEAL OF THE DAY",
+                            const SizedBox(height: 10),
+                            const Text(
+                              "iPhone 13 Pro",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "iPhone 13 Pro",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                            const Text(
+                              "Refurbished - 10% Off",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                          const Text(
-                            "Refurbished - 10% Off",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                            const SizedBox(height: 10),
+                            const Text(
+                              "50,000 ETB",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "50,000 ETB",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 25),
+
+                // Fresh Recommendations Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Fresh Recommendations",
+                      style: context.textTheme.titleLarge,
                     ),
+                    Icon(Icons.tune, color: context.greyText),
                   ],
                 ),
-              ),
-              const SizedBox(height: 25),
+                const SizedBox(height: 15),
 
-              // Fresh Recommendations
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Fresh Recommendations",
-                    style: context.textTheme.titleLarge,
-                  ),
-                  Icon(Icons.tune, color: context.greyText),
-                ],
-              ),
-              const SizedBox(height: 15),
+                // Product Grid (Connected to Bloc)
+                BlocBuilder<ProductBloc, ProductState>(
+                  builder: (context, state) {
+                    if (state is ProductLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (state is ProductError) {
+                      return Center(child: Text('Error: ${state.message}'));
+                    } else if (state is ProductsLoaded) {
+                      if (state.products.isEmpty) {
+                        return const Center(child: Text("No products found"));
+                      }
 
-              // Product Grid
-              BlocBuilder<ProductBloc, ProductState>(
-                builder: (context, state) {
-                  if (state is ProductLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (state is ProductError) {
-                    return Center(child: Text(state.message));
-                  } else if (state is ProductsLoaded) {
-                    final products = state.products;
-                    if (products.isEmpty) {
-                      return const Center(child: Text("No products found"));
+                      return GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: state.products.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 220,
+                              childAspectRatio: 0.55,
+                              crossAxisSpacing: 15,
+                              mainAxisSpacing: 15,
+                            ),
+                        itemBuilder: (context, index) {
+                          final product = state.products[index];
+                          return ProductCard(
+                            product: product,
+                          );
+                        },
+                      );
                     }
-                    return GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: products.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.65,
-                        crossAxisSpacing: 15,
-                        mainAxisSpacing: 15,
-                      ),
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-                        final imageUrl = product.images.isNotEmpty ? product.images.first : "https://images.unsplash.com/photo-1621330396173-e41b12717551?q=80&w=200";
-                        return ProductCard(
-                          image: imageUrl,
-                          title: product.title,
-                          price: product.price.toStringAsFixed(0),
-                          condition: product.condition.toString().split('.').last,
-                          location: product.location,
-                          isVerified: product.isVerified,
-                          isEscrow: product.isEscrow,
-                        );
-                      },
-                    );
-                  }
-                  return const SizedBox();
-                },
-              ),
-            ],
+                    return const SizedBox();
+                  },
+                ),
+                // Extra space at bottom
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),

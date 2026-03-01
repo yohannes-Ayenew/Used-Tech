@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/app_theme_extensions.dart';
+import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import '../bloc/sell_bloc.dart';
 import 'step4_images_page.dart';
 
 class Step3ConditionSpecsPage extends StatefulWidget {
@@ -14,70 +16,73 @@ class Step3ConditionSpecsPage extends StatefulWidget {
   });
 
   @override
-  State<Step3ConditionSpecsPage> createState() => _Step3ConditionSpecsPageState();
+  State<Step3ConditionSpecsPage> createState() =>
+      _Step3ConditionSpecsPageState();
 }
 
 class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
-  // Selections
   String? _selectedCondition;
   String? _selectedStorage;
   String? _selectedRam;
   String? _selectedProcessor;
   String? _selectedCore;
-  
-  // Manual Entry Controllers
+
   final _storageController = TextEditingController();
   final _ramController = TextEditingController();
   final _generationController = TextEditingController();
 
   final List<Map<String, dynamic>> _conditions = [
-    {'title': 'Brand New', 'desc': 'Sealed, never used', 'val': 'New'},
-    {'title': 'Like New', 'desc': 'Minimal use, no scratches', 'val': 'Like New'},
-    {'title': 'Good', 'desc': 'Minor scratches, fully functional', 'val': 'Good'},
-    {'title': 'Fair', 'desc': 'Visible wear, fully functional', 'val': 'Fair'},
-    {'title': 'For Parts', 'desc': 'Broken or defective', 'val': 'Broken'},
+    {'title': 'Brand New', 'desc': 'Sealed', 'val': 'New'},
+    {'title': 'Like New', 'desc': 'No scratches', 'val': 'Like New'},
+    {'title': 'Good', 'desc': 'Minor scratches', 'val': 'Good'},
+    {'title': 'Fair', 'desc': 'Visible wear', 'val': 'Fair'},
+    {'title': 'For Parts', 'desc': 'Broken', 'val': 'Broken'},
   ];
 
-  final List<String> _processorOptions = ['Intel', 'AMD', 'Apple M1/M2', 'Other'];
-  final List<String> _coreOptions = ['i3', 'i5', 'i7', 'i9', 'Ryzen 3', 'Ryzen 5', 'Ryzen 7', 'Other'];
-
   void _nextStep() {
-    // Validate required fields
-    if (_selectedCondition == null) return;
+    if (_selectedCondition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select device condition")),
+      );
+      return;
+    }
 
-    // Build Data Map
+    // 🚀 Close keyboard
+    FocusScope.of(context).unfocus();
+
     final Map<String, dynamic> specs = {
       'condition': _selectedCondition,
-      'storage': _selectedStorage == 'Other' ? _storageController.text : _selectedStorage,
-      'ram': _selectedRam == 'Other' ? _ramController.text : _selectedRam,
+      'storage': _selectedStorage == 'Other'
+          ? _storageController.text.trim()
+          : _selectedStorage,
+      'ram': _selectedRam == 'Other' ? _ramController.text.trim() : _selectedRam,
     };
 
-    // Add PC Specifics
     if (widget.category == 'laptop') {
       specs['processor'] = _selectedProcessor;
       specs['core'] = _selectedCore;
-      specs['generation'] = _generationController.text;
+      specs['generation'] = _generationController.text.trim();
     }
 
-    widget.onNext(specs);
-    
-    // Navigate
+    // 📥 Update Bloc
+    context.read<SellBloc>().add(UpdateSellDataEvent(specs));
+
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => Step4ImagesPage(
-          onNext: (images) {
-            // Logic handled by parent bloc/controller
-          },
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => Step4ImagesPage(onNext: (_) {})),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Define options based on category
-    List<String> storageOpts = ['64GB', '128GB', '256GB', '512GB', '1TB', 'Other'];
+    List<String> storageOpts = [
+      '64GB',
+      '128GB',
+      '256GB',
+      '512GB',
+      '1TB',
+      'Other',
+    ];
     List<String> ramOpts = ['4GB', '8GB', '16GB', '32GB', 'Other'];
 
     if (widget.category == 'laptop') {
@@ -86,15 +91,16 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
 
     return Scaffold(
       backgroundColor: context.theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: Text("Specs & Condition", style: context.textTheme.titleLarge)),
+      appBar: AppBar(
+        title: Text("Specs & Condition", style: context.textTheme.titleLarge),
+      ),
       body: Column(
         children: [
           LinearProgressIndicator(
-            value: 3 / 5,
+            value: 0.6,
             backgroundColor: context.lightGrey,
             valueColor: AlwaysStoppedAnimation(context.primaryColor),
           ),
-          
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -105,82 +111,47 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                   const SizedBox(height: 8),
                   Text("Details", style: context.textTheme.headlineSmall),
                   const SizedBox(height: 32),
-
-                  // 1. CONDITION (Required for all)
                   Text("Condition *", style: context.textTheme.titleMedium),
                   const SizedBox(height: 12),
                   ..._conditions.map((c) => _buildConditionCard(c)),
-
                   const SizedBox(height: 24),
-
-                  // 2. STORAGE
-                  _buildSectionTitle("Storage *"),
-                  _buildChipGroup(storageOpts, _selectedStorage, (val) {
-                    setState(() {
-                      _selectedStorage = val;
-                      if (val != 'Other') _storageController.clear();
-                    });
-                  }),
-                  if (_selectedStorage == 'Other') 
-                    _buildTextInput(_storageController, "Enter Storage (e.g. 3TB)"),
-
+                  Text("Storage *", style: context.textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    children: storageOpts
+                        .map(
+                          (o) => _buildChip(
+                            o,
+                            _selectedStorage,
+                            (v) => setState(() => _selectedStorage = v),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  if (_selectedStorage == 'Other')
+                    _buildTextInput(_storageController, "Enter Storage"),
                   const SizedBox(height: 24),
-
-                  // 3. RAM
-                  _buildSectionTitle("RAM *"),
-                  _buildChipGroup(ramOpts, _selectedRam, (val) {
-                    setState(() {
-                      _selectedRam = val;
-                      if (val != 'Other') _ramController.clear();
-                    });
-                  }),
-                  if (_selectedRam == 'Other') 
-                    _buildTextInput(_ramController, "Enter RAM (e.g. 12GB)"),
-
-                  // 4. PC SPECIFIC FIELDS (Only if Laptop)
-                  if (widget.category == 'laptop') ...[
-                    const SizedBox(height: 24),
-                    const Divider(),
-                    const SizedBox(height: 24),
-                    Text("Processor Details", style: context.textTheme.titleLarge),
-                    const SizedBox(height: 16),
-
-                    // Processor Brand
-                    _buildSectionTitle("Processor Type"),
-                    _buildChipGroup(_processorOptions, _selectedProcessor, (val) {
-                      setState(() => _selectedProcessor = val);
-                    }),
-                    const SizedBox(height: 16),
-
-                    // Core / Series
-                    _buildSectionTitle("Core / Series"),
-                    _buildChipGroup(_coreOptions, _selectedCore, (val) {
-                      setState(() => _selectedCore = val);
-                    }),
-                    const SizedBox(height: 16),
-
-                    // Generation (Text Field)
-                    _buildSectionTitle("Generation (Optional)"),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _generationController,
-                      decoration: InputDecoration(
-                        hintText: "e.g. 11th Gen, 12th Gen",
-                        filled: true,
-                        fillColor: context.lightGrey,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                  ],
+                  Text("RAM *", style: context.textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    children: ramOpts
+                        .map(
+                          (o) => _buildChip(
+                            o,
+                            _selectedRam,
+                            (v) => setState(() => _selectedRam = v),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  if (_selectedRam == 'Other')
+                    _buildTextInput(_ramController, "Enter RAM"),
                 ],
               ),
             ),
           ),
-
-          // Next Button
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -203,44 +174,24 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+  Widget _buildChip(String label, String? selected, Function(String) onSelect) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected == label,
+      onSelected: (val) => onSelect(label),
+      selectedColor: context.primaryColor,
+      backgroundColor: context.cardBackground,
+      labelStyle: TextStyle(
+        color: selected == label ? Colors.white : context.darkText,
+      ),
     );
   }
 
-  Widget _buildChipGroup(List<String> options, String? selectedValue, Function(String) onSelect) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: options.map((option) {
-        final isSelected = selectedValue == option;
-        return ChoiceChip(
-          label: Text(option),
-          selected: isSelected,
-          onSelected: (selected) => onSelect(option),
-          selectedColor: Theme.of(context).extension<AppColors>()?.primaryTeal ?? Colors.teal,
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Theme.of(context).extension<AppColors>()?.darkText,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-          backgroundColor: Theme.of(context).extension<AppColors>()?.cardBackground,
-          side: BorderSide(
-            color: isSelected 
-              ? Colors.transparent 
-              : Theme.of(context).extension<AppColors>()?.borderColor ?? Colors.grey,
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildTextInput(TextEditingController controller, String hint) {
+  Widget _buildTextInput(TextEditingController ctrl, String hint) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10.0),
+      padding: const EdgeInsets.only(top: 10),
       child: TextField(
-        controller: controller,
+        controller: ctrl,
         decoration: InputDecoration(
           hintText: hint,
           filled: true,
@@ -256,18 +207,16 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
 
   Widget _buildConditionCard(Map<String, dynamic> item) {
     final isSelected = _selectedCondition == item['val'];
-    final colors = Theme.of(context).extension<AppColors>();
-    
     return GestureDetector(
       onTap: () => setState(() => _selectedCondition = item['val']),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colors?.cardBackground,
+          color: context.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? (colors?.primaryTeal ?? Colors.teal) : (colors?.borderColor ?? Colors.grey),
+            color: isSelected ? context.primaryColor : context.borderColor,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -278,20 +227,21 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item['title'], 
+                    item['title'],
                     style: TextStyle(
-                      fontSize: 16, 
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? colors?.primaryTeal : colors?.darkText,
-                    )
+                      color: isSelected
+                          ? context.primaryColor
+                          : context.darkText,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(item['desc'], style: colors != null ? TextStyle(color: colors.greyText, fontSize: 13) : null),
+                  Text(item['desc'], style: context.textTheme.bodySmall),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: colors?.primaryTeal),
+              Icon(Icons.check_circle, color: context.primaryColor),
           ],
         ),
       ),

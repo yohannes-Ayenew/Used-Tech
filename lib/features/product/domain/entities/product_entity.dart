@@ -74,6 +74,8 @@ class ProductEntity extends Equatable {
   final String sellerId;
   final String sellerName;
   final bool isSellerVerified;
+  final String? sellerPhone;
+  final String? sellerLocation;
   final ProductCategory category;
   final String brand;
   final String model;
@@ -81,6 +83,8 @@ class ProductEntity extends Equatable {
   final String? storage;
   final String? ram;
   final String? processor;
+  final String? core;
+  final String? generation;
   final String title;
   final String description;
   final double price;
@@ -96,6 +100,8 @@ class ProductEntity extends Equatable {
     required this.sellerId,
     required this.sellerName,
     required this.isSellerVerified,
+    this.sellerPhone,
+    this.sellerLocation,
     required this.category,
     required this.brand,
     required this.model,
@@ -103,6 +109,8 @@ class ProductEntity extends Equatable {
     this.storage,
     this.ram,
     this.processor,
+    this.core,
+    this.generation,
     required this.title,
     required this.description,
     required this.price,
@@ -132,10 +140,19 @@ class ProductEntity extends Equatable {
   List<Object?> get props => [
     id,
     sellerId,
+    sellerName,
+    isSellerVerified,
+    sellerPhone,
+    sellerLocation,
     category,
     brand,
     model,
     condition,
+    storage,
+    ram,
+    processor,
+    core,
+    generation,
     price,
     createdAt,
   ];

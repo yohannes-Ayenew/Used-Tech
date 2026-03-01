@@ -1,7 +1,9 @@
 // lib/features/sell/presentation/pages/sell_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import '../bloc/sell_bloc.dart';
 import 'step2_brand_model_page.dart';
 
 class SellPage extends StatefulWidget {
@@ -37,14 +39,17 @@ class _SellPageState extends State<SellPage> {
 
   void _nextStep() {
     if (_selectedCategory != null) {
+      // 🚀 Update Bloc
+      context.read<SellBloc>().add(
+        UpdateSellDataEvent({'category': _selectedCategory}),
+      );
+
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => Step2BrandModelPage(
             category: _selectedCategory!,
-            onNext: (data) {
-              // Handle next step
-            },
+            onNext: (data) {},
           ),
         ),
       );
@@ -57,10 +62,6 @@ class _SellPageState extends State<SellPage> {
       backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text("List Your Device", style: context.textTheme.titleLarge),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: Column(
         children: [

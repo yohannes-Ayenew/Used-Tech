@@ -1,3 +1,5 @@
+// lib/features/product/data/models/product_model.dart
+
 import '../../domain/entities/product_entity.dart';
 
 class ProductModel extends ProductEntity {
@@ -6,6 +8,8 @@ class ProductModel extends ProductEntity {
     required super.sellerId,
     required super.sellerName,
     required super.isSellerVerified,
+    super.sellerPhone,
+    super.sellerLocation,
     required super.category,
     required super.brand,
     required super.model,
@@ -13,6 +17,8 @@ class ProductModel extends ProductEntity {
     super.storage,
     super.ram,
     super.processor,
+    super.core,
+    super.generation,
     required super.title,
     required super.description,
     required super.price,
@@ -25,61 +31,79 @@ class ProductModel extends ProductEntity {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // Parse specs safely
+    final specs = json['specs'] ?? {};
+
+    // Parse seller info safely
+    final seller = json['sellerId'];
+    final sellerName = (seller is Map) ? seller['name'] : 'Unknown Seller';
+    final isSellerVerified = (seller is Map)
+        ? (seller['role'] == 'VERIFIED_SELLER')
+        : false;
+    final sellerPhone = (seller is Map) ? seller['phone'] : null;
+    final sellerLocation = (seller is Map) ? seller['location'] : null;
+
+    // Helper to map category string to Enum
+    ProductCategory parseCategory(String? cat) {
+      switch (cat?.toLowerCase()) {
+        case 'mobile':
+          return ProductCategory.mobile;
+        case 'laptop':
+          return ProductCategory.laptop;
+        case 'tablet':
+          return ProductCategory.tablet;
+        default:
+          return ProductCategory.mobile; // Default
+      }
+    }
+
+    // Helper to map condition string to Enum
+    ProductCondition parseCondition(String? cond) {
+      switch (cond?.toLowerCase()) {
+        case 'new':
+          return ProductCondition.brandNew;
+        case 'like new':
+          return ProductCondition.likeNew;
+        case 'good':
+          return ProductCondition.good;
+        case 'fair':
+          return ProductCondition.fair;
+        case 'for parts':
+          return ProductCondition.forParts;
+        default:
+          return ProductCondition.good;
+      }
+    }
+
     return ProductModel(
-      id: json['_id'],
-      sellerId: json['sellerId'], // Ensure backend returns string or object
-      sellerName: json['sellerName'] ?? 'Unknown',
-      isSellerVerified: json['isSellerVerified'] ?? false,
-      category: _mapCategory(json['category']),
+      id: json['_id'] ?? '',
+      sellerId: (seller is Map) ? seller['_id'] : (seller ?? ''),
+      sellerName: sellerName,
+      isSellerVerified: isSellerVerified,
+      sellerPhone: sellerPhone,
+      sellerLocation: sellerLocation,
+      category: parseCategory(json['category']),
       brand: json['brand'] ?? '',
       model: json['model'] ?? '',
-      condition: _mapCondition(json['condition']),
-      storage: json['storage'],
-      ram: json['ram'],
-      processor: json['processor'],
-      title: json['title'],
-      description: json['description'],
-      price: (json['price'] as num).toDouble(),
+      condition: parseCondition(json['condition']),
+      storage: specs['storage'],
+      ram: specs['ram'],
+      processor: specs['processor'],
+      core: specs['core'],
+      generation: specs['generation'],
+      title: "${json['brand']} ${json['model']}", // Virtual Title
+      description: json['description'] ?? '',
+      price: (json['price'] ?? 0).toDouble(),
       images: List<String>.from(json['images'] ?? []),
-      location: json['location'] ?? '',
-      isEscrow: json['isEscrow'] ?? false,
-      isVerified: json['isVerified'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      location: json['location'] ?? 'Addis Ababa',
+      isEscrow: true, // Always true for now
+      isVerified: isSellerVerified,
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        json['updatedAt'] ?? DateTime.now().toIso8601String(),
+      ),
     );
-  }
-
-  static ProductCategory _mapCategory(String? categoryRaw) {
-    if (categoryRaw == null) return ProductCategory.mobile;
-    switch (categoryRaw.toLowerCase()) {
-      case 'laptop':
-        return ProductCategory.laptop;
-      case 'tablet':
-        return ProductCategory.tablet;
-      case 'mobile':
-      default:
-        return ProductCategory.mobile;
-    }
-  }
-
-  static ProductCondition _mapCondition(String? conditionRaw) {
-    if (conditionRaw == null) return ProductCondition.good;
-    switch (conditionRaw.toLowerCase()) {
-      case 'brand new':
-      case 'brandnew':
-        return ProductCondition.brandNew;
-      case 'like new':
-      case 'likenew':
-        return ProductCondition.likeNew;
-      case 'good':
-        return ProductCondition.good;
-      case 'fair':
-        return ProductCondition.fair;
-      case 'for parts':
-      case 'forparts':
-        return ProductCondition.forParts;
-      default:
-        return ProductCondition.good;
-    }
   }
 }

@@ -1,8 +1,10 @@
+// lib/features/product/data/repositories/product_repository_impl.dart
+
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/product_entity.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../datasources/product_remote_data_source.dart';
 
@@ -12,36 +14,16 @@ class ProductRepositoryImpl implements ProductRepository {
   ProductRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, ProductEntity>> createProduct({
-    required String category,
-    required String brand,
-    required String model,
-    required String condition,
-    required String title,
-    required String description,
-    required double price,
-    required String location,
-    String? storage,
-    String? ram,
-    String? processor,
-    required List<XFile> images,
+  Future<Either<Failure, void>> createProduct({
+    required Map<String, dynamic> productData,
+    required List<File> images,
   }) async {
     try {
-      final product = await remoteDataSource.createProduct(
-        category: category,
-        brand: brand,
-        model: model,
-        condition: condition,
-        title: title,
-        description: description,
-        price: price,
-        location: location,
-        storage: storage,
-        ram: ram,
-        processor: processor,
+      await remoteDataSource.createProduct(
+        productData: productData,
         images: images,
       );
-      return Right(product);
+      return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
@@ -50,9 +32,15 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
-  Future<Either<Failure, List<ProductEntity>>> getProducts() async {
+  Future<Either<Failure, List<ProductEntity>>> getProducts({
+    String? category,
+    String? searchQuery,
+  }) async {
     try {
-      final products = await remoteDataSource.getProducts();
+      final products = await remoteDataSource.getProducts(
+        category: category,
+        search: searchQuery,
+      );
       return Right(products);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
