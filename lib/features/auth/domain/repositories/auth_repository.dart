@@ -36,6 +36,7 @@ abstract class AuthRepository {
   Future<Either<Failure, UserEntity>> updateProfile({
     String? name,
     String? phone,
+    String? location,
     XFile? profileImage,
   });
 

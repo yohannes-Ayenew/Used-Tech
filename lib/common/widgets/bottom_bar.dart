@@ -1,3 +1,5 @@
+// lib/common/widgets/bottom_bar.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/utils/auth_guard.dart';
@@ -10,6 +12,8 @@ import '../../features/sell/presentation/pages/sell_page.dart';
 import '../../features/inbox/presentation/pages/inbox_page.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
+import '../../features/sell/presentation/bloc/sell_bloc.dart';
+import '../../injection_container.dart' as di;
 
 class BottomBar extends StatefulWidget {
   static const String routeName = '/actual-home';
@@ -28,13 +32,11 @@ class _BottomBarState extends State<BottomBar> {
   void initState() {
     super.initState();
     _page = widget.initialTab ?? 0;
-    print('📱 BottomBar initialized with tab: $_page');
   }
 
   @override
   void didUpdateWidget(covariant BottomBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update tab if initialTab changes
     if (widget.initialTab != oldWidget.initialTab) {
       setState(() {
         _page = widget.initialTab!;
@@ -44,8 +46,6 @@ class _BottomBarState extends State<BottomBar> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Wrap everything in BlocListener to listen for ONE-TIME events (Errors/Success)
-    // This runs even if the Auth Bottom Sheet is closed.
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthFailure) {
@@ -59,14 +59,12 @@ class _BottomBarState extends State<BottomBar> {
             ),
           );
         } else if (state is AuthSuccess) {
-          // 💡 IMPROVEMENT: Only show "Welcome back" if we are the current route.
-          // This prevents duplicate snackbars when EditProfilePage/etc are on top.
           if (ModalRoute.of(context)?.isCurrent == true) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text("Welcome back, ${state.user.name}!"),
-                backgroundColor: Colors.green,
+                backgroundColor: context.successColor,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -74,34 +72,31 @@ class _BottomBarState extends State<BottomBar> {
         }
       },
       listenWhen: (previous, current) {
-        // 🚀 CRITICAL: Only fire "Welcome back" if we wasn't already logged in.
-        // This prevents the snackbar from showing up on every profile update.
         if (current is AuthSuccess && previous is! AuthSuccess) {
           return true;
         }
         if (current is AuthFailure) return true;
         return false;
       },
-      // 2. BlocBuilder handles building the UI based on state (Authenticated vs Guest)
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {
           final isAuthenticated = state is AuthSuccess;
-          
-          // Debug prints
-          // print('🔍 BottomBar building - isAuthenticated: $isAuthenticated');
-          // if (isAuthenticated) {
-          //   final user = (state).user;
-          //   print('👤 User: ${user.email}');
-          // }
 
           return Scaffold(
             body: IndexedStack(
               index: _page,
               children: [
                 const HomePage(),
+
                 const SearchPage(),
-                const SellPage(),
+
+                BlocProvider(
+                  create: (_) => di.sl<SellBloc>(),
+                  child: const SellPage(),
+                ),
+
                 const InboxPage(),
+
                 isAuthenticated
                     ? const AuthenticatedProfilePage()
                     : const ProfilePage(),

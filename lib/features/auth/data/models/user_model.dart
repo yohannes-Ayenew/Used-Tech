@@ -16,6 +16,7 @@ class UserModel extends UserEntity {
     required super.isEmailVerified,
     required super.walletBalance,
     required super.isActive,
+    super.location,
     super.lastLoginAt,
     required super.kycStatus,
     super.kycIdImage,
@@ -36,6 +37,7 @@ class UserModel extends UserEntity {
       isEmailVerified: json['isEmailVerified'] ?? false,
       walletBalance: (json['walletBalance'] ?? 0).toDouble(),
       isActive: json['isActive'] ?? true,
+      location: json['location'],
       lastLoginAt: json['lastLoginAt'] != null
           ? DateTime.parse(json['lastLoginAt'])
           : null,
@@ -62,6 +64,7 @@ class UserModel extends UserEntity {
       'isEmailVerified': isEmailVerified,
       'walletBalance': walletBalance,
       'isActive': isActive,
+      'location': location,
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'kyc': {
         'status': kycStatus.toJson(),
@@ -82,6 +85,7 @@ class UserModel extends UserEntity {
     double? walletBalance,
     bool? isEmailVerified,
     bool? isActive,
+    String? location,
     DateTime? lastLoginAt,
     KycStatus? kycStatus,
     String? kycIdImage,
@@ -100,6 +104,7 @@ class UserModel extends UserEntity {
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       walletBalance: walletBalance ?? this.walletBalance,
       isActive: isActive ?? this.isActive,
+      location: location ?? this.location,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       kycStatus: kycStatus ?? this.kycStatus,
       kycIdImage: kycIdImage ?? this.kycIdImage,

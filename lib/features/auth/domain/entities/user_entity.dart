@@ -15,6 +15,7 @@ class UserEntity extends Equatable {
   final bool isEmailVerified;
   final double walletBalance;
   final bool isActive;
+  final String? location;
   final DateTime? lastLoginAt;
 
   // KYC fields
@@ -35,6 +36,7 @@ class UserEntity extends Equatable {
     required this.isEmailVerified,
     required this.walletBalance,
     required this.isActive,
+    this.location,
     this.lastLoginAt,
     required this.kycStatus,
     this.kycIdImage,
@@ -64,6 +66,7 @@ class UserEntity extends Equatable {
     kycStatus,
     walletBalance,
     isActive,
+    location,
   ];
 
   UserEntity copyWith({
@@ -75,6 +78,7 @@ class UserEntity extends Equatable {
     double? walletBalance,
     bool? isEmailVerified,
     bool? isActive,
+    String? location,
     DateTime? lastLoginAt,
     KycStatus? kycStatus,
     String? kycIdImage,
@@ -93,6 +97,7 @@ class UserEntity extends Equatable {
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       walletBalance: walletBalance ?? this.walletBalance,
       isActive: isActive ?? this.isActive,
+      location: location ?? this.location,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       kycStatus: kycStatus ?? this.kycStatus,
       kycIdImage: kycIdImage ?? this.kycIdImage,

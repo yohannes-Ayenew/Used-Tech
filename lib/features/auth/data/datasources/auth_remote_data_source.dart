@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api_endpoints.dart';
@@ -37,7 +36,12 @@ abstract class AuthRemoteDataSource {
 
   // Profile methods
   Future<Map<String, dynamic>> getUserProfile();
-  Future<Map<String, dynamic>> updateProfile({String? name, String? phone, XFile? profileImage});
+  Future<Map<String, dynamic>> updateProfile({
+    String? name,
+    String? phone,
+    String? location,
+    XFile? profileImage,
+  });
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -54,9 +58,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     // 💡 Client ID for Web support (from index.html)
     // For Mobile, it will automatically use the one from google-services.json
-    clientId: kIsWeb 
-      ? '440923132786-ljsa2h08f61512lc1fdqflg0nnrq5cu3.apps.googleusercontent.com' 
-      : '440923132786-8rv31b9bhqhtllfj1ok22skbc1u1kdv3.apps.googleusercontent.com',
+    clientId: kIsWeb
+        ? '440923132786-ljsa2h08f61512lc1fdqflg0nnrq5cu3.apps.googleusercontent.com'
+        : '440923132786-8rv31b9bhqhtllfj1ok22skbc1u1kdv3.apps.googleusercontent.com',
   );
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
@@ -74,10 +78,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final token = await localDataSource.getLastToken();
 
       if (token != null && token.isNotEmpty) {
-        print('📝 Token retrieved: ${token.substring(0, 10)}...');
         return token;
       } else {
-        print('❌ No token found in local storage');
         return null;
       }
     } catch (e) {
@@ -157,9 +159,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         }
       } else {
         googleUser = await _googleSignIn.signInSilently();
-        if (googleUser == null) {
-          googleUser = await _googleSignIn.signIn();
-        }
+        googleUser ??= await _googleSignIn.signIn();
       }
 
       if (googleUser == null) throw Exception('Google Sign In cancelled');
@@ -182,9 +182,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       if (idToken == null) throw Exception('Failed to get Google ID Token');
 
-      // 5. Send ID Token to YOUR Backend
-      print('🚀 Sending Google Token to Backend...');
-      
       final headers = _getHeaders();
       headers['Connection'] = 'close'; // Prevent TCP connection reuse issues
 
@@ -194,7 +191,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
             body: jsonEncode({'idToken': idToken}),
             headers: headers,
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -333,7 +330,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> updateProfile({String? name, String? phone, XFile? profileImage}) async {
+  Future<Map<String, dynamic>> updateProfile({
+    String? name,
+    String? phone,
+    String? location,
+    XFile? profileImage,
+  }) async {
     try {
       final token = await _getToken();
       if (token == null || token.isEmpty) {
@@ -354,39 +356,39 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // 3. Add Fields
       if (name != null) request.fields['name'] = name;
       if (phone != null) request.fields['phone'] = phone;
+      if (location != null) request.fields['location'] = location;
 
       // 4. Add Image if provided
       if (profileImage != null) {
         if (kIsWeb) {
           final bytes = await profileImage.readAsBytes();
-          request.files.add(http.MultipartFile.fromBytes(
-            'profileImage',
-            bytes,
-            filename: profileImage.name,
-            contentType: MediaType('image', 'jpeg'),
-          ));
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'profileImage',
+              bytes,
+              filename: profileImage.name,
+              contentType: MediaType('image', 'jpeg'),
+            ),
+          );
         } else {
           // MOBILE: Use path
           final ext = profileImage.path.split('.').last.toLowerCase();
-          String mimeType = 'image/jpeg'; // Default
-          if (ext == 'png') mimeType = 'image/png';
-          if (ext == 'webp') mimeType = 'image/webp';
-          if (ext == 'gif') mimeType = 'image/gif';
-
-          request.files.add(await http.MultipartFile.fromPath(
-            'profileImage',
-            profileImage.path,
-            contentType: MediaType('image', ext == 'jpg' ? 'jpeg' : ext),
-          ));
+          final mimeType =
+              (ext == 'jpg' || ext == 'jpeg') ? 'jpeg' : (ext == 'png' ? 'png' : 'jpeg');
+          
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'profileImage',
+              profileImage.path,
+              contentType: MediaType('image', mimeType),
+            ),
+          );
         }
       }
 
-      // 5. Send
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
-      print('📥 Profile Update Status: ${response.statusCode}');
-      
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return data['data']; // Returns updated user object
@@ -448,7 +450,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       print('🚀 Uploading verification images...');
-      
+
       // 1. Create Multipart Request
       var request = http.MultipartRequest(
         'POST',
@@ -463,18 +465,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         if (kIsWeb) {
           // WEB: Read bytes
           final bytes = await file.readAsBytes();
-          request.files.add(http.MultipartFile.fromBytes(
-            fieldName,
-            bytes,
-            filename: file.name,
-            contentType: MediaType('image', 'jpeg'), 
-          ));
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              fieldName,
+              bytes,
+              filename: file.name,
+              contentType: MediaType('image', 'jpeg'),
+            ),
+          );
         } else {
           // MOBILE: Use path
-          request.files.add(await http.MultipartFile.fromPath(
-            fieldName,
-            file.path,
-          ));
+          request.files.add(
+            await http.MultipartFile.fromPath(fieldName, file.path),
+          );
         }
       }
 

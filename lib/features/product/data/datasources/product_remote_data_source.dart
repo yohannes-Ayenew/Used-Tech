@@ -1,31 +1,21 @@
+// lib/features/product/data/datasources/product_remote_data_source.dart
+
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/product_model.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:mime/mime.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart';
 
 abstract class ProductRemoteDataSource {
-  Future<ProductModel> createProduct({
-    required String category,
-    required String brand,
-    required String model,
-    required String condition,
-    required String title,
-    required String description,
-    required double price,
-    required String location,
-    String? storage,
-    String? ram,
-    String? processor,
-    required List<XFile> images,
+  Future<void> createProduct({
+    required Map<String, dynamic> productData,
+    required List<File> images,
   });
 
-  Future<List<ProductModel>> getProducts();
+  Future<List<ProductModel>> getProducts({String? category, String? search});
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -38,86 +28,80 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   });
 
   @override
-  Future<ProductModel> createProduct({
-    required String category,
-    required String brand,
-    required String model,
-    required String condition,
-    required String title,
-    required String description,
-    required double price,
-    required String location,
-    String? storage,
-    String? ram,
-    String? processor,
-    required List<XFile> images,
+  Future<void> createProduct({
+    required Map<String, dynamic> productData,
+    required List<File> images,
   }) async {
     final token = sharedPreferences.getString('CACHED_TOKEN');
-    if (token == null) {
-      throw ServerException('Not authenticated');
-    }
+    if (token == null) throw ServerException('Not authenticated');
 
-    final uri = Uri.parse(ApiEndpoints.createProduct); // Make sure this exists in ApiEndpoints
-    var request = http.MultipartRequest('POST', uri)
-      ..headers.addAll({
-        'Authorization': 'Bearer $token',
-      })
-      ..fields['category'] = category
-      ..fields['brand'] = brand
-      ..fields['model'] = model
-      ..fields['condition'] = condition
-      ..fields['title'] = title
-      ..fields['description'] = description
-      ..fields['price'] = price.toString()
-      ..fields['location'] = location;
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiEndpoints.createProduct),
+      );
 
-    if (storage != null && storage.isNotEmpty) request.fields['storage'] = storage;
-    if (ram != null && ram.isNotEmpty) request.fields['ram'] = ram;
-    if (processor != null && processor.isNotEmpty) request.fields['processor'] = processor;
+      request.headers.addAll({'Authorization': 'Bearer $token'});
 
-    for (var image in images) {
-      if (kIsWeb) {
-        final bytes = await image.readAsBytes();
-        request.files.add(http.MultipartFile.fromBytes(
-          'images',
-          bytes,
-          filename: image.name,
-          contentType: MediaType('image', 'jpeg'),
-        ));
-      } else {
-        final mimeType = lookupMimeType(image.path) ?? 'image/jpeg';
-        request.files.add(await http.MultipartFile.fromPath(
-          'images',
-          image.path,
-          contentType: MediaType.parse(mimeType),
-        ));
+      // Add text fields
+      productData.forEach((key, value) {
+        if (value != null) {
+          request.fields[key] = value.toString();
+        }
+      });
+
+      // Add images
+      print("📸 Adding ${images.length} images to request");
+      for (var image in images) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'images', // Ensure this matches backend expectation
+            image.path,
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
       }
-    }
 
-    final streamedResponse = await client.send(request);
-    final response = await http.Response.fromStream(streamedResponse);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      return ProductModel.fromJson(jsonData['data'] ?? jsonData['product'] ?? jsonData);
-    } else {
-      final jsonData = json.decode(response.body);
-      throw ServerException(jsonData['message'] ?? 'Failed to create product');
+      if (response.statusCode != 201) {
+        final message =
+            jsonDecode(response.body)['message'] ?? "Failed to create listing";
+        throw ServerException(message);
+      }
+    } catch (e) {
+      throw ServerException(e.toString());
     }
   }
 
   @override
-  Future<List<ProductModel>> getProducts() async {
-    final uri = Uri.parse(ApiEndpoints.getProducts);
-    final response = await client.get(uri);
+  Future<List<ProductModel>> getProducts({
+    String? category,
+    String? search,
+  }) async {
+    try {
+      // Build Query
+      String query = '';
+      if (category != null) query += '?category=$category';
+      if (search != null) query += '${query.isEmpty ? '?' : '&'}search=$search';
 
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      final List<dynamic> data = jsonData['data'];
-      return data.map((json) => ProductModel.fromJson(json)).toList();
-    } else {
-      final jsonData = json.decode(response.body);
-      throw ServerException(jsonData['message'] ?? 'Failed to fetch products');
+      final uri = Uri.parse('${ApiEndpoints.getProducts}$query');
+
+      final response = await client.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> productsJson = data['data'];
+        return productsJson.map((json) => ProductModel.fromJson(json)).toList();
+      } else {
+        throw ServerException('Failed to load products');
+      }
+    } catch (e) {
+      throw ServerException(e.toString());
     }
   }
 }

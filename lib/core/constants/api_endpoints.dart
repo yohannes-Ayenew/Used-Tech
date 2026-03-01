@@ -11,9 +11,24 @@ class ApiEndpoints {
     } else {
       // 💡 TIP: Your IP changed from 10.232.201.96 to 10.232.201.120
       // Run 'ipconfig' and look for Ethernet adapter IPv4 Address
-      const String localIp = '10.232.201.120';   
+      const String localIp = '10.232.201.24';   
       return 'http://$localIp:3000/api'; 
     }
+  }
+
+  // Resolve Backend Image Paths
+  static String resolveImageUrl(String path) {
+    if (path.isEmpty) return "";
+    if (path.startsWith('http')) return path;
+
+    // The backend stores paths like "src/uploads/..." 
+    // We need to serve them from the root (e.g., http://ip:3000/uploads/...)
+    // So we replace "src/" with empty string if it exists
+    final cleanPath = path.replaceFirst('src/', '');
+    
+    // Get host (remove /api from the end of baseUrl)
+    final host = baseUrl.replaceAll('/api', '');
+    return "$host/$cleanPath";
   }
 
   // ALL endpoints below must be getters ('get') because baseUrl is dynamic now

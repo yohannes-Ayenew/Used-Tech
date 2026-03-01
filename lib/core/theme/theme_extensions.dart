@@ -13,20 +13,20 @@ extension ThemeExtensions on BuildContext {
   // Access color scheme
   ColorScheme get colorScheme => Theme.of(this).colorScheme;
 
-  // Access custom app colors
-  AppColors get appColors => Theme.of(this).extension<AppColors>()!;
+  // Access custom app colors safely
+  AppColors get appColors => Theme.of(this).extension<AppColors>() ?? AppColors.light;
 
-  // Helper methods for common colors
-  Color get primaryColor => appColors.primaryTeal;
-  Color get secondaryColor => appColors.secondaryOrange;
-  Color get successColor => appColors.successGreen;
-  Color get lightGrey => appColors.lightGrey;
-  Color get darkText => appColors.darkText;
-  Color get greyText => appColors.greyText;
-  Color get pillGreen => appColors.pillGreen;
-  Color get pillText => appColors.pillText;
-  Color get cardBackground => appColors.cardBackground;
-  Color get borderColor => appColors.borderColor;
+  // Helper methods for common colors with fallbacks
+  Color get primaryColor => Theme.of(this).extension<AppColors>()?.primaryTeal ?? const Color(0xFF00838F);
+  Color get secondaryColor => Theme.of(this).extension<AppColors>()?.secondaryOrange ?? const Color(0xFFFF9800);
+  Color get successColor => Theme.of(this).extension<AppColors>()?.successGreen ?? const Color(0xFF4CAF50);
+  Color get lightGrey => Theme.of(this).extension<AppColors>()?.lightGrey ?? const Color(0xFFF5F5F5);
+  Color get darkText => Theme.of(this).extension<AppColors>()?.darkText ?? const Color(0xFF212121);
+  Color get greyText => Theme.of(this).extension<AppColors>()?.greyText ?? const Color(0xFF757575);
+  Color get pillGreen => Theme.of(this).extension<AppColors>()?.pillGreen ?? const Color(0xFFE8F5E9);
+  Color get pillText => Theme.of(this).extension<AppColors>()?.pillText ?? const Color(0xFF2E7D32);
+  Color get cardBackground => Theme.of(this).extension<AppColors>()?.cardBackground ?? Colors.white;
+  Color get borderColor => Theme.of(this).extension<AppColors>()?.borderColor ?? const Color(0xFFE0E0E0);
 
   // Helper for responsive sizing
   double get width => MediaQuery.of(this).size.width;

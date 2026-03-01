@@ -79,11 +79,22 @@ class ResetPasswordRequestedEvent extends AuthEvent {
 class UpdateProfileRequestedEvent extends AuthEvent {
   final String? name;
   final String? phone;
+  final String? location;
   final XFile? profileImage;
-  const UpdateProfileRequestedEvent({this.name, this.phone, this.profileImage});
+  const UpdateProfileRequestedEvent({
+    this.name,
+    this.phone,
+    this.location,
+    this.profileImage,
+  });
 
   @override
-  List<Object> get props => [name ?? '', phone ?? '', profileImage ?? ''];
+  List<Object> get props => [
+    name ?? '',
+    phone ?? '',
+    location ?? '',
+    profileImage ?? '',
+  ];
 }
 
 class ChangePasswordRequestedEvent extends AuthEvent {

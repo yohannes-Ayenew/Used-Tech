@@ -197,10 +197,10 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final response = await remoteDataSource.getUserProfile();
       final user = UserModel.fromJson(response);
-      
+
       // CRITICAL: Update the local cache with new data (Approved Status)
       await localDataSource.cacheUser(user);
-      
+
       return Right(user);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -211,19 +211,21 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, UserEntity>> updateProfile({
     String? name,
     String? phone,
+    String? location,
     XFile? profileImage,
   }) async {
     try {
       final response = await remoteDataSource.updateProfile(
         name: name,
         phone: phone,
+        location: location,
         profileImage: profileImage,
       );
       final user = UserModel.fromJson(response);
-      
+
       // Update local cache
       await localDataSource.cacheUser(user);
-      
+
       return Right(user);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -266,7 +268,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final currentUser = await localDataSource.getCachedUser();
       if (currentUser != null) {
         final updatedUser = currentUser.copyWith(kycStatus: KycStatus.pending);
-        await localDataSource.cacheUser(updatedUser as UserModel);
+        await localDataSource.cacheUser(updatedUser);
       }
 
       return const Right(null);
@@ -279,7 +281,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, void>> logout() async {
     try {
       await localDataSource.logout();
-      await remoteDataSource.logout();  
+      await remoteDataSource.logout();
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(e.toString()));

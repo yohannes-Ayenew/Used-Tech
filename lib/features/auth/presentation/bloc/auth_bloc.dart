@@ -351,6 +351,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await authRepository.updateProfile(
       name: event.name,
       phone: event.phone,
+      location: event.location,
       profileImage: event.profileImage,
     );
 
