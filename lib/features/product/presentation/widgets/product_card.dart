@@ -8,10 +8,12 @@ import '../pages/product_detail_page.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductEntity product;
+  final bool isSold;
 
   const ProductCard({
     super.key,
     required this.product,
+    this.isSold = false,
   });
 
   Color _getConditionColor(BuildContext context, String condition) {
@@ -58,23 +60,52 @@ class ProductCard extends StatelessWidget {
             // Image with fixed aspect ratio
             AspectRatio(
               aspectRatio: 1,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                child: Image.network(
-                  ApiEndpoints.resolveImageUrl(product.coverImage),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: context.lightGrey,
-                      child: Icon(
-                        Icons.image_not_supported,
-                        color: context.greyText,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
                       ),
-                    );
-                  },
-                ),
+                      child: Image.network(
+                        ApiEndpoints.resolveImageUrl(product.coverImage),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: context.lightGrey,
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: context.greyText,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  if (isSold)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "Sold",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 
