@@ -295,7 +295,7 @@ class _HomePageState extends State<HomePage> {
 
                 // Trending Products Horizontal List
                 SizedBox(
-                  height: 250,
+                  height: 280,
                   child: BlocBuilder<ProductBloc, ProductState>(
                     builder: (context, state) {
                       if (state is ProductLoading) {
@@ -353,7 +353,7 @@ class _HomePageState extends State<HomePage> {
 
                 // Recently Sold Horizontal List
                 SizedBox(
-                  height: 250,
+                  height: 280,
                   child: BlocBuilder<ProductBloc, ProductState>(
                     builder: (context, state) {
                       if (state is ProductsLoaded) {
