@@ -151,7 +151,7 @@ class _HomePageState extends State<HomePage> {
 
                 // Categories
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildCategoryItem(context, Icons.phone_android, "Phones"),
                     _buildCategoryItem(context, Icons.laptop, "Laptops"),
@@ -160,7 +160,6 @@ class _HomePageState extends State<HomePage> {
                       Icons.tablet_android,
                       "Tablets",
                     ),
-                    _buildCategoryItem(context, Icons.gamepad, "Consoles"),
                   ],
                 ),
                 const SizedBox(height: 25),
@@ -239,55 +238,157 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 25),
 
-                // Fresh Recommendations Header
+                // Trending Near You Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      "Fresh Recommendations",
-                      style: context.textTheme.titleLarge,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Trending Near You",
+                          style: context.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            final location = (state is AuthSuccess)
+                                ? (state.user.location ?? "Addis Ababa")
+                                : "Addis Ababa";
+                            return Text(
+                              "Most viewed devices in $location",
+                              style: context.textTheme.bodySmall?.copyWith(
+                                color: context.greyText,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    Icon(Icons.tune, color: context.greyText),
+                    InkWell(
+                      onTap: () {
+                        // TODO: Navigate to All Products or Trending
+                      },
+                      child: Row(
+                        children: [
+                          Text(
+                            "See All",
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.greyText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: context.greyText,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 15),
 
-                // Product Grid (Connected to Bloc)
-                BlocBuilder<ProductBloc, ProductState>(
-                  builder: (context, state) {
-                    if (state is ProductLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (state is ProductError) {
-                      return Center(child: Text('Error: ${state.message}'));
-                    } else if (state is ProductsLoaded) {
-                      if (state.products.isEmpty) {
-                        return const Center(child: Text("No products found"));
-                      }
+                // Trending Products Horizontal List
+                SizedBox(
+                  height: 250,
+                  child: BlocBuilder<ProductBloc, ProductState>(
+                    builder: (context, state) {
+                      if (state is ProductLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (state is ProductError) {
+                        return Center(child: Text('Error: ${state.message}'));
+                      } else if (state is ProductsLoaded) {
+                        if (state.products.isEmpty) {
+                          return const Center(child: Text("No products found"));
+                        }
 
-                      return GridView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: state.products.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 220,
-                              childAspectRatio: 0.55,
-                              crossAxisSpacing: 15,
-                              mainAxisSpacing: 15,
-                            ),
-                        itemBuilder: (context, index) {
-                          final product = state.products[index];
-                          return ProductCard(
-                            product: product,
-                          );
-                        },
-                      );
-                    }
-                    return const SizedBox();
+                        return ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: state.products.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 15),
+                          itemBuilder: (context, index) {
+                            final product = state.products[index];
+                            return SizedBox(
+                              width: 160,
+                              child: ProductCard(
+                                product: product,
+                              ),
+                            );
+                          },
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Recently Sold Header
+                BlocBuilder<AuthBloc, AuthState>(
+                  builder: (context, state) {
+                    final location = (state is AuthSuccess)
+                        ? (state.user.location ?? "Addis Ababa")
+                        : "Addis Ababa";
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Recently Sold in $location",
+                          style: context.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    );
                   },
                 ),
+                const SizedBox(height: 15),
+
+                // Recently Sold Horizontal List
+                SizedBox(
+                  height: 250,
+                  child: BlocBuilder<ProductBloc, ProductState>(
+                    builder: (context, state) {
+                      if (state is ProductsLoaded) {
+                        // For demo purposes, we'll just show the same products but marked as sold
+                        // In a real app, this would be a separate BLoC event/state
+                        final soldProducts =
+                            state.products.reversed.take(5).toList();
+                        if (soldProducts.isEmpty) {
+                          return const Center(child: Text("No sold products"));
+                        }
+
+                        return ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: soldProducts.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 15),
+                          itemBuilder: (context, index) {
+                            final product = soldProducts[index];
+                            return SizedBox(
+                              width: 160,
+                              child: ProductCard(
+                                product: product,
+                                isSold: true,
+                              ),
+                            );
+                          },
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+
                 // Extra space at bottom
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
               ],
             ),
           ),
