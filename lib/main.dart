@@ -20,6 +20,7 @@ import 'features/auth/presentation/pages/reset_password_page.dart';
 import 'features/profile/presentation/pages/settings_page.dart';
 import 'features/sell/presentation/pages/sell_page.dart';
 import 'features/sell/presentation/pages/success_page.dart';
+import 'features/product/presentation/pages/collections_page.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
@@ -129,6 +130,7 @@ class MyApp extends StatelessWidget {
               },
               '/settings': (context) => const SettingsPage(),
               '/success': (context) => const SuccessPage(),
+              '/collections': (context) => const CollectionsPage(),
             },
             onGenerateRoute: (settings) {
               if (settings.name == '/email-verification' &&

@@ -35,11 +35,13 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<Either<Failure, List<ProductEntity>>> getProducts({
     String? category,
     String? searchQuery,
+    String? location,
   }) async {
     try {
       final products = await remoteDataSource.getProducts(
         category: category,
         search: searchQuery,
+        location: location,
       );
       return Right(products);
     } on ServerException catch (e) {

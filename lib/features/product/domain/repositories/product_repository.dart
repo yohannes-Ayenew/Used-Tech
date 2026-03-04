@@ -14,5 +14,6 @@ abstract class ProductRepository {
   Future<Either<Failure, List<ProductEntity>>> getProducts({
     String? category,
     String? searchQuery,
+    String? location,
   });
 }

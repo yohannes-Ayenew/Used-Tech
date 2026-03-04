@@ -15,11 +15,12 @@ abstract class ProductEvent extends Equatable {
 class GetProductsEvent extends ProductEvent {
   final String? category;
   final String? searchQuery;
+  final String? location;
 
-  const GetProductsEvent({this.category, this.searchQuery});
+  const GetProductsEvent({this.category, this.searchQuery, this.location});
 
   @override
-  List<Object> get props => [category ?? '', searchQuery ?? ''];
+  List<Object> get props => [category ?? '', searchQuery ?? '', location ?? ''];
 }
 
 // --- STATES ---
@@ -66,6 +67,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     final result = await productRepository.getProducts(
       category: event.category,
       searchQuery: event.searchQuery,
+      location: event.location,
     );
 
     result.fold(

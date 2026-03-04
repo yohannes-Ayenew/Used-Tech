@@ -15,7 +15,11 @@ abstract class ProductRemoteDataSource {
     required List<File> images,
   });
 
-  Future<List<ProductModel>> getProducts({String? category, String? search});
+  Future<List<ProductModel>> getProducts({
+    String? category,
+    String? search,
+    String? location,
+  });
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -79,12 +83,16 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   Future<List<ProductModel>> getProducts({
     String? category,
     String? search,
+    String? location,
   }) async {
     try {
       // Build Query
       String query = '';
       if (category != null) query += '?category=$category';
       if (search != null) query += '${query.isEmpty ? '?' : '&'}search=$search';
+      if (location != null) {
+        query += '${query.isEmpty ? '?' : '&'}location=$location';
+      }
 
       final uri = Uri.parse('${ApiEndpoints.getProducts}$query');
 
