@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/utils/auth_guard.dart';
 import '../../core/theme/theme_extensions.dart';
 import '../../features/product/presentation/pages/home_page.dart';
-import '../../features/product/presentation/pages/search_page.dart';
+import '../../features/product/presentation/pages/collections_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/profile/presentation/pages/authenticated_profile_page.dart';
 import '../../features/sell/presentation/pages/sell_page.dart';
@@ -88,7 +88,7 @@ class _BottomBarState extends State<BottomBar> {
               children: [
                 const HomePage(),
 
-                const SearchPage(),
+                const CollectionsPage(),
 
                 BlocProvider(
                   create: (_) => di.sl<SellBloc>(),
@@ -129,8 +129,8 @@ class _BottomBarState extends State<BottomBar> {
                   label: 'Home',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.search_outlined),
-                  label: 'Search',
+                  icon: Icon(Icons.collections_bookmark_outlined),
+                  label: 'Collections',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.add_circle_outline),

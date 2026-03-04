@@ -51,5 +51,6 @@ abstract class AuthRepository {
     required XFile faceImage,
   });
 
+  Future<void> updateLocalUser(UserEntity user);
   Future<Either<Failure, void>> logout();
 }

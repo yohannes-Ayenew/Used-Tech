@@ -50,6 +50,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ChangePasswordRequestedEvent>(_onChangePasswordRequested);
     on<RequestVerificationEvent>(_onRequestVerification);
     on<UpdateProfileRequestedEvent>(_onUpdateProfile);
+    on<UpdateLocalLocationEvent>(_onUpdateLocalLocation);
   }
 
   bool? get mounted => null;
@@ -367,5 +368,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthSuccess(user, token: user.token));
       },
     );
+  }
+
+  Future<void> _onUpdateLocalLocation(
+    UpdateLocalLocationEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state is AuthSuccess) {
+      final currentState = state as AuthSuccess;
+      final updatedUser = currentState.user.copyWith(location: event.location);
+
+      // Update local cache
+      await authRepository.updateLocalUser(updatedUser);
+
+      // Emit new state
+      emit(AuthSuccess(updatedUser, token: currentState.token));
+    }
   }
 }

@@ -124,4 +124,12 @@ class RequestVerificationEvent extends AuthEvent {
   List<Object> get props => [frontImage, backImage, faceImage];
 }
 
+class UpdateLocalLocationEvent extends AuthEvent {
+  final String location;
+  const UpdateLocalLocationEvent({required this.location});
+
+  @override
+  List<Object> get props => [location];
+}
+
 class GetUserProfileEvent extends AuthEvent {}

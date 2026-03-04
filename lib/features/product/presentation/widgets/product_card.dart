@@ -47,7 +47,7 @@ class ProductCard extends StatelessWidget {
           border: Border.all(color: context.borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withAlpha(13),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -92,7 +92,7 @@ class ProductCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
+                          color: Colors.black.withAlpha(153),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -146,7 +146,7 @@ class ProductCard extends StatelessWidget {
                       color: _getConditionColor(
                         context,
                         product.condition.displayName,
-                      ).withValues(alpha: 0.1),
+                      ).withAlpha(25),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(

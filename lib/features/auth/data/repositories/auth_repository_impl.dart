@@ -278,6 +278,30 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> updateLocalUser(UserEntity user) async {
+    // Cast to UserModel to use cacheUser
+    final userModel = UserModel(
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      token: user.token,
+      isEmailVerified: user.isEmailVerified,
+      walletBalance: user.walletBalance,
+      isActive: user.isActive,
+      location: user.location,
+      lastLoginAt: user.lastLoginAt,
+      kycStatus: user.kycStatus,
+      kycIdImage: user.kycIdImage,
+      kycSubmittedAt: user.kycSubmittedAt,
+      kycReviewedAt: user.kycReviewedAt,
+      kycRejectionReason: user.kycRejectionReason,
+    );
+    await localDataSource.cacheUser(userModel);
+  }
+
+  @override
   Future<Either<Failure, void>> logout() async {
     try {
       await localDataSource.logout();

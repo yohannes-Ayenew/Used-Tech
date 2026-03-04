@@ -66,6 +66,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       'kycSubmittedAt': user.kycSubmittedAt?.toIso8601String(),
       'kycReviewedAt': user.kycReviewedAt?.toIso8601String(),
       'kycRejectionReason': user.kycRejectionReason,
+      'location': user.location,
     });
 
     await sharedPreferences.setString(CACHED_USER, userJson);
@@ -102,6 +103,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
             ? DateTime.parse(userMap['kycReviewedAt'])
             : null,
         kycRejectionReason: userMap['kycRejectionReason'],
+        location: userMap['location'],
       );
       return _userCache;
     } catch (e) {
