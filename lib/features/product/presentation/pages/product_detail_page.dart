@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/favorites_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/favorites_event.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/favorites_state.dart';
 import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
@@ -87,9 +90,27 @@ class ProductDetailPage extends StatelessWidget {
                       right: 16,
                       child: Row(
                         children: [
-                          _buildCircleBtn(context, Icons.favorite_border, () {
-                            _handleAction(context, "Add to favorites");
-                          }),
+                          BlocBuilder<FavoritesBloc, FavoritesState>(
+                            builder: (context, state) {
+                              bool isFavorite = false;
+                              if (state is FavoritesLoaded) {
+                                isFavorite = state.products
+                                    .any((p) => p.id == product.id);
+                              }
+                              return _buildCircleBtn(
+                                context,
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                () {
+                                  context
+                                      .read<FavoritesBloc>()
+                                      .add(ToggleFavorite(product));
+                                },
+                                iconColor: isFavorite ? Colors.red : null,
+                              );
+                            },
+                          ),
                           const SizedBox(width: 10),
                           _buildCircleBtn(context, Icons.share, () {
                             _handleAction(context, "Share");
@@ -569,14 +590,15 @@ class ProductDetailPage extends StatelessWidget {
   Widget _buildCircleBtn(
     BuildContext context,
     IconData icon,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    Color? iconColor,
+  }) {
     return InkWell(
       onTap: onTap,
       child: CircleAvatar(
         radius: 18,
         backgroundColor: context.cardBackground.withValues(alpha: 0.9),
-        child: Icon(icon, color: context.darkText, size: 20),
+        child: Icon(icon, color: iconColor ?? context.darkText, size: 20),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:used_tech_client/features/auth/data/repositories/auth_repository
 import 'package:used_tech_client/features/auth/domain/repositories/auth_repository.dart';
 import 'package:used_tech_client/features/product/data/datasources/product_remote_data_source.dart';
 import 'package:used_tech_client/features/sell/presentation/bloc/sell_bloc.dart';
+import 'package:used_tech_client/features/sell/data/datasources/sell_remote_data_source.dart';
 
 // Use Cases
 import 'package:used_tech_client/features/auth/domain/usecases/login_user.dart';
@@ -26,6 +27,7 @@ import 'package:used_tech_client/features/auth/domain/usecases/request_verificat
 import 'package:used_tech_client/features/auth/domain/usecases/get_user_profile.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/favorites_bloc.dart';
 
 // Product Feature Imports
 import 'package:used_tech_client/features/product/data/repositories/product_repository_impl.dart';
@@ -100,4 +102,5 @@ Future<void> init() async {
 
   // Product Bloc
   sl.registerFactory(() => ProductBloc(productRepository: sl()));
+  sl.registerFactory(() => FavoritesBloc());
 }

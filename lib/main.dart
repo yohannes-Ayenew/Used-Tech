@@ -11,6 +11,8 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
 import 'features/product/presentation/bloc/product_bloc.dart';
+import 'features/product/presentation/bloc/favorites_bloc.dart';
+import 'features/product/presentation/bloc/favorites_event.dart';
 import 'features/sell/presentation/bloc/sell_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/signup_page.dart';
@@ -21,6 +23,7 @@ import 'features/profile/presentation/pages/settings_page.dart';
 import 'features/sell/presentation/pages/sell_page.dart';
 import 'features/sell/presentation/pages/success_page.dart';
 import 'features/product/presentation/pages/collections_page.dart';
+import 'features/product/presentation/pages/favorites_page.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
@@ -61,6 +64,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => di.sl<AuthBloc>()..add(AppStartedEvent())),
         BlocProvider(create: (_) => di.sl<ProductBloc>()),
+        BlocProvider(create: (_) => di.sl<FavoritesBloc>()..add(LoadFavorites())),
         BlocProvider(create: (_) => di.sl<SellBloc>()),
         BlocProvider(create: (_) => ThemeCubit()),
       ],
@@ -131,6 +135,7 @@ class MyApp extends StatelessWidget {
               '/settings': (context) => const SettingsPage(),
               '/success': (context) => const SuccessPage(),
               '/collections': (context) => const CollectionsPage(),
+              '/favorites': (context) => const FavoritesPage(),
             },
             onGenerateRoute: (settings) {
               if (settings.name == '/email-verification' &&

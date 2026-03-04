@@ -5,8 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:used_tech_client/features/auth/presentation/bloc/auth_event.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'product_detail_page.dart';
 import '../widgets/product_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,103 +20,173 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final List<String> _subCities = [
+    'Addis Ketema',
+    'Akaky Kaliti',
+    'Arada',
+    'Bole',
+    'Gullele',
+    'Kirkos',
+    'Kolfe Keranio',
+    'Lideta',
+    'Nifas Silk-Lafto',
+    'Yeka',
+  ];
+
   @override
   void initState() {
     super.initState();
     // Fetch products when Home Page loads
-    context.read<ProductBloc>().add(const GetProductsEvent());
+    final authState = context.read<AuthBloc>().state;
+    String? location;
+    if (authState is AuthSuccess) {
+      location = authState.user.location;
+    }
+    context.read<ProductBloc>().add(GetProductsEvent(location: location));
   }
 
-  String _getInitials(String name) {
-    if (name.isEmpty) return "U";
-    final parts = name.split(' ');
-    if (parts.length > 1) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name[0].toUpperCase();
+  void _showLocationPicker(BuildContext context, String currentCity) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(color: context.cardBackground),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Select Sub-city",
+                style: context.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 15),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _subCities.length,
+                  itemBuilder: (context, index) {
+                    final city = _subCities[index];
+                    final isSelected = city == currentCity;
+                    return ListTile(
+                      title: Text(
+                        city,
+                        style: context.textTheme.bodyLarge?.copyWith(
+                          color: isSelected ? context.primaryColor : null,
+                          fontWeight: isSelected ? FontWeight.bold : null,
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? Icon(Icons.check_circle, color: context.primaryColor)
+                          : null,
+                      onTap: () {
+                        // 1. Update local location in AuthBloc
+                        context.read<AuthBloc>().add(
+                              UpdateLocalLocationEvent(location: city),
+                            );
+                        
+                        // 2. Refresh products for this location
+                        context.read<ProductBloc>().add(
+                              GetProductsEvent(location: city),
+                            );
+
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(Icons.location_on_outlined, size: 20, color: context.greyText),
-            const SizedBox(width: 5),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Delivering to", style: context.textTheme.bodySmall),
-                BlocBuilder<AuthBloc, AuthState>(
-                  builder: (context, state) {
-                    final location = (state is AuthSuccess)
-                        ? (state.user.location ?? "Addis Ababa")
-                        : "Addis Ababa";
-                    return Text(
-                      location,
-                      style: context.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
+        title: GestureDetector(
+          onTap: () {
+            final authState = context.read<AuthBloc>().state;
+            final currentLocation = (authState is AuthSuccess)
+                ? (authState.user.location ?? "Addis Ababa")
+                : "Addis Ababa";
+            _showLocationPicker(context, currentLocation);
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              Icon(Icons.location_on_outlined, size: 20, color: context.greyText),
+              const SizedBox(width: 5),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Delivering to", style: context.textTheme.bodySmall),
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      final location = (state is AuthSuccess)
+                          ? (state.user.location ?? "Addis Ababa")
+                          : "Addis Ababa";
+                      return Row(
+                        children: [
+                          Text(
+                            location,
+                            style: context.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 16,
+                            color: context.primaryColor,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
-          BlocBuilder<AuthBloc, AuthState>(
-            builder: (context, state) {
-              if (state is AuthSuccess) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: context.primaryColor.withValues(alpha: 0.1),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _getInitials(state.user.name),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: context.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              } else {
-                return TextButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const AuthBottomSheet(),
-                    );
-                  },
-                  child: Text(
-                    "Sign In",
-                    style: TextStyle(
-                      color: context.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                );
-              }
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/favorites');
             },
+            icon: Icon(
+              Icons.favorite_border,
+              color: context.greyText,
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              // TODO: Navigate to Notifications
+            },
+            icon: Icon(
+              Icons.notifications_none_outlined,
+              color: context.greyText,
+            ),
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          context.read<ProductBloc>().add(const GetProductsEvent());
+          final authState = context.read<AuthBloc>().state;
+          String? location;
+          if (authState is AuthSuccess) {
+            location = authState.user.location;
+          }
+          context.read<ProductBloc>().add(GetProductsEvent(location: location));
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -122,12 +195,12 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Search Bar
+                // Collections Search Bar
                 GestureDetector(
                   onTap: () => Navigator.pushNamed(
                     context,
-                    '/search',
-                  ), // Make sure this route exists in main.dart or use push
+                    '/collections',
+                  ),
                   child: Container(
                     height: 45,
                     decoration: BoxDecoration(
@@ -140,7 +213,7 @@ class _HomePageState extends State<HomePage> {
                         Icon(Icons.search, color: context.greyText),
                         const SizedBox(width: 8),
                         Text(
-                          "Search iPhone, Mac...",
+                          "Explore Collections...",
                           style: context.textTheme.bodyMedium,
                         ),
                       ],
@@ -153,88 +226,153 @@ class _HomePageState extends State<HomePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildCategoryItem(context, Icons.phone_android, "Phones"),
-                    _buildCategoryItem(context, Icons.laptop, "Laptops"),
+                    _buildCategoryItem(
+                      context,
+                      Icons.phone_android,
+                      "Phones",
+                      () => Navigator.pushNamed(
+                        context,
+                        '/collections',
+                        arguments: {'category': 'mobile'},
+                      ),
+                    ),
+                    _buildCategoryItem(
+                      context,
+                      Icons.laptop,
+                      "Laptops",
+                      () => Navigator.pushNamed(
+                        context,
+                        '/collections',
+                        arguments: {'category': 'laptop'},
+                      ),
+                    ),
                     _buildCategoryItem(
                       context,
                       Icons.tablet_android,
                       "Tablets",
+                      () => Navigator.pushNamed(
+                        context,
+                        '/collections',
+                        arguments: {'category': 'tablet'},
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 25),
 
                 // Hero Banner
-                Container(
-                  width: double.infinity,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        context.secondaryColor,
-                        context.secondaryColor.withValues(alpha: 0.8),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 20,
-                        top: 30,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                BlocBuilder<ProductBloc, ProductState>(
+                  builder: (context, state) {
+                    ProductEntity? matchingProduct;
+                    if (state is ProductsLoaded) {
+                      try {
+                        matchingProduct = state.products.firstWhere(
+                          (p) =>
+                              p.title.toLowerCase().contains('iphone 13') ||
+                              (p.brand.toLowerCase() == 'apple' &&
+                                  p.model.toLowerCase().contains('13')),
+                        );
+                      } catch (_) {
+                        matchingProduct = null;
+                      }
+                    }
+
+                    return InkWell(
+                      onTap: () {
+                        if (matchingProduct != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ProductDetailPage(product: matchingProduct!),
+                            ),
+                          );
+                        } else {
+                          Navigator.pushNamed(
+                            context,
+                            '/collections',
+                            arguments: {'searchQuery': 'Apple iPhone 13'},
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        width: double.infinity,
+                        height: 160,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              context.secondaryColor,
+                              context.secondaryColor.withAlpha(204),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Stack(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                "DEAL OF THE DAY",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              "iPhone 13 Pro",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Text(
-                              "Refurbished - 10% Off",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              "50,000 ETB",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
+                            Positioned(
+                              left: 20,
+                              top: 30,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withAlpha(76),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      "DEAL OF THE DAY",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    matchingProduct?.title ?? "iPhone 13 Pro",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    matchingProduct != null
+                                        ? "${matchingProduct.condition.displayName} - Limited Deal"
+                                        : "Refurbished - 10% Off",
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    matchingProduct != null
+                                        ? "${matchingProduct.formattedPrice} ETB"
+                                        : "50,000 ETB",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 25),
 
@@ -397,22 +535,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCategoryItem(BuildContext context, IconData icon, String label) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 28,
-          backgroundColor: context.primaryColor.withValues(alpha: 0.1),
-          child: Icon(icon, color: context.primaryColor),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: context.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+  Widget _buildCategoryItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: context.primaryColor.withAlpha(25),
+            child: Icon(icon, color: context.primaryColor),
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: context.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
