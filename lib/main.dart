@@ -134,7 +134,10 @@ class MyApp extends StatelessWidget {
               },
               '/settings': (context) => const SettingsPage(),
               '/success': (context) => const SuccessPage(),
-              '/collections': (context) => const CollectionsPage(),
+              '/collections': (context) => BlocProvider(
+                create: (context) => di.sl<ProductBloc>(),
+                child: const CollectionsPage(),
+              ),
               '/favorites': (context) => const FavoritesPage(),
             },
             onGenerateRoute: (settings) {

@@ -10,6 +10,7 @@ class ProductModel extends ProductEntity {
     required super.isSellerVerified,
     super.sellerPhone,
     super.sellerLocation,
+    super.sellerProfileImage,
     required super.category,
     required super.brand,
     required super.model,
@@ -42,6 +43,7 @@ class ProductModel extends ProductEntity {
         : false;
     final sellerPhone = (seller is Map) ? seller['phone'] : null;
     final sellerLocation = (seller is Map) ? seller['location'] : null;
+    final sellerProfileImage = (seller is Map) ? seller['profileImage'] : null;
 
     // Helper to map category string to Enum
     ProductCategory parseCategory(String? cat) {
@@ -82,6 +84,7 @@ class ProductModel extends ProductEntity {
       isSellerVerified: isSellerVerified,
       sellerPhone: sellerPhone,
       sellerLocation: sellerLocation,
+      sellerProfileImage: sellerProfileImage,
       category: parseCategory(json['category']),
       brand: json['brand'] ?? '',
       model: json['model'] ?? '',

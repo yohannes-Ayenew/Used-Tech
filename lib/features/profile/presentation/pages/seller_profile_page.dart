@@ -9,6 +9,8 @@ import 'package:used_tech_client/injection_container.dart';
 import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/core/constants/api_endpoints.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../common/widgets/error_display.dart';
 import '../../../product/presentation/widgets/product_card.dart';
 
@@ -16,6 +18,7 @@ class SellerProfilePage extends StatefulWidget {
   final String sellerId;
   final String sellerName;
   final bool isVerified;
+  final String? sellerProfileImage;
   // In a real app, these would come from the API payload
   // For now, we mock them to match the design perfectly
   final String joinDateMock = "Jan 2023";
@@ -28,6 +31,7 @@ class SellerProfilePage extends StatefulWidget {
     required this.sellerId,
     required this.sellerName,
     this.isVerified = false,
+    this.sellerProfileImage,
   });
 
   @override
@@ -153,17 +157,38 @@ class _SellerProfilePageState extends State<SellerProfilePage>
           children: [
             CircleAvatar(
               radius: 40,
-              backgroundColor: context.primaryColor,
-              child: Text(
-                widget.sellerName.isNotEmpty
-                    ? widget.sellerName.substring(0, 2).toUpperCase()
-                    : "U",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              backgroundColor: context.primaryColor.withValues(alpha: 0.1),
+              child: widget.sellerProfileImage != null
+                  ? ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${widget.sellerProfileImage}",
+                        fit: BoxFit.cover,
+                        width: 80,
+                        height: 80,
+                        placeholder: (context, url) =>
+                            const CircularProgressIndicator(),
+                        errorWidget: (context, url, error) => Text(
+                          widget.sellerName.isNotEmpty
+                              ? widget.sellerName.substring(0, 2).toUpperCase()
+                              : "U",
+                          style: TextStyle(
+                            color: context.primaryColor,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Text(
+                      widget.sellerName.isNotEmpty
+                          ? widget.sellerName.substring(0, 2).toUpperCase()
+                          : "U",
+                      style: TextStyle(
+                        color: context.primaryColor,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
             if (widget.isVerified)
               Positioned(

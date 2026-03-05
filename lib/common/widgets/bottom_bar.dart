@@ -13,6 +13,7 @@ import '../../features/inbox/presentation/pages/inbox_page.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/sell/presentation/bloc/sell_bloc.dart';
+import '../../features/product/presentation/bloc/product_bloc.dart';
 import '../../injection_container.dart' as di;
 
 class BottomBar extends StatefulWidget {
@@ -88,7 +89,10 @@ class _BottomBarState extends State<BottomBar> {
               children: [
                 const HomePage(),
 
-                const CollectionsPage(),
+                BlocProvider(
+                  create: (_) => di.sl<ProductBloc>(),
+                  child: const CollectionsPage(),
+                ),
 
                 BlocProvider(
                   create: (_) => di.sl<SellBloc>(),

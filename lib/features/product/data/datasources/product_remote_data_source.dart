@@ -19,6 +19,7 @@ abstract class ProductRemoteDataSource {
     String? category,
     String? search,
     String? location,
+    String? sellerId,
   });
 }
 
@@ -84,6 +85,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     String? category,
     String? search,
     String? location,
+    String? sellerId,
   }) async {
     try {
       // Build Query
@@ -92,6 +94,9 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       if (search != null) query += '${query.isEmpty ? '?' : '&'}search=$search';
       if (location != null) {
         query += '${query.isEmpty ? '?' : '&'}location=$location';
+      }
+      if (sellerId != null) {
+        query += '${query.isEmpty ? '?' : '&'}sellerId=$sellerId';
       }
 
       final uri = Uri.parse('${ApiEndpoints.getProducts}$query');

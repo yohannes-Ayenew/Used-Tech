@@ -10,8 +10,6 @@ import 'package:used_tech_client/features/auth/data/repositories/auth_repository
 import 'package:used_tech_client/features/auth/domain/repositories/auth_repository.dart';
 import 'package:used_tech_client/features/product/data/datasources/product_remote_data_source.dart';
 import 'package:used_tech_client/features/sell/presentation/bloc/sell_bloc.dart';
-import 'package:used_tech_client/features/sell/data/datasources/sell_remote_data_source.dart';
-
 // Use Cases
 import 'package:used_tech_client/features/auth/domain/usecases/login_user.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/signin_with_google.dart';
