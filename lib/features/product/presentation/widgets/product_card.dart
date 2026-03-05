@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import '../pages/product_detail_page.dart';
@@ -67,10 +68,20 @@ class ProductCard extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(12),
                       ),
-                      child: Image.network(
-                        ApiEndpoints.resolveImageUrl(product.coverImage),
+                      child: CachedNetworkImage(
+                        imageUrl: ApiEndpoints.resolveImageUrl(product.coverImage),
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        placeholder: (context, url) => Container(
+                          color: context.lightGrey,
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) {
                           return Container(
                             color: context.lightGrey,
                             child: Icon(

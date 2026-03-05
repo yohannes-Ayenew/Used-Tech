@@ -76,6 +76,7 @@ class ProductEntity extends Equatable {
   final bool isSellerVerified;
   final String? sellerPhone;
   final String? sellerLocation;
+  final String? sellerProfileImage;
   final ProductCategory category;
   final String brand;
   final String model;
@@ -102,6 +103,7 @@ class ProductEntity extends Equatable {
     required this.isSellerVerified,
     this.sellerPhone,
     this.sellerLocation,
+    this.sellerProfileImage,
     required this.category,
     required this.brand,
     required this.model,
@@ -144,6 +146,7 @@ class ProductEntity extends Equatable {
     isSellerVerified,
     sellerPhone,
     sellerLocation,
+    sellerProfileImage,
     category,
     brand,
     model,

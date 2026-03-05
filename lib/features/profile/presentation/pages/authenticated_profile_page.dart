@@ -8,6 +8,7 @@ import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart'
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_event.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
 import 'package:used_tech_client/features/profile/presentation/widgets/verification_badge.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'verification_page.dart';
 import 'settings_page.dart';
 
@@ -133,11 +134,13 @@ class AuthenticatedProfilePage extends StatelessWidget {
                             ),
                             child: user.profileImage != null
                                 ? ClipOval(
-                                    child: Image.network(
-                                      "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${user.profileImage}",
+                                    child: CachedNetworkImage(
+                                      imageUrl: "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${user.profileImage}",
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Center(
+                                      width: 70,
+                                      height: 70,
+                                      placeholder: (context, url) => const CircularProgressIndicator(),
+                                      errorWidget: (context, url, error) => Center(
                                         child: Text(
                                           initials,
                                           style: TextStyle(

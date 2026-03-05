@@ -6,6 +6,7 @@ import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
 import '../widgets/product_card.dart';
+import '../../../../common/widgets/error_display.dart';
 
 class CollectionsPage extends StatefulWidget {
   const CollectionsPage({super.key});
@@ -155,7 +156,11 @@ class _CollectionsPageState extends State<CollectionsPage>
           if (state is ProductLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is ProductError) {
-            return Center(child: Text(state.message));
+            return ErrorDisplay(
+              onRetry: () {
+                context.read<ProductBloc>().add(const GetProductsEvent());
+              },
+            );
           } else if (state is ProductsLoaded) {
             final query = _searchController.text.toLowerCase();
 

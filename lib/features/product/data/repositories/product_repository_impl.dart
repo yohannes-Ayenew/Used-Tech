@@ -10,6 +10,9 @@ import '../datasources/product_remote_data_source.dart';
 
 class ProductRepositoryImpl implements ProductRepository {
   final ProductRemoteDataSource remoteDataSource;
+  
+  // 🚀 Simple In-Memory Cache
+  static final Map<String, List<ProductEntity>> _cache = {};
 
   ProductRepositoryImpl({required this.remoteDataSource});
 
@@ -36,17 +39,33 @@ class ProductRepositoryImpl implements ProductRepository {
     String? category,
     String? searchQuery,
     String? location,
+    String? sellerId,
   }) async {
+    final cacheKey = "${category ?? 'all'}_${searchQuery ?? 'none'}_${location ?? 'any'}_${sellerId ?? 'any'}";
+
+    // 💡 Optional: Return cached data immediately if available (Fast UI)
+    // For now, we fetch fresh but we can evolve this to "Cache then Refresh"
+    
     try {
       final products = await remoteDataSource.getProducts(
         category: category,
         search: searchQuery,
         location: location,
+        sellerId: sellerId,
       );
+      
+      _cache[cacheKey] = products; // Update cache
       return Right(products);
     } on ServerException catch (e) {
+      // If network fails, try to return from cache instead of erroring
+      if (_cache.containsKey(cacheKey)) {
+        return Right(_cache[cacheKey]!);
+      }
       return Left(ServerFailure(e.message));
     } catch (e) {
+      if (_cache.containsKey(cacheKey)) {
+        return Right(_cache[cacheKey]!);
+      }
       return Left(ServerFailure(e.toString()));
     }
   }

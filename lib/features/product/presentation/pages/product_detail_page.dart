@@ -12,6 +12,11 @@ import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart
 import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import '../widgets/product_card.dart';
+import '../../domain/repositories/product_repository.dart';
+import '../bloc/product_bloc.dart';
+import '../../../../common/widgets/error_display.dart';
+import '../../../../injection_container.dart';
+import '../../../profile/presentation/pages/seller_profile_page.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final ProductEntity product;
@@ -293,8 +298,19 @@ class ProductDetailPage extends StatelessWidget {
                                 ),
                                 const Spacer(),
                                 TextButton(
-                                  onPressed: () =>
-                                      _handleAction(context, "View Profile"),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => SellerProfilePage(
+                                          sellerId: product.sellerId,
+                                          sellerName: product.sellerName,
+                                          isVerified: product.isSellerVerified,
+                                          sellerProfileImage: product.sellerProfileImage,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                   child: Text(
                                     "View Profile",
                                     style: TextStyle(
@@ -464,21 +480,63 @@ class ProductDetailPage extends StatelessWidget {
                         style: context.textTheme.titleLarge,
                       ),
                       const SizedBox(height: 10),
-                      SizedBox(
-                        height: 240,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: 3,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 12.0),
-                              child: SizedBox(
-                                width: 160,
-                                child: ProductCard(
-                                  product: product, // In a real app, this would be a similar product entity
+                      const SizedBox(height: 10),
+                      BlocProvider(
+                        create: (context) => ProductBloc(
+                          productRepository: sl<ProductRepository>(),
+                        )..add(GetProductsEvent(location: product.location)),
+                        child: BlocBuilder<ProductBloc, ProductState>(
+                          builder: (context, state) {
+                            if (state is ProductLoading) {
+                              return const SizedBox(
+                                height: 280,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
                                 ),
-                              ),
-                            );
+                              );
+                            } else if (state is ProductError) {
+                              return SizedBox(
+                                height: 180,
+                                child: ErrorDisplay(
+                                  isCompact: true,
+                                  onRetry: () {
+                                    context.read<ProductBloc>().add(
+                                          GetProductsEvent(
+                                            location: product.location,
+                                          ),
+                                        );
+                                  },
+                                ),
+                              );
+                            } else if (state is ProductsLoaded) {
+                              final similarProducts = state.products
+                                  .where((p) => p.id != product.id)
+                                  .toList();
+
+                              if (similarProducts.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+
+                              return SizedBox(
+                                height: 280,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: similarProducts.length,
+                                  itemBuilder: (context, index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 12.0),
+                                      child: SizedBox(
+                                        width: 170,
+                                        child: ProductCard(
+                                          product: similarProducts[index],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
                           },
                         ),
                       ),

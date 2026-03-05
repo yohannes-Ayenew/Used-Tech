@@ -16,11 +16,22 @@ class GetProductsEvent extends ProductEvent {
   final String? category;
   final String? searchQuery;
   final String? location;
+  final String? sellerId;
 
-  const GetProductsEvent({this.category, this.searchQuery, this.location});
+  const GetProductsEvent({
+    this.category,
+    this.searchQuery,
+    this.location,
+    this.sellerId,
+  });
 
   @override
-  List<Object> get props => [category ?? '', searchQuery ?? '', location ?? ''];
+  List<Object> get props => [
+        category ?? '',
+        searchQuery ?? '',
+        location ?? '',
+        sellerId ?? '',
+      ];
 }
 
 // --- STATES ---
@@ -68,6 +79,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       category: event.category,
       searchQuery: event.searchQuery,
       location: event.location,
+      sellerId: event.sellerId,
     );
 
     result.fold(
