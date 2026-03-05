@@ -110,8 +110,9 @@ class ProductCard extends StatelessWidget {
             ),
 
             // Content with proper spacing
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -208,6 +209,7 @@ class ProductCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
             ),
           ],
         ),

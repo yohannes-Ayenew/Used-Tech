@@ -11,6 +11,7 @@ import 'package:used_tech_client/features/product/domain/entities/product_entity
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
 import 'product_detail_page.dart';
 import '../widgets/product_card.dart';
+import '../../../../common/widgets/error_display.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -408,7 +409,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     InkWell(
                       onTap: () {
-                        // TODO: Navigate to All Products or Trending
+                        Navigator.pushNamed(context, '/collections');
                       },
                       child: Row(
                         children: [
@@ -439,7 +440,19 @@ class _HomePageState extends State<HomePage> {
                       if (state is ProductLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is ProductError) {
-                        return Center(child: Text('Error: ${state.message}'));
+                        return ErrorDisplay(
+                          isCompact: true,
+                          onRetry: () {
+                            final authState = context.read<AuthBloc>().state;
+                            String? location;
+                            if (authState is AuthSuccess) {
+                              location = authState.user.location;
+                            }
+                            context.read<ProductBloc>().add(
+                              GetProductsEvent(location: location),
+                            );
+                          },
+                        );
                       } else if (state is ProductsLoaded) {
                         if (state.products.isEmpty) {
                           return const Center(child: Text("No products found"));

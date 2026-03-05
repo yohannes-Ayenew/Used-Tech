@@ -60,7 +60,7 @@ class FavoritesPage extends StatelessWidget {
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.7,
+                  childAspectRatio: 0.55,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
