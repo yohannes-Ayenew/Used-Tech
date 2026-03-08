@@ -2,6 +2,7 @@
 
 import 'package:equatable/equatable.dart';
 import 'dart:io';
+import '../../domain/entities/message_entity.dart';
 
 abstract class ChatEvent extends Equatable {
   const ChatEvent();
@@ -21,20 +22,24 @@ class GetMessagesEvent extends ChatEvent {
 }
 
 class SendMessageEvent extends ChatEvent {
-  final String conversationId;
+  final String receiverId;
+  final String? productId;
   final String message;
-  final File? imageFile;
+  final String type;
+  
   const SendMessageEvent({
-    required this.conversationId,
+    required this.receiverId,
+    this.productId,
     required this.message,
-    this.imageFile,
+    this.type = 'text',
   });
 
   @override
   List<Object> get props => [
-        conversationId,
+        receiverId,
         message,
-        if (imageFile != null) imageFile!,
+        type,
+        if (productId != null) productId!,
       ];
 }
 
@@ -58,4 +63,12 @@ class StartNewConversationEvent extends ChatEvent {
 
   @override
   List<Object> get props => [productId, sellerId, initialMessage];
+}
+
+class ReceiveSocketMessageEvent extends ChatEvent {
+  final MessageEntity message;
+  const ReceiveSocketMessageEvent(this.message);
+
+  @override
+  List<Object> get props => [message];
 }

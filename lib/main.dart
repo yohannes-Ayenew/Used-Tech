@@ -52,6 +52,15 @@ void main() async {
   }
 
   await di.init();
+  
+  // Initialize Notification Service
+  try {
+    await di.sl<NotificationService>().init();
+    print('🔔 Notification Service initialized');
+  } catch (e) {
+    print('❌ Notification Service error: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -66,6 +75,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<ProductBloc>()),
         BlocProvider(create: (_) => di.sl<FavoritesBloc>()..add(LoadFavorites())),
         BlocProvider(create: (_) => di.sl<SellBloc>()),
+        BlocProvider(create: (_) => di.sl<ChatBloc>()),
         BlocProvider(create: (_) => ThemeCubit()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(

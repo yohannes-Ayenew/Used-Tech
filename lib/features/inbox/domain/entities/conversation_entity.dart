@@ -48,6 +48,8 @@ class ConversationEntity extends Equatable {
     }
   }
 
+  bool get isImage => lastMessage.startsWith('📷'); // Simple heuristic for now
+
   @override
   List<Object?> get props => [
     id,
@@ -55,7 +57,6 @@ class ConversationEntity extends Equatable {
     otherUserName,
     lastMessage,
     lastMessageTime,
-    hasUnread,
     unreadCount,
   ];
 }

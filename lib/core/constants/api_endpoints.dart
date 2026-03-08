@@ -46,4 +46,15 @@ class ApiEndpoints {
   static String get requestVerification => '$baseUrl/users/request-verification';
   static String get createProduct => '$baseUrl/products';
   static String get getProducts => '$baseUrl/products';
+
+  // Chat Endpoints
+  static String get sendMessage => '$baseUrl/chat';
+  static String get getConversations => '$baseUrl/chat/conversations';
+  static String get getChatHistory => '$baseUrl/chat/history';
+  static String get updateFcmToken => '$baseUrl/users/fcm-token';
+
+  // Socket URL
+  static String get socketUrl {
+    return baseUrl.replaceAll('/api', '');
+  }
 }

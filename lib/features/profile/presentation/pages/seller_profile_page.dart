@@ -13,6 +13,7 @@ import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../common/widgets/error_display.dart';
 import '../../../product/presentation/widgets/product_card.dart';
+import '../widgets/verification_badge.dart';
 
 class SellerProfilePage extends StatefulWidget {
   final String sellerId;
@@ -73,6 +74,15 @@ class _SellerProfilePageState extends State<SellerProfilePage>
         builder: (context) => const AuthBottomSheet(),
       );
     }
+  }
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return "U";
+    final parts = name.trim().split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
   }
 
   @override
@@ -151,60 +161,61 @@ class _SellerProfilePageState extends State<SellerProfilePage>
   }
 
   Widget _buildHeader() {
+    final initials = _getInitials(widget.sellerName);
+
     return Row(
       children: [
         Stack(
           children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: context.primaryColor.withValues(alpha: 0.1),
-              child: widget.sellerProfileImage != null && widget.sellerProfileImage!.isNotEmpty
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.primaryColor.withValues(alpha: 0.1),
+              ),
+              child: widget.sellerProfileImage != null &&
+                      widget.sellerProfileImage!.isNotEmpty
                   ? ClipOval(
                       child: CachedNetworkImage(
-                        imageUrl: ApiEndpoints.resolveImageUrl(widget.sellerProfileImage!),
+                        imageUrl: ApiEndpoints.resolveImageUrl(
+                            widget.sellerProfileImage!),
                         fit: BoxFit.cover,
                         width: 80,
                         height: 80,
-                        placeholder: (context, url) =>
-                            const CircularProgressIndicator(),
-                        errorWidget: (context, url, error) => Text(
-                          widget.sellerName.isNotEmpty
-                              ? widget.sellerName.substring(0, 2).toUpperCase()
-                              : "U",
-                          style: TextStyle(
-                            color: context.primaryColor,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        errorWidget: (context, url, error) => Center(
+                          child: Text(
+                            initials,
+                            style: TextStyle(
+                              color: context.primaryColor,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
                     )
-                  : Text(
-                      widget.sellerName.isNotEmpty
-                          ? widget.sellerName.substring(0, 2).toUpperCase()
-                          : "U",
-                      style: TextStyle(
-                        color: context.primaryColor,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                  : Center(
+                      child: Text(
+                        initials,
+                        style: TextStyle(
+                          color: context.primaryColor,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
             ),
             if (widget.isVerified)
-              Positioned(
+              const Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.verified,
-                    color: context.primaryColor,
-                    size: 20,
-                  ),
+                child: VerificationBadge(
+                  isVerified: true,
+                  size: 24,
                 ),
               ),
           ],

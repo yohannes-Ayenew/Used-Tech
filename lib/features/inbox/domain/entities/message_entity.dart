@@ -48,9 +48,9 @@ class MessageEntity extends Equatable {
   final String senderName;
   final String? senderAvatar;
   final String message;
-  final String? imageUrl;
+  final String type;
   final DateTime createdAt;
-  final MessageStatus status;
+  final bool isRead;
 
   const MessageEntity({
     required this.id,
@@ -59,24 +59,12 @@ class MessageEntity extends Equatable {
     required this.senderName,
     this.senderAvatar,
     required this.message,
-    this.imageUrl,
+    required this.type,
     required this.createdAt,
-    required this.status,
+    required this.isRead,
   });
 
-  bool get isMe => senderId == currentUserId; // You'll set this from auth state
-  bool get hasImage => imageUrl != null && imageUrl!.isNotEmpty;
-
-  String get timeFormatted {
-    final now = DateTime.now();
-    final difference = now.difference(createdAt);
-
-    if (difference.inHours > 0) {
-      return '${createdAt.hour}:${createdAt.minute.toString().padLeft(2, '0')}';
-    } else {
-      return 'Just now';
-    }
-  }
+  bool get isImage => type == 'image';
 
   @override
   List<Object?> get props => [
@@ -84,9 +72,8 @@ class MessageEntity extends Equatable {
     conversationId,
     senderId,
     message,
+    type,
     createdAt,
-    status,
+    isRead,
   ];
-
-  Object? get currentUserId => null;
 }

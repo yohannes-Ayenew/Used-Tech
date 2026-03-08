@@ -26,6 +26,12 @@ import 'package:used_tech_client/features/auth/domain/usecases/get_user_profile.
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/favorites_bloc.dart';
+import 'package:used_tech_client/features/inbox/data/datasources/chat_remote_data_source.dart';
+import 'package:used_tech_client/features/inbox/data/repositories/chat_repository_impl.dart';
+import 'package:used_tech_client/features/inbox/domain/repositories/chat_repository.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_bloc.dart';
+import 'package:used_tech_client/core/services/socket_service.dart';
+import 'package:used_tech_client/core/services/notification_service.dart';
 
 // Product Feature Imports
 import 'package:used_tech_client/features/product/data/repositories/product_repository_impl.dart';
@@ -52,6 +58,9 @@ Future<void> init() async {
   sl.registerLazySingleton<ProductRemoteDataSource>(
     () => ProductRemoteDataSourceImpl(client: sl(), sharedPreferences: sl()),
   );
+  sl.registerLazySingleton<ChatRemoteDataSource>(
+    () => ChatRemoteDataSourceImpl(client: sl(), sharedPreferences: sl()),
+  );
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
@@ -60,6 +69,13 @@ Future<void> init() async {
   sl.registerLazySingleton<ProductRepository>(
     () => ProductRepositoryImpl(remoteDataSource: sl()),
   );
+  sl.registerLazySingleton<ChatRepository>(
+    () => ChatRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  // Services
+  sl.registerLazySingleton(() => SocketService());
+  sl.registerLazySingleton(() => NotificationService(chatRepository: sl()));
 
   // Use Cases
   sl.registerLazySingleton(() => LoginUser(sl()));
@@ -101,4 +117,5 @@ Future<void> init() async {
   // Product Bloc
   sl.registerFactory(() => ProductBloc(productRepository: sl()));
   sl.registerFactory(() => FavoritesBloc());
+  sl.registerFactory(() => ChatBloc(chatRepository: sl(), socketService: sl()));
 }
