@@ -9,7 +9,11 @@ import 'package:used_tech_client/common/widgets/auth_bottom_sheet.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_bloc.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_event.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dart';
 import 'package:used_tech_client/core/constants/api_endpoints.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import '../widgets/product_card.dart';
 import '../../domain/repositories/product_repository.dart';
@@ -28,6 +32,15 @@ class ProductDetailPage extends StatelessWidget {
       return product.sellerLocation!;
     }
     return product.location;
+  }
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return "U";
+    final parts = name.trim().split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
   }
 
   void _handleAction(BuildContext context, String action) {
@@ -237,15 +250,43 @@ class ProductDetailPage extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: context.cardBackground,
-                                  child: Text(
-                                    product.sellerName.isNotEmpty
-                                        ? product.sellerName[0].toUpperCase()
-                                        : "U",
-                                    style: context.textTheme.titleMedium,
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: context.cardBackground,
                                   ),
+                                  child: product.sellerProfileImage != null &&
+                                          product.sellerProfileImage!.isNotEmpty
+                                      ? ClipOval(
+                                          child: CachedNetworkImage(
+                                            imageUrl: ApiEndpoints.resolveImageUrl(
+                                                product.sellerProfileImage!),
+                                            fit: BoxFit.cover,
+                                            width: 40,
+                                            height: 40,
+                                            placeholder: (context, url) =>
+                                                const Center(
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2),
+                                            ),
+                                            errorWidget: (context, url,
+                                                    error) =>
+                                                Center(
+                                              child: Text(
+                                                _getInitials(product.sellerName),
+                                                style: context.textTheme.titleMedium,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Text(
+                                            _getInitials(product.sellerName),
+                                            style: context.textTheme.titleMedium,
+                                          ),
+                                        ),
                                 ),
                                 const SizedBox(width: 10),
                                 Column(
@@ -576,7 +617,16 @@ class ProductDetailPage extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: () {
                             if (isAuthenticated) {
-                              _handleAction(context, "Chat");
+                              context.read<ChatBloc>().add(StartNewConversationEvent(
+                                productId: product.id,
+                                sellerId: product.sellerId,
+                                initialMessage: "Hi, I'm interested in ${product.title}!",
+                              ));
+                              // Navigate to Inbox
+                              Navigator.pushNamed(context, '/'); // Or specific tab
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Starting conversation...")),
+                              );
                             } else {
                               showModalBottomSheet(
                                 context: context,

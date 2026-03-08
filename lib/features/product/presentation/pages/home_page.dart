@@ -9,6 +9,8 @@ import 'package:used_tech_client/features/auth/presentation/bloc/auth_event.dart
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
 import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_event.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import 'product_detail_page.dart';
 import '../widgets/product_card.dart';
 import '../../../../common/widgets/error_display.dart';
@@ -43,7 +45,7 @@ class _HomePageState extends State<HomePage> {
     if (authState is AuthSuccess) {
       location = authState.user.location;
     }
-    context.read<ProductBloc>().add(GetProductsEvent(location: location));
+    context.read<ProductBloc>().add(GetHomeDataEvent(location: location ?? "Addis Ababa"));
   }
 
   void _showLocationPicker(BuildContext context, String currentCity) {
@@ -90,9 +92,9 @@ class _HomePageState extends State<HomePage> {
                               UpdateLocalLocationEvent(location: city),
                             );
                         
-                        // 2. Refresh products for this location
+                        // 2. Refresh home data for this location
                         context.read<ProductBloc>().add(
-                              GetProductsEvent(location: city),
+                              GetHomeDataEvent(location: city),
                             );
 
                         Navigator.pop(context);
@@ -187,7 +189,7 @@ class _HomePageState extends State<HomePage> {
           if (authState is AuthSuccess) {
             location = authState.user.location;
           }
-          context.read<ProductBloc>().add(GetProductsEvent(location: location));
+          context.read<ProductBloc>().add(GetHomeDataEvent(location: location ?? "Addis Ababa"));
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -265,9 +267,9 @@ class _HomePageState extends State<HomePage> {
                 BlocBuilder<ProductBloc, ProductState>(
                   builder: (context, state) {
                     ProductEntity? matchingProduct;
-                    if (state is ProductsLoaded) {
+                    if (state is HomeDataLoaded) {
                       try {
-                        matchingProduct = state.products.firstWhere(
+                        matchingProduct = state.trending.firstWhere(
                           (p) =>
                               p.title.toLowerCase().contains('iphone 13') ||
                               (p.brand.toLowerCase() == 'apple' &&
@@ -449,22 +451,22 @@ class _HomePageState extends State<HomePage> {
                               location = authState.user.location;
                             }
                             context.read<ProductBloc>().add(
-                              GetProductsEvent(location: location),
+                              GetHomeDataEvent(location: location ?? "Addis Ababa"),
                             );
                           },
                         );
-                      } else if (state is ProductsLoaded) {
-                        if (state.products.isEmpty) {
-                          return const Center(child: Text("No products found"));
+                      } else if (state is HomeDataLoaded) {
+                        if (state.trending.isEmpty) {
+                          return const Center(child: Text("No trending products today"));
                         }
 
                         return ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: state.products.length,
+                          itemCount: state.trending.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(width: 15),
                           itemBuilder: (context, index) {
-                            final product = state.products[index];
+                            final product = state.trending[index];
                             return SizedBox(
                               width: 160,
                               child: ProductCard(
@@ -507,13 +509,14 @@ class _HomePageState extends State<HomePage> {
                   height: 280,
                   child: BlocBuilder<ProductBloc, ProductState>(
                     builder: (context, state) {
-                      if (state is ProductsLoaded) {
-                        // For demo purposes, we'll just show the same products but marked as sold
-                        // In a real app, this would be a separate BLoC event/state
-                        final soldProducts =
-                            state.products.reversed.take(5).toList();
+                      if (state is HomeDataLoaded) {
+                        final soldProducts = state.recentlySold;
                         if (soldProducts.isEmpty) {
-                          return const Center(child: Text("No sold products"));
+                          return const Center(
+                              child: Text(
+                            "No recently sold products found in this area",
+                            style: TextStyle(color: Colors.grey),
+                          ));
                         }
 
                         return ListView.separated(
@@ -528,6 +531,58 @@ class _HomePageState extends State<HomePage> {
                               child: ProductCard(
                                 product: product,
                                 isSold: true,
+                              ),
+                            );
+                          },
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Recommended Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Recommended for You",
+                      style: context.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+
+                // Recommended List
+                SizedBox(
+                  height: 280,
+                  child: BlocBuilder<ProductBloc, ProductState>(
+                    builder: (context, state) {
+                      if (state is HomeDataLoaded) {
+                        final recommendedProducts = state.recommended;
+                        if (recommendedProducts.isEmpty) {
+                          return const Center(
+                              child: Text(
+                            "More recommendations coming soon!",
+                            style: TextStyle(color: Colors.grey),
+                          ));
+                        }
+
+                        return ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: recommendedProducts.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 15),
+                          itemBuilder: (context, index) {
+                            final product = recommendedProducts[index];
+                            return SizedBox(
+                              width: 160,
+                              child: ProductCard(
+                                product: product,
                               ),
                             );
                           },

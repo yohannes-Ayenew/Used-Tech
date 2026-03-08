@@ -40,8 +40,11 @@ class ProductRepositoryImpl implements ProductRepository {
     String? searchQuery,
     String? location,
     String? sellerId,
+    String? status,
+    int? limit,
+    String? sort,
   }) async {
-    final cacheKey = "${category ?? 'all'}_${searchQuery ?? 'none'}_${location ?? 'any'}_${sellerId ?? 'any'}";
+    final cacheKey = "${category ?? 'all'}_${searchQuery ?? 'none'}_${location ?? 'any'}_${sellerId ?? 'any'}_${status ?? 'any'}_${limit ?? 'all'}_${sort ?? 'default'}";
 
     // 💡 Optional: Return cached data immediately if available (Fast UI)
     // For now, we fetch fresh but we can evolve this to "Cache then Refresh"
@@ -52,6 +55,9 @@ class ProductRepositoryImpl implements ProductRepository {
         search: searchQuery,
         location: location,
         sellerId: sellerId,
+        status: status,
+        limit: limit,
+        sort: sort,
       );
       
       _cache[cacheKey] = products; // Update cache

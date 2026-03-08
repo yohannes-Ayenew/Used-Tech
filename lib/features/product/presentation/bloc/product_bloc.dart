@@ -1,65 +1,13 @@
 // lib/features/product/presentation/bloc/product_bloc.dart
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
+import 'product_event.dart';
+import 'product_state.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../domain/repositories/product_repository.dart';
 
-// --- EVENTS ---
-abstract class ProductEvent extends Equatable {
-  const ProductEvent();
-  @override
-  List<Object> get props => [];
-}
-
-class GetProductsEvent extends ProductEvent {
-  final String? category;
-  final String? searchQuery;
-  final String? location;
-  final String? sellerId;
-
-  const GetProductsEvent({
-    this.category,
-    this.searchQuery,
-    this.location,
-    this.sellerId,
-  });
-
-  @override
-  List<Object> get props => [
-        category ?? '',
-        searchQuery ?? '',
-        location ?? '',
-        sellerId ?? '',
-      ];
-}
-
-// --- STATES ---
-abstract class ProductState extends Equatable {
-  const ProductState();
-  @override
-  List<Object> get props => [];
-}
-
-class ProductInitial extends ProductState {}
-
-class ProductLoading extends ProductState {}
-
-class ProductsLoaded extends ProductState {
-  final List<ProductEntity> products;
-  const ProductsLoaded(this.products);
-
-  @override
-  List<Object> get props => [products];
-}
-
-class ProductError extends ProductState {
-  final String message;
-  const ProductError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
+export 'product_event.dart';
+export 'product_state.dart';
 
 // --- BLOC ---
 class ProductBloc extends Bloc<ProductEvent, ProductState> {
@@ -67,6 +15,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
 
   ProductBloc({required this.productRepository}) : super(ProductInitial()) {
     on<GetProductsEvent>(_onGetProducts);
+    on<GetHomeDataEvent>(_onGetHomeData);
   }
 
   Future<void> _onGetProducts(
@@ -80,11 +29,47 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
       searchQuery: event.searchQuery,
       location: event.location,
       sellerId: event.sellerId,
+      status: event.status,
+      limit: event.limit,
     );
 
     result.fold(
       (failure) => emit(ProductError(failure.message)),
       (products) => emit(ProductsLoaded(products)),
     );
+  }
+
+  Future<void> _onGetHomeData(
+    GetHomeDataEvent event,
+    Emitter<ProductState> emit,
+  ) async {
+    emit(ProductLoading());
+
+    // Execute multiple repository calls in parallel for speed!
+    final results = await Future.wait([
+      productRepository.getProducts(location: event.location, status: 'ACTIVE', sort: 'trending', limit: 10), // Trending
+      productRepository.getProducts(location: event.location, status: 'SOLD', sort: 'sold', limit: 10),       // Recently Sold
+      productRepository.getProducts(location: event.location, status: 'ACTIVE', limit: 10),                   // Recommended (Generic active for now)
+    ]);
+
+    // Check if any failed
+    for (final result in results) {
+      if (result.isLeft()) {
+        final failure = result.fold((l) => l, (r) => null);
+        emit(ProductError(failure?.message ?? "Failed to load home data"));
+        return;
+      }
+    }
+
+    // Extract successful lists with explicit casting to avoid dynamic type errors
+    final trending = results[0].fold((l) => <ProductEntity>[], (r) => r as List<ProductEntity>);
+    final recentlySold = results[1].fold((l) => <ProductEntity>[], (r) => r as List<ProductEntity>);
+    final recommended = results[2].fold((l) => <ProductEntity>[], (r) => r as List<ProductEntity>);
+
+    emit(HomeDataLoaded(
+      trending: trending,
+      recentlySold: recentlySold,
+      recommended: recommended,
+    ));
   }
 }

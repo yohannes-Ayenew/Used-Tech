@@ -16,6 +16,10 @@ class GetProductsEvent extends ProductEvent {
   final double? minPrice;
   final double? maxPrice;
   final String? searchQuery;
+  final String? location;
+  final String? sellerId;
+  final String? status;
+  final int? limit;
 
   const GetProductsEvent({
     this.category,
@@ -23,6 +27,10 @@ class GetProductsEvent extends ProductEvent {
     this.minPrice,
     this.maxPrice,
     this.searchQuery,
+    this.location,
+    this.sellerId,
+    this.status,
+    this.limit,
   });
 
   @override
@@ -32,7 +40,19 @@ class GetProductsEvent extends ProductEvent {
         if (minPrice != null) minPrice!,
         if (maxPrice != null) maxPrice!,
         if (searchQuery != null) searchQuery!,
+        if (location != null) location!,
+        if (sellerId != null) sellerId!,
+        if (status != null) status!,
+        if (limit != null) limit!,
       ];
+}
+
+class GetHomeDataEvent extends ProductEvent {
+  final String location;
+  const GetHomeDataEvent({required this.location});
+
+  @override
+  List<Object> get props => [location];
 }
 
 class GetProductDetailsEvent extends ProductEvent {

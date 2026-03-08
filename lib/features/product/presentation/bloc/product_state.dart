@@ -22,6 +22,21 @@ class ProductsLoaded extends ProductState {
   List<Object> get props => [products];
 }
 
+class HomeDataLoaded extends ProductState {
+  final List<ProductEntity> trending;
+  final List<ProductEntity> recentlySold;
+  final List<ProductEntity> recommended;
+
+  const HomeDataLoaded({
+    required this.trending,
+    required this.recentlySold,
+    required this.recommended,
+  });
+
+  @override
+  List<Object> get props => [trending, recentlySold, recommended];
+}
+
 class ProductDetailsLoaded extends ProductState {
   final ProductEntity product;
   const ProductDetailsLoaded(this.product);

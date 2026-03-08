@@ -48,7 +48,7 @@ class _CollectionsPageState extends State<CollectionsPage>
                   : null,
             ));
       } else {
-        context.read<ProductBloc>().add(const GetProductsEvent());
+        context.read<ProductBloc>().add(GetProductsEvent());
       }
     });
   }
@@ -138,7 +138,7 @@ class _CollectionsPageState extends State<CollectionsPage>
                           setState(() {
                             _activeCategory = null;
                           });
-                          context.read<ProductBloc>().add(const GetProductsEvent());
+                          context.read<ProductBloc>().add(GetProductsEvent());
                         },
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -158,7 +158,7 @@ class _CollectionsPageState extends State<CollectionsPage>
           } else if (state is ProductError) {
             return ErrorDisplay(
               onRetry: () {
-                context.read<ProductBloc>().add(const GetProductsEvent());
+                context.read<ProductBloc>().add(GetProductsEvent());
               },
             );
           } else if (state is ProductsLoaded) {

@@ -16,5 +16,8 @@ abstract class ProductRepository {
     String? searchQuery,
     String? location,
     String? sellerId,
+    String? status,
+    int? limit,
+    String? sort,
   });
 }
