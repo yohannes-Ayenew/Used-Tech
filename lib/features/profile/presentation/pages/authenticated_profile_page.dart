@@ -132,10 +132,10 @@ class AuthenticatedProfilePage extends StatelessWidget {
                                 alpha: 0.1,
                               ),
                             ),
-                            child: user.profileImage != null
+                            child: user.profileImage != null && user.profileImage!.isNotEmpty
                                 ? ClipOval(
                                     child: CachedNetworkImage(
-                                      imageUrl: "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${user.profileImage}",
+                                      imageUrl: ApiEndpoints.resolveImageUrl(user.profileImage!),
                                       fit: BoxFit.cover,
                                       width: 70,
                                       height: 70,

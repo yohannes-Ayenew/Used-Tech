@@ -93,8 +93,8 @@ class _SellerProfilePageState extends State<SellerProfilePage>
           child: InkWell(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: context.lightGrey,
-              child: const Icon(Icons.arrow_back_ios_new, size: 16),
+              backgroundColor: context.cardBackground.withValues(alpha: 0.9),
+              child: Icon(Icons.arrow_back, color: context.darkText, size: 20),
             ),
           ),
         ),
@@ -158,10 +158,10 @@ class _SellerProfilePageState extends State<SellerProfilePage>
             CircleAvatar(
               radius: 40,
               backgroundColor: context.primaryColor.withValues(alpha: 0.1),
-              child: widget.sellerProfileImage != null
+              child: widget.sellerProfileImage != null && widget.sellerProfileImage!.isNotEmpty
                   ? ClipOval(
                       child: CachedNetworkImage(
-                        imageUrl: "${ApiEndpoints.baseUrl.replaceAll('/api', '')}/${widget.sellerProfileImage}",
+                        imageUrl: ApiEndpoints.resolveImageUrl(widget.sellerProfileImage!),
                         fit: BoxFit.cover,
                         width: 80,
                         height: 80,
