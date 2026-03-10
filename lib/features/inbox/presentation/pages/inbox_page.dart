@@ -187,4 +187,99 @@ class InboxPage extends StatelessWidget {
     ConversationEntity conv,
   ) {
     final hasUnread = conv.unreadCount > 0;
+
+    return ListTile(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InboxChatPage(conversation: conv),
+          ),
+        );
+      },
+      leading: Stack(
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: context.primaryColor.withValues(alpha: 0.1),
+            child: Text(
+              conv.otherUserName.isNotEmpty ? conv.otherUserName[0].toUpperCase() : "?",
+              style: TextStyle(
+                color: context.primaryColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ),
+          if (conv.otherUserIsVerified)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.verified,
+                  size: 14,
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+        ],
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              conv.otherUserName,
+              style: context.textTheme.titleMedium?.copyWith(
+                fontWeight: hasUnread ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            conv.lastMessageTimeFormatted,
+            style: context.textTheme.bodySmall?.copyWith(
+              color: hasUnread ? Colors.blue : context.greyText,
+              fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+      subtitle: Row(
+        children: [
+          Expanded(
+            child: Text(
+              conv.lastMessage,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: hasUnread ? context.textTheme.bodyLarge?.color : context.greyText,
+                fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ),
+          if (hasUnread)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                conv.unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

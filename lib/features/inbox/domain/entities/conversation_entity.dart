@@ -50,13 +50,36 @@ class ConversationEntity extends Equatable {
 
   bool get isImage => lastMessage.startsWith('📷'); // Simple heuristic for now
 
+  ConversationEntity copyWith({
+    String? lastMessage,
+    DateTime? lastMessageTime,
+    bool? hasUnread,
+    int? unreadCount,
+  }) {
+    return ConversationEntity(
+      id: id,
+      otherUserId: otherUserId,
+      otherUserName: otherUserName,
+      otherUserAvatar: otherUserAvatar,
+      otherUserIsVerified: otherUserIsVerified,
+      productId: productId,
+      productTitle: productTitle,
+      productImage: productImage,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageTime: lastMessageTime ?? this.lastMessageTime,
+      hasUnread: hasUnread ?? this.hasUnread,
+      unreadCount: unreadCount ?? this.unreadCount,
+    );
+  }
+
   @override
   List<Object?> get props => [
-    id,
-    otherUserId,
-    otherUserName,
-    lastMessage,
-    lastMessageTime,
-    unreadCount,
-  ];
+        id,
+        otherUserId,
+        otherUserName,
+        lastMessage,
+        lastMessageTime,
+        unreadCount,
+        hasUnread,
+      ];
 }

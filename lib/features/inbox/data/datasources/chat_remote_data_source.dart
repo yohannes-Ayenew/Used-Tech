@@ -48,7 +48,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       final List data = jsonResponse['data'] ?? [];
       return data.map((json) => ConversationModel.fromJson(json)).toList();
     } else {
-      throw ServerException();
+      throw ServerException('Failed to load conversations: ${response.statusCode}');
     }
   }
 
@@ -64,7 +64,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       final List data = jsonResponse['data'] ?? [];
       return data.map((json) => MessageModel.fromJson(json)).toList();
     } else {
-      throw ServerException();
+      throw ServerException('Failed to load chat history: ${response.statusCode}');
     }
   }
 
@@ -90,7 +90,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       final jsonResponse = json.decode(response.body);
       return MessageModel.fromJson(jsonResponse['data']);
     } else {
-      throw ServerException();
+      throw ServerException('Failed to send message: ${response.statusCode}');
     }
   }
 
@@ -103,7 +103,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw ServerException();
+      throw ServerException('Failed to update FCM token: ${response.statusCode}');
     }
   }
 }

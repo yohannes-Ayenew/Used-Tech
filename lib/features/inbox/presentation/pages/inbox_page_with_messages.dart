@@ -142,7 +142,10 @@ class _InboxChatPageState extends State<InboxChatPage> {
             child: Text(widget.conversation.productTitle!, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
               minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: const Text("Buy Now"),
@@ -159,27 +162,83 @@ class _InboxChatPageState extends State<InboxChatPage> {
         color: context.cardBackground,
         border: Border(top: BorderSide(color: context.borderColor)),
       ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.attach_file),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text("File attachment coming soon"),
-                  backgroundColor: context.primaryColor,
-                  behavior: SnackBarBehavior.floating,
+      child: SafeArea(
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.attach_file),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text("File attachment coming soon"),
+                    backgroundColor: context.primaryColor,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+            Expanded(
+              child: TextField(
+                controller: _messageController,
+                decoration: InputDecoration(
+                  hintText: "Type a message...",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: context.lightGrey,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
-              );
-            },
-          ),
-          Expanded(
-            child: Container(
-                ],
+                textCapitalization: TextCapitalization.sentences,
+                onSubmitted: (_) => _sendMessage(),
               ),
             ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: _sendMessage,
+              icon: const Icon(Icons.send),
+              color: context.primaryColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(BuildContext context, MessageEntity msg, bool isMe) {
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        decoration: BoxDecoration(
+          color: isMe ? context.primaryColor : context.lightGrey,
+          borderRadius: BorderRadius.circular(16).copyWith(
+            bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(16),
+            bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(0),
           ),
-        ],
+        ),
+        child: Column(
+          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(
+              msg.message,
+              style: TextStyle(
+                color: isMe ? Colors.white : context.textTheme.bodyLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              "${msg.createdAt.hour}:${msg.createdAt.minute.toString().padLeft(2, '0')}",
+              style: TextStyle(
+                fontSize: 10,
+                color: isMe ? Colors.white70 : Colors.grey,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

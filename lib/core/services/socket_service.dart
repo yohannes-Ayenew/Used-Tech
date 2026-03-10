@@ -22,7 +22,7 @@ class SocketService {
 
     _socket!.onConnect((_) {
       print('✅ Socket Connected');
-      _socket!.emit('join', userId);
+      _socket!.emit('join_user_room', userId);
     });
 
     _socket!.on('receive_message', (data) {

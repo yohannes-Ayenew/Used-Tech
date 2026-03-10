@@ -18,8 +18,8 @@ class ChatRepositoryImpl implements ChatRepository {
     try {
       final result = await remoteDataSource.getConversations();
       return Right(result);
-    } on ServerException {
-      return Left(ServerFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     }
   }
 
@@ -28,8 +28,8 @@ class ChatRepositoryImpl implements ChatRepository {
     try {
       final result = await remoteDataSource.getChatHistory(conversationId, page: page);
       return Right(result);
-    } on ServerException {
-      return Left(ServerFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     }
   }
 
@@ -48,8 +48,8 @@ class ChatRepositoryImpl implements ChatRepository {
         type: type,
       );
       return Right(result);
-    } on ServerException {
-      return Left(ServerFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     }
   }
 
@@ -58,8 +58,8 @@ class ChatRepositoryImpl implements ChatRepository {
     try {
       await remoteDataSource.updateFcmToken(token);
       return const Right(null);
-    } on ServerException {
-      return Left(ServerFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
     }
   }
 }

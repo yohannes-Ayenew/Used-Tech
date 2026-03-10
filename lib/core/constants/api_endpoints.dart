@@ -11,7 +11,7 @@ class ApiEndpoints {
     } else {
       // 💡 TIP: Your IP changed from 10.232.201.96 to 10.232.201.120
       // Run 'ipconfig' and look for Ethernet adapter IPv4 Address
-      const String localIp = '10.232.201.90';   
+      const String localIp = '192.168.137.188';   
       return 'http://$localIp:3000/api'; 
     }
   }
