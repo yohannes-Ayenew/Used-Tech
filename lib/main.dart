@@ -56,10 +56,10 @@ void main() async {
 
   await di.init();
   
-  // Initialize Notification Service
+  // Initialize Notification Service in background
   try {
-    await di.sl<NotificationService>().init();
-    print('🔔 Notification Service initialized');
+    di.sl<NotificationService>().init();
+    print('🔔 Notification Service initialization started in background');
   } catch (e) {
     print('❌ Notification Service error: $e');
   }

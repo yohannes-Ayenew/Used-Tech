@@ -10,32 +10,51 @@ class NotificationService {
   NotificationService({required this.chatRepository});
 
   Future<void> init() async {
-    // Request permission (iOS/Web)
-    await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    try {
+      // Request permission (iOS/Web)
+      NotificationSettings settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    // Get token and save to backend
-    String? token = await _fcm.getToken();
-    if (token != null) {
-      print("📱 FCM Token: $token");
-      await chatRepository.updateFcmToken(token);
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        print('🔔 User granted notification permission');
+        
+        // Get token and save to backend
+        // Use a timeout for getToken especially on Web to prevent hanging
+        String? token;
+        try {
+          token = await _fcm.getToken().timeout(const Duration(seconds: 10));
+        } catch (e) {
+          print('⚠️ FCM Token retrieval timed out or failed: $e');
+        }
+
+        if (token != null) {
+          print("📱 FCM Token: $token");
+          await chatRepository.updateFcmToken(token);
+        }
+      } else {
+        print('❌ User declined or has not accepted notification permission');
+      }
+
+      // Handle token refresh
+      _fcm.onTokenRefresh.listen((token) {
+        chatRepository.updateFcmToken(token);
+      });
+
+      // Handle background notifications
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+      // Handle foreground messages
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('🔔 Notification Received: ${message.notification?.title}');
+      });
+
+      print('✅ Notification Service fully initialized');
+    } catch (e) {
+      print('❌ Error initializing Notification Service: $e');
     }
-
-    // Handle token refresh
-    _fcm.onTokenRefresh.listen((token) {
-      chatRepository.updateFcmToken(token);
-    });
-
-    // Handle background notifications
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('🔔 Notification Received: ${message.notification?.title}');
-    });
   }
 }
 
