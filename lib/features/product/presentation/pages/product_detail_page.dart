@@ -614,38 +614,83 @@ class ProductDetailPage extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: 1,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            if (isAuthenticated) {
-                              context.read<ChatBloc>().add(StartNewConversationEvent(
+                        child: BlocListener<ChatBloc, ChatState>(
+                          listenWhen: (previous, current) => current is MessageSent || current is ChatError,
+                          listener: (context, state) {
+                            if (state is MessageSent) {
+                              // We need to construct a ConversationEntity from the message
+                              // Alternatively, we could navigate to the general Inbox
+                              // But ideally, we want to go to the specific chat.
+                              // For simplicity and "smoothness", let's navigate to Inbox first
+                              // or try to find the conversation.
+                              
+                              // Create a dummy conversation entity to open the chat page
+                              final conv = ConversationEntity(
+                                id: state.message.conversationId,
+                                otherUserId: product.sellerId,
+                                otherUserName: product.sellerName,
+                                otherUserAvatar: product.sellerProfileImage ?? "",
+                                otherUserIsVerified: product.isSellerVerified,
                                 productId: product.id,
-                                sellerId: product.sellerId,
-                                initialMessage: "Hi, I'm interested in ${product.title}!",
-                              ));
-                              // Navigate to Inbox
-                              Navigator.pushNamed(context, '/'); // Or specific tab
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Starting conversation...")),
+                                productTitle: product.title,
+                                productImage: ApiEndpoints.resolveImageUrl(product.coverImage),
+                                lastMessage: state.message.message,
+                                lastMessageTime: state.message.createdAt,
+                                hasUnread: false,
+                                unreadCount: 0,
                               );
-                            } else {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => const AuthBottomSheet(),
+
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => InboxChatPage(conversation: conv),
+                                ),
+                              );
+                            } else if (state is ChatError) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(state.message)),
                               );
                             }
                           },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(color: context.primaryColor),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                          child: OutlinedButton(
+                            onPressed: () {
+                              if (isAuthenticated) {
+                                context.read<ChatBloc>().add(StartNewConversationEvent(
+                                  productId: product.id,
+                                  sellerId: product.sellerId,
+                                  initialMessage: "Hi, I'm interested in ${product.title}!",
+                                ));
+                              } else {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => const AuthBottomSheet(),
+                                );
+                              }
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: context.primaryColor),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                          ),
-                          child: Icon(
-                            Icons.chat_bubble_outline,
-                            color: context.primaryColor,
+                            child: BlocBuilder<ChatBloc, ChatState>(
+                              builder: (context, state) {
+                                if (state is ChatLoading) {
+                                  return const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  );
+                                }
+                                return Icon(
+                                  Icons.chat_bubble_outline,
+                                  color: context.primaryColor,
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),

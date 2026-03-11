@@ -14,6 +14,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../common/widgets/error_display.dart';
 import '../../../product/presentation/widgets/product_card.dart';
 import '../widgets/verification_badge.dart';
+import '../../inbox/presentation/bloc/chat_bloc.dart';
+import '../../inbox/presentation/bloc/chat_event.dart';
+import '../../inbox/presentation/bloc/chat_state.dart';
+import '../../inbox/domain/entities/conversation_entity.dart';
+import '../../inbox/presentation/pages/inbox_page_with_messages.dart';
 
 class SellerProfilePage extends StatefulWidget {
   final String sellerId;
@@ -385,30 +390,88 @@ class _SellerProfilePageState extends State<SellerProfilePage>
     return Row(
       children: [
         Expanded(
-          child: ElevatedButton(
-            onPressed: () => _handleAction(context, "Chat"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.primaryColor,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.chat_bubble_outline, size: 20, color: Colors.white),
-                SizedBox(width: 8),
-                Text(
-                  "Chat with Seller",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+          child: BlocListener<ChatBloc, ChatState>(
+            listenWhen: (previous, current) => current is MessageSent || current is ChatError,
+            listener: (context, state) {
+              if (state is MessageSent) {
+                final conv = ConversationEntity(
+                  id: state.message.conversationId,
+                  otherUserId: widget.sellerId,
+                  otherUserName: widget.sellerName,
+                  otherUserAvatar: widget.sellerProfileImage ?? "",
+                  otherUserIsVerified: widget.isVerified,
+                  lastMessage: state.message.message,
+                  lastMessageTime: state.message.createdAt,
+                  hasUnread: false,
+                  unreadCount: 0,
+                );
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => InboxChatPage(conversation: conv),
                   ),
+                );
+              } else if (state is ChatError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message)),
+                );
+              }
+            },
+            child: ElevatedButton(
+              onPressed: () {
+                final authState = context.read<AuthBloc>().state;
+                if (authState is AuthSuccess) {
+                  context.read<ChatBloc>().add(StartNewConversationEvent(
+                        sellerId: widget.sellerId,
+                        initialMessage: "Hi ${widget.sellerName}, I'm interested in your listings!",
+                      ));
+                } else {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => const AuthBottomSheet(),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
+                elevation: 0,
+              ),
+              child: BlocBuilder<ChatBloc, ChatState>(
+                builder: (context, state) {
+                  if (state is ChatLoading) {
+                    return const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    );
+                  }
+                  return const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.chat_bubble_outline, size: 20, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        "Chat with Seller",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),
