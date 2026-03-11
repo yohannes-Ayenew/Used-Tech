@@ -53,13 +53,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
+    // With reverse: true, we don't need manual scrolling for new messages
   }
 
   @override
@@ -104,13 +98,14 @@ class _InboxChatPageState extends State<InboxChatPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (state is MessagesLoaded) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                  final reversedMessages = state.messages.reversed.toList();
                   return ListView.builder(
                     controller: _scrollController,
+                    reverse: true,
                     padding: const EdgeInsets.all(16),
-                    itemCount: state.messages.length,
+                    itemCount: reversedMessages.length,
                     itemBuilder: (context, index) {
-                      final msg = state.messages[index];
+                      final msg = reversedMessages[index];
                       return _buildMessageBubble(context, msg, msg.senderId == currentUserId);
                     },
                   );
@@ -209,36 +204,50 @@ class _InboxChatPageState extends State<InboxChatPage> {
   Widget _buildMessageBubble(BuildContext context, MessageEntity msg, bool isMe) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: isMe ? context.primaryColor : context.lightGrey,
-          borderRadius: BorderRadius.circular(16).copyWith(
-            bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(16),
-            bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(0),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Text(
+      child: Column(
+        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+            decoration: BoxDecoration(
+              color: isMe ? context.primaryColor : context.lightGrey.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: Radius.circular(isMe ? 16 : 0),
+                bottomRight: Radius.circular(isMe ? 0 : 16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Text(
               msg.message,
               style: TextStyle(
                 color: isMe ? Colors.white : context.textTheme.bodyLarge?.color,
+                fontSize: 15,
+                height: 1.3,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Text(
               "${msg.createdAt.hour}:${msg.createdAt.minute.toString().padLeft(2, '0')}",
               style: TextStyle(
                 fontSize: 10,
-                color: isMe ? Colors.white70 : Colors.grey,
+                color: context.greyText,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+        ],
       ),
     );
   }

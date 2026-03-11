@@ -99,7 +99,25 @@ class InboxPage extends StatelessWidget {
         }
 
         if (state is ChatError) {
-          return Scaffold(body: Center(child: Text(state.message)));
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red.withValues(alpha: 0.5)),
+                  const SizedBox(height: 16),
+                  Text(state.message, style: context.textTheme.titleMedium),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<ChatBloc>().add(GetConversationsEvent());
+                    },
+                    child: const Text("Retry"),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         if (state is ConversationsLoaded) {

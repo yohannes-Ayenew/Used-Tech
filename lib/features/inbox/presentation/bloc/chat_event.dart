@@ -52,17 +52,17 @@ class MarkAsReadEvent extends ChatEvent {
 }
 
 class StartNewConversationEvent extends ChatEvent {
-  final String productId;
+  final String? productId;
   final String sellerId;
   final String initialMessage;
   const StartNewConversationEvent({
-    required this.productId,
+    this.productId,
     required this.sellerId,
     required this.initialMessage,
   });
 
   @override
-  List<Object> get props => [productId, sellerId, initialMessage];
+  List<Object?> get props => [productId, sellerId, initialMessage];
 }
 
 class ReceiveSocketMessageEvent extends ChatEvent {

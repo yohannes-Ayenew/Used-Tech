@@ -153,8 +153,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     result.fold(
       (failure) => emit(ChatError("Failed to start conversation")),
       (message) {
+        // We need to fetch the conversation entity for the UI to navigate
+        // Since the backend creates/returns a message with a conversationId,
+        // we can potentially load the conversations to find it or have the repo return it.
+        // For now, let's trigger a refresh and maybe a specific state.
         emit(MessageSent(message));
-        // Navigation should be handled in UI
       },
     );
   }
