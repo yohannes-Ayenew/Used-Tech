@@ -27,6 +27,7 @@ import 'features/product/presentation/pages/favorites_page.dart';
 import 'features/inbox/presentation/bloc/chat_bloc.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/socket_service.dart';
+import 'core/services/connectivity_service.dart';
 import 'injection_container.dart' as di;
 
 void main() async {

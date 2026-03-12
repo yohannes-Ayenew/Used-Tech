@@ -9,8 +9,8 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import 'email_verification_page.dart';
 import 'login_page.dart';
-import '../../../core/services/connectivity_service.dart';
-import '../../../injection_container.dart' as di;
+import '../../../../core/services/connectivity_service.dart';
+import '../../../../injection_container.dart' as di;
 import 'dart:async';
 
 class SignupPage extends StatefulWidget {
@@ -122,7 +122,7 @@ class _SignupPageState extends State<SignupPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
+                   const SizedBox(height: 20),
 
                   // Logo/Icon
                   Container(
@@ -357,11 +357,11 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ],
 
-                  const SizedBox(height: 40), // Extra space for keyboard smoothness
+                  const SizedBox(height: 40),
 
                   const SizedBox(height: 16),
 
-                  // 🔥 NEW: Login Link
+                  // Login Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -371,7 +371,6 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          // Navigate to login page
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
@@ -390,7 +389,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40), // More bottom padding
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

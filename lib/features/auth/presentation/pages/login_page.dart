@@ -9,8 +9,8 @@ import '../bloc/auth_state.dart';
 import 'signup_page.dart';
 import 'email_verification_page.dart';
 import 'forgot_password_page.dart';
-import '../../../core/services/connectivity_service.dart';
-import '../../../injection_container.dart' as di;
+import '../../../../core/services/connectivity_service.dart';
+import '../../../../injection_container.dart' as di;
 import 'dart:async';
 
 class LoginPage extends StatefulWidget {
@@ -132,9 +132,9 @@ class _LoginPageState extends State<LoginPage> {
                 // Email
                 TextField(
                   controller: _emailController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: "Email",
-                    prefixIcon: const Icon(Icons.email_outlined),
+                    prefixIcon: Icon(Icons.email_outlined),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -207,6 +207,36 @@ class _LoginPageState extends State<LoginPage> {
                 
                 const SizedBox(height: 16),
                 
+                // Google Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() => _isLoading = true);
+                            context
+                                .read<AuthBloc>()
+                                .add(GoogleSignInRequestedEvent());
+                          },
+                          icon: Image.network(
+                            'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png',
+                            height: 24,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.login,
+                                color: Colors.blue,
+                              );
+                            },
+                          ),
+                          label: const Text("Continue with Google"),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                                color: Colors.grey.withValues(alpha: 0.3)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
                         ),
                 ),
 
@@ -234,9 +264,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
 
-                const SizedBox(height: 40), // Extra space for keyboard smoothness
-
-                const SizedBox(height: 16),
+                const SizedBox(height: 40),
 
                 // Sign Up Link
                 Row(
