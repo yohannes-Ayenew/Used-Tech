@@ -32,6 +32,7 @@ import 'package:used_tech_client/features/inbox/domain/repositories/chat_reposit
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_bloc.dart';
 import 'package:used_tech_client/core/services/socket_service.dart';
 import 'package:used_tech_client/core/services/notification_service.dart';
+import 'package:used_tech_client/core/services/connectivity_service.dart';
 
 // Product Feature Imports
 import 'package:used_tech_client/features/product/data/repositories/product_repository_impl.dart';
@@ -76,6 +77,7 @@ Future<void> init() async {
   // Services
   sl.registerLazySingleton(() => SocketService());
   sl.registerLazySingleton(() => NotificationService(chatRepository: sl()));
+  sl.registerLazySingleton(() => ConnectivityService(client: sl()));
 
   // Use Cases
   sl.registerLazySingleton(() => LoginUser(sl()));

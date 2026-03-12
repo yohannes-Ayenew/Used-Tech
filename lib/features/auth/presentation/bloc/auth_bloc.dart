@@ -60,6 +60,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     GoogleSignInRequestedEvent event,
     Emitter<AuthState> emit,
   ) async {
+    if (state is AuthLoading) {
+      print('⏳ Auth already in progress, ignoring duplicate request');
+      return;
+    }
+    
     print('🚀 Google Sign In requested');
     emit(AuthLoading());
 

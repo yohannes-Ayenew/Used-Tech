@@ -9,6 +9,9 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import 'email_verification_page.dart';
 import 'login_page.dart';
+import '../../../core/services/connectivity_service.dart';
+import '../../../injection_container.dart' as di;
+import 'dart:async';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -28,9 +31,26 @@ class _SignupPageState extends State<SignupPage> {
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
   bool _isLoading = false;
+  late StreamSubscription<ConnectivityStatus> _connectivitySubscription;
+  ConnectivityStatus _connectivityStatus = ConnectivityStatus.checking;
+
+  @override
+  void initState() {
+    super.initState();
+    final connectivityService = di.sl<ConnectivityService>();
+    _connectivityStatus = connectivityService.currentStatus;
+    _connectivitySubscription = connectivityService.statusStream.listen((status) {
+      if (mounted) {
+        setState(() => _connectivityStatus = status);
+      }
+    });
+
+    _passwordController.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
+    _connectivitySubscription.cancel();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -312,6 +332,30 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                           ),
                   ),
+
+                if (_connectivityStatus == ConnectivityStatus.offline) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            "Cannot connect to server. Please check your network and make sure the backend is running.",
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
                   const SizedBox(height: 40), // Extra space for keyboard smoothness
 

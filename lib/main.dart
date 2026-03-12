@@ -56,13 +56,17 @@ void main() async {
 
   await di.init();
   
-  // Initialize Notification Service in background
-  try {
-    di.sl<NotificationService>().init();
-    print('🔔 Notification Service initialization started in background');
-  } catch (e) {
-    print('❌ Notification Service error: $e');
-  }
+  // ⚡ OPTIMIZATION: Initialize non-critical services asynchronously 
+  // to prevent blocking the main thread and skipping frames.
+  Future.microtask(() async {
+    try {
+      di.sl<ConnectivityService>().init();
+      di.sl<NotificationService>().init();
+      print('🚀 Background services (Connectivity/Push) initialized');
+    } catch (e) {
+      print('⚠️ Error during background initialization: $e');
+    }
+  });
 
   runApp(const MyApp());
 }

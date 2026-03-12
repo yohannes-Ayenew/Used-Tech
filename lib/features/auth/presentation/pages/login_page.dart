@@ -9,6 +9,9 @@ import '../bloc/auth_state.dart';
 import 'signup_page.dart';
 import 'email_verification_page.dart';
 import 'forgot_password_page.dart';
+import '../../../core/services/connectivity_service.dart';
+import '../../../injection_container.dart' as di;
+import 'dart:async';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,9 +26,24 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  late StreamSubscription<ConnectivityStatus> _connectivitySubscription;
+  ConnectivityStatus _connectivityStatus = ConnectivityStatus.checking;
+
+  @override
+  void initState() {
+    super.initState();
+    final connectivityService = di.sl<ConnectivityService>();
+    _connectivityStatus = connectivityService.currentStatus;
+    _connectivitySubscription = connectivityService.statusStream.listen((status) {
+      if (mounted) {
+        setState(() => _connectivityStatus = status);
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _connectivitySubscription.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -189,38 +207,32 @@ class _LoginPageState extends State<LoginPage> {
                 
                 const SizedBox(height: 16),
                 
-                // Google Login Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : OutlinedButton.icon(
-                          onPressed: () {
-                            setState(() => _isLoading = true);
-                            context
-                                .read<AuthBloc>()
-                                .add(GoogleSignInRequestedEvent());
-                          },
-                          icon: Image.network(
-                            'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png',
-                            height: 24,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.login,
-                                color: Colors.blue,
-                              );
-                            },
-                          ),
-                          label: const Text("Continue with Google"),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                                color: Colors.grey.withValues(alpha: 0.3)),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
                         ),
                 ),
+
+                if (_connectivityStatus == ConnectivityStatus.offline) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            "Cannot connect to server. Please check your network and make sure the backend is running.",
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 40), // Extra space for keyboard smoothness
 

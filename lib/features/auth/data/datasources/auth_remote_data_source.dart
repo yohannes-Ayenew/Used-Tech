@@ -56,11 +56,13 @@ abstract class AuthRemoteDataSource {
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final http.Client client;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // 💡 Client ID for Web support (from index.html)
-    // For Mobile, it will automatically use the one from google-services.json
+    // 💡 serverClientId for Android/iOS, clientId for Web
+    serverClientId: kIsWeb
+        ? null
+        : '440923132786-8rv31b9bhqhtllfj1ok22skbc1u1kdv3.apps.googleusercontent.com',
     clientId: kIsWeb
         ? '440923132786-ljsa2h08f61512lc1fdqflg0nnrq5cu3.apps.googleusercontent.com'
-        : '440923132786-8rv31b9bhqhtllfj1ok22skbc1u1kdv3.apps.googleusercontent.com',
+        : null,
   );
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
@@ -177,8 +179,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // 4. Sign in to Firebase to get the Firebase ID Token
       final UserCredential userCredential = await _firebaseAuth
           .signInWithCredential(credential);
-      // Force refresh to guarantee a valid token, preventing backend verification bugs
-      final String? idToken = await userCredential.user?.getIdToken(true);
+      
+      // Removed Force refresh (true) to decrease latency; login always provides a fresh token
+      final String? idToken = await userCredential.user?.getIdToken();
 
       if (idToken == null) throw Exception('Failed to get Google ID Token');
 
@@ -191,7 +194,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
             body: jsonEncode({'idToken': idToken}),
             headers: headers,
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
 
       final data = jsonDecode(response.body);
 
