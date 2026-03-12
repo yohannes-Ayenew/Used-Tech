@@ -11,14 +11,14 @@ import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart'
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
 import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../../common/widgets/error_display.dart';
-import '../../../product/presentation/widgets/product_card.dart';
-import '../widgets/verification_badge.dart';
-import '../../inbox/presentation/bloc/chat_bloc.dart';
-import '../../inbox/presentation/bloc/chat_event.dart';
-import '../../inbox/presentation/bloc/chat_state.dart';
-import '../../inbox/domain/entities/conversation_entity.dart';
-import '../../inbox/presentation/pages/inbox_page_with_messages.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_bloc.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_event.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dart';
+import 'package:used_tech_client/features/inbox/domain/entities/conversation_entity.dart';
+import 'package:used_tech_client/features/inbox/presentation/pages/inbox_page_with_messages.dart';
+import 'package:used_tech_client/features/profile/presentation/widgets/verification_badge.dart';
+import 'package:used_tech_client/features/product/presentation/widgets/product_card.dart';
+import 'package:used_tech_client/common/widgets/error_display.dart';
 
 class SellerProfilePage extends StatefulWidget {
   final String sellerId;
@@ -369,7 +369,7 @@ class _SellerProfilePageState extends State<SellerProfilePage>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: context.successColor.withOpacity(0.1),
+            color: context.successColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: context.successColor),

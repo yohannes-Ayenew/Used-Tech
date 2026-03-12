@@ -15,12 +15,14 @@ import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dar
 import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
-import '../widgets/product_card.dart';
-import '../../domain/repositories/product_repository.dart';
-import '../bloc/product_bloc.dart';
-import '../../../../common/widgets/error_display.dart';
-import '../../../../injection_container.dart';
-import '../../../profile/presentation/pages/seller_profile_page.dart';
+import 'package:used_tech_client/features/product/presentation/widgets/product_card.dart';
+import 'package:used_tech_client/features/product/domain/repositories/product_repository.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'package:used_tech_client/common/widgets/error_display.dart';
+import 'package:used_tech_client/injection_container.dart';
+import 'package:used_tech_client/features/profile/presentation/pages/seller_profile_page.dart';
+import 'package:used_tech_client/features/inbox/domain/entities/conversation_entity.dart';
+import 'package:used_tech_client/features/inbox/presentation/pages/inbox_page_with_messages.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final ProductEntity product;

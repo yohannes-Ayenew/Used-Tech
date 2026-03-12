@@ -1,8 +1,7 @@
 // lib/features/inbox/presentation/bloc/chat_event.dart
 
 import 'package:equatable/equatable.dart';
-import 'dart:io';
-import '../../domain/entities/message_entity.dart';
+import 'package:used_tech_client/features/inbox/domain/entities/message_entity.dart';
 
 abstract class ChatEvent extends Equatable {
   const ChatEvent();
@@ -62,7 +61,11 @@ class StartNewConversationEvent extends ChatEvent {
   });
 
   @override
-  List<Object?> get props => [productId, sellerId, initialMessage];
+  List<Object> get props => [
+        if (productId != null) productId!,
+        sellerId,
+        initialMessage,
+      ];
 }
 
 class ReceiveSocketMessageEvent extends ChatEvent {

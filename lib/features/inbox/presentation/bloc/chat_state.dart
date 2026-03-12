@@ -1,8 +1,8 @@
 // lib/features/inbox/presentation/bloc/chat_state.dart
 
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/conversation_entity.dart';
-import '../../domain/entities/message_entity.dart';
+import 'package:used_tech_client/features/inbox/domain/entities/conversation_entity.dart';
+import 'package:used_tech_client/features/inbox/domain/entities/message_entity.dart';
 
 abstract class ChatState extends Equatable {
   const ChatState();

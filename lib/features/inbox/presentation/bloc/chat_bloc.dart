@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/chat_event.dart';
-import '../bloc/chat_state.dart';
-import '../../../../core/services/socket_service.dart';
-import '../../domain/repositories/chat_repository.dart';
-import '../../domain/entities/conversation_entity.dart';
-import '../../domain/entities/message_entity.dart';
-import '../../data/models/message_model.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_event.dart';
+import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dart';
+import 'package:used_tech_client/core/services/socket_service.dart';
+import 'package:used_tech_client/features/inbox/domain/repositories/chat_repository.dart';
+import 'package:used_tech_client/features/inbox/domain/entities/conversation_entity.dart';
+import 'package:used_tech_client/features/inbox/domain/entities/message_entity.dart';
+import 'package:used_tech_client/features/inbox/data/models/message_model.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatRepository chatRepository;
