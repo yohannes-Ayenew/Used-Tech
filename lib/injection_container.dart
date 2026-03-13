@@ -108,6 +108,7 @@ Future<void> init() async {
       resetPassword: sl(),
       changePassword: sl(),
       authRepository: sl(),
+      socketService: sl(),
     ),
   );
 
