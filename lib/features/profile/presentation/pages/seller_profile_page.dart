@@ -422,6 +422,12 @@ class _SellerProfilePageState extends State<SellerProfilePage>
               onPressed: () {
                 final authState = context.read<AuthBloc>().state;
                 if (authState is AuthSuccess) {
+                  if (authState.user.id == widget.sellerId) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("You cannot chat with yourself")),
+                    );
+                    return;
+                  }
                   context.read<ChatBloc>().add(StartNewConversationEvent(
                         sellerId: widget.sellerId,
                         initialMessage: "Hi ${widget.sellerName}, I'm interested in your listings!",

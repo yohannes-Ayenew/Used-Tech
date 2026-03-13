@@ -657,6 +657,13 @@ class ProductDetailPage extends StatelessWidget {
                           child: OutlinedButton(
                             onPressed: () {
                               if (isAuthenticated) {
+                                final authState = state as AuthSuccess;
+                                if (authState.user.id == product.sellerId) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text("You cannot chat with yourself")),
+                                  );
+                                  return;
+                                }
                                 context.read<ChatBloc>().add(StartNewConversationEvent(
                                   productId: product.id,
                                   sellerId: product.sellerId,
