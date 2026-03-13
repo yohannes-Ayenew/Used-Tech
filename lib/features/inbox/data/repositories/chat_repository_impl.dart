@@ -20,6 +20,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Data processing error: ${e.toString()}'));
     }
   }
 
@@ -30,6 +32,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Data processing error: ${e.toString()}'));
     }
   }
 
@@ -50,6 +54,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Data processing error: ${e.toString()}'));
     }
   }
 

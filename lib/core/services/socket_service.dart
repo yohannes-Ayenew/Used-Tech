@@ -7,8 +7,10 @@ import '../constants/api_endpoints.dart';
 class SocketService {
   io.Socket? _socket;
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
+  final _statusController = StreamController<bool>.broadcast();
 
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
+  Stream<bool> get statusStream => _statusController.stream;
 
   void connect(String userId) {
     if (_socket != null && _socket!.connected) return;
@@ -17,11 +19,15 @@ class SocketService {
       io.OptionBuilder()
         .setTransports(['websocket'])
         .enableAutoConnect()
+        .enableReconnection()
+        .setReconnectionAttempts(10)
+        .setReconnectionDelay(2000)
         .build()
     );
 
     _socket!.onConnect((_) {
       print('✅ Socket Connected');
+      _statusController.add(true);
       _socket!.emit('join_user_room', userId);
     });
 
@@ -30,17 +36,29 @@ class SocketService {
       _messageController.add(data);
     });
 
-    _socket!.onDisconnect((_) => print('❌ Socket Disconnected'));
-    _socket!.onConnectError((err) => print('⚠️ Socket Connect Error: $err'));
+    _socket!.onDisconnect((_) {
+      print('❌ Socket Disconnected');
+      _statusController.add(false);
+    });
+
+    _socket!.onConnectError((err) {
+      print('⚠️ Socket Connect Error: $err');
+      _statusController.add(false);
+    });
   }
 
   void disconnect() {
     _socket?.disconnect();
     _socket = null;
+    _statusController.add(false);
   }
 
   void emit(String event, dynamic data) {
-    _socket?.emit(event, data);
+    if (_socket?.connected ?? false) {
+      _socket?.emit(event, data);
+    } else {
+      print('⚠️ Socket not connected, cannot emit $event');
+    }
   }
 
   bool get isConnected => _socket?.connected ?? false;

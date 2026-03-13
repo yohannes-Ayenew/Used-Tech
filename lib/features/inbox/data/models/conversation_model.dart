@@ -1,5 +1,6 @@
 // lib/features/inbox/data/models/conversation_model.dart
 
+import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import '../../domain/entities/conversation_entity.dart';
 
 class ConversationModel extends ConversationEntity {
@@ -27,12 +28,12 @@ class ConversationModel extends ConversationEntity {
       id: json['conversationId'] ?? '',
       otherUserId: other['_id'] ?? '',
       otherUserName: other['name'] ?? 'Unknown',
-      otherUserAvatar: other['profileImage'] ?? '',
+      otherUserAvatar: ApiEndpoints.resolveImageUrl(other['profileImage'] ?? ''),
       otherUserIsVerified: (other['role'] == 'VERIFIED_SELLER'),
       productId: (product is Map) ? product['_id'] : null,
       productTitle: (product is Map) ? "${product['brand']} ${product['model']}" : null,
       productImage: (product is Map && product['images'] != null && product['images'].isNotEmpty) 
-          ? product['images'][0] 
+          ? ApiEndpoints.resolveImageUrl(product['images'][0]) 
           : null,
       lastMessage: lastMsg['type'] == 'image' ? '📷 Photo' : (lastMsg['message'] ?? ''),
       lastMessageTime: DateTime.parse(lastMsg['createdAt'] ?? DateTime.now().toIso8601String()),

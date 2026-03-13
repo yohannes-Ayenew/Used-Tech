@@ -23,6 +23,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<MarkAsReadEvent>(_onMarkAsRead);
     on<StartNewConversationEvent>(_onStartNewConversation);
     on<ReceiveSocketMessageEvent>(_onReceiveSocketMessage);
+    on<LoadMoreMessagesEvent>(_onLoadMoreMessages);
+    on<UpdateMessageStatusEvent>(_onUpdateMessageStatus);
 
     // Listen to Socket messages
     _socketSubscription = socketService.messageStream.listen((data) {
@@ -41,10 +43,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     GetConversationsEvent event,
     Emitter<ChatState> emit,
   ) async {
-    emit(ChatLoading());
+    if (state is! ConversationsLoaded) {
+      emit(ChatLoading());
+    }
     final result = await chatRepository.getConversations();
     result.fold(
-      (failure) => emit(ChatError("Failed to load conversations")),
+      (failure) => emit(ChatError(failure.message)),
       (conversations) {
         final unread = conversations.fold<int>(0, (sum, c) => sum + c.unreadCount);
         emit(ConversationsLoaded(conversations, unreadCount: unread));
@@ -56,11 +60,18 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     GetMessagesEvent event,
     Emitter<ChatState> emit,
   ) async {
-    emit(ChatLoading());
-    final result = await chatRepository.getChatHistory(event.conversationId);
+    if (state is! MessagesLoaded || (state as MessagesLoaded).conversationId != event.conversationId) {
+      emit(ChatLoading());
+    }
+    final result = await chatRepository.getChatHistory(event.conversationId, page: 1);
     result.fold(
       (failure) => emit(ChatError("Failed to load messages")),
-      (messages) => emit(MessagesLoaded(messages, event.conversationId)),
+      (messages) => emit(MessagesLoaded(
+        messages, 
+        event.conversationId,
+        hasReachedMax: messages.length < 20, // Assuming 20 is the limit
+        currentPage: 1,
+      )),
     );
   }
 
@@ -68,8 +79,28 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     SendMessageEvent event,
     Emitter<ChatState> emit,
   ) async {
-    // Optimistic UI update or wait for result
-    // For now, let's wait for the repository result which includes the populated message
+    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+    
+    // 1. Optimistic Update
+    if (state is MessagesLoaded) {
+      final currentState = state as MessagesLoaded;
+      final optimisticMsg = MessageEntity(
+        id: tempId,
+        tempId: tempId,
+        conversationId: currentState.conversationId,
+        senderId: "ME", // Dummy for UI to recognize
+        senderName: "Me",
+        message: event.message,
+        type: event.type,
+        createdAt: DateTime.now(),
+        isRead: false,
+        status: MessageStatus.sending,
+      );
+      
+      final updatedMessages = List<MessageEntity>.from(currentState.messages)..add(optimisticMsg);
+      emit(currentState.copyWith(messages: updatedMessages));
+    }
+
     final result = await chatRepository.sendMessage(
       receiverId: event.receiverId,
       productId: event.productId,
@@ -77,11 +108,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     );
 
     result.fold(
-      (failure) => emit(ChatError("Failed to send message")),
+      (failure) {
+        add(UpdateMessageStatusEvent(tempId: tempId, status: MessageStatus.failed));
+      },
       (message) {
-        // State will be updated via socket listener if connected, 
-        // but we emit MessageSent for immediate feedback if needed.
-        emit(MessageSent(message));
+        add(UpdateMessageStatusEvent(tempId: tempId, status: MessageStatus.sent, finalMessage: message));
       },
     );
   }
@@ -96,8 +127,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (state is MessagesLoaded) {
       final currentState = state as MessagesLoaded;
       if (currentState.conversationId == message.conversationId) {
-        final updatedMessages = List<MessageEntity>.from(currentState.messages)..add(message);
-        emit(MessagesLoaded(updatedMessages, currentState.conversationId));
+        // Prevent duplicate if we already have it (from optimistic or direct send)
+        final alreadyExists = currentState.messages.any((m) => m.id == message.id);
+        if (!alreadyExists) {
+          final updatedMessages = List<MessageEntity>.from(currentState.messages)..add(message);
+          emit(currentState.copyWith(messages: updatedMessages));
+        }
       }
     }
 
@@ -160,5 +195,56 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         emit(MessageSent(message));
       },
     );
+  }
+
+  Future<void> _onLoadMoreMessages(
+    LoadMoreMessagesEvent event,
+    Emitter<ChatState> emit,
+  ) async {
+    if (state is! MessagesLoaded) return;
+    final currentState = state as MessagesLoaded;
+    if (currentState.hasReachedMax || currentState.isPaginationLoading) return;
+
+    emit(currentState.copyWith(isPaginationLoading: true));
+
+    final nextPage = currentState.currentPage + 1;
+    final result = await chatRepository.getChatHistory(event.conversationId, page: nextPage);
+
+    result.fold(
+      (failure) => emit(currentState.copyWith(isPaginationLoading: false)),
+      (newMessages) {
+        if (newMessages.isEmpty) {
+          emit(currentState.copyWith(hasReachedMax: true, isPaginationLoading: false));
+        } else {
+          final updatedMessages = List<MessageEntity>.from(newMessages)..addAll(currentState.messages);
+          emit(currentState.copyWith(
+            messages: updatedMessages,
+            currentPage: nextPage,
+            isPaginationLoading: false,
+            hasReachedMax: newMessages.length < 20,
+          ));
+        }
+      },
+    );
+  }
+
+  void _onUpdateMessageStatus(
+    UpdateMessageStatusEvent event,
+    Emitter<ChatState> emit,
+  ) {
+    if (state is MessagesLoaded) {
+      final currentState = state as MessagesLoaded;
+      final messages = List<MessageEntity>.from(currentState.messages);
+      final index = messages.indexWhere((m) => m.tempId == event.tempId);
+
+      if (index != -1) {
+        if (event.status == MessageStatus.sent && event.finalMessage != null) {
+          messages[index] = event.finalMessage!;
+        } else {
+          messages[index] = messages[index].copyWith(status: event.status);
+        }
+        emit(currentState.copyWith(messages: messages));
+      }
+    }
   }
 }

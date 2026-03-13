@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:used_tech_client/core/services/socket_service.dart';
 import 'package:used_tech_client/features/auth/domain/repositories/auth_repository.dart';
 import 'package:used_tech_client/features/auth/domain/usecases/change_password.dart';
 import '../../domain/usecases/login_user.dart';
@@ -25,6 +26,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   // Repository (Direct access for Google Sign In to save creating a specific UseCase file)
   final AuthRepository authRepository;
+  final SocketService socketService;
 
   AuthBloc({
     required this.loginUser,
@@ -36,6 +38,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.resetPassword,
     required this.changePassword,
     required this.authRepository, // Injected dependency
+    required this.socketService,
   }) : super(AuthInitial()) {
     // Register Event Handlers
     on<SignupRequestedEvent>(_onSignupRequested);
@@ -79,6 +82,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (data) {
         print('✅ Google Sign In successful!');
         // user object is in data['user'], token is in data['token']
+        socketService.connect(data['user'].id);
         emit(AuthSuccess(data['user'], token: data['token']));
       },
     );
@@ -143,6 +147,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         print('   User data: ${data['user']}');
 
         // IMMEDIATE LOGIN SUCCESS
+        socketService.connect(data['user'].id);
         emit(AuthSuccess(data['user'], token: data['token']));
       },
     );
@@ -175,6 +180,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           );
         } else {
           print('✅ Login successful!');
+          socketService.connect(data['user'].id);
           emit(AuthSuccess(data['user'], token: data['token']));
         }
       },
@@ -229,6 +235,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             (freshUser) {
               print('✨ Profile refreshed! Status: ${freshUser.kycStatus}');
               // Emit new state with updated user (Blue Badge)
+              socketService.connect(freshUser.id);
               emit(AuthSuccess(freshUser, token: freshUser.token));
             },
           );
@@ -245,6 +252,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     print('🚪 Logout requested');
+    socketService.disconnect();
     await authRepository.logout();
     emit(AuthGuest());
     print('✅ User logged out');

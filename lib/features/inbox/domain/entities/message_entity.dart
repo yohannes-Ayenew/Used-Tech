@@ -43,6 +43,7 @@ enum MessageStatus {
 
 class MessageEntity extends Equatable {
   final String id;
+  final String? tempId; // For optimistic UI tracking
   final String conversationId;
   final String senderId;
   final String senderName;
@@ -51,9 +52,11 @@ class MessageEntity extends Equatable {
   final String type;
   final DateTime createdAt;
   final bool isRead;
+  final MessageStatus status;
 
   const MessageEntity({
     required this.id,
+    this.tempId,
     required this.conversationId,
     required this.senderId,
     required this.senderName,
@@ -62,6 +65,7 @@ class MessageEntity extends Equatable {
     required this.type,
     required this.createdAt,
     required this.isRead,
+    this.status = MessageStatus.sent,
   });
 
   bool get isImage => type == 'image';
@@ -69,11 +73,34 @@ class MessageEntity extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    tempId,
     conversationId,
     senderId,
     message,
     type,
     createdAt,
     isRead,
+    status,
   ];
+
+  MessageEntity copyWith({
+    String? id,
+    String? tempId,
+    MessageStatus? status,
+    bool? isRead,
+  }) {
+    return MessageEntity(
+      id: id ?? this.id,
+      tempId: tempId ?? this.tempId,
+      conversationId: conversationId,
+      senderId: senderId,
+      senderName: senderName,
+      senderAvatar: senderAvatar,
+      message: message,
+      type: type,
+      createdAt: createdAt,
+      isRead: isRead ?? this.isRead,
+      status: status ?? this.status,
+    );
+  }
 }

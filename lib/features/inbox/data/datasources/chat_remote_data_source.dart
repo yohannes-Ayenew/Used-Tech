@@ -29,7 +29,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     required this.sharedPreferences,
   });
 
-  String? get _token => sharedPreferences.getString('auth_token');
+  String? get _token => sharedPreferences.getString('CACHED_TOKEN');
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',

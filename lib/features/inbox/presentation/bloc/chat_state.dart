@@ -27,10 +27,35 @@ class ConversationsLoaded extends ChatState {
 class MessagesLoaded extends ChatState {
   final List<MessageEntity> messages;
   final String conversationId;
-  const MessagesLoaded(this.messages, this.conversationId);
+  final bool hasReachedMax;
+  final bool isPaginationLoading;
+  final int currentPage;
+
+  const MessagesLoaded(
+    this.messages,
+    this.conversationId, {
+    this.hasReachedMax = false,
+    this.isPaginationLoading = false,
+    this.currentPage = 1,
+  });
+
+  MessagesLoaded copyWith({
+    List<MessageEntity>? messages,
+    bool? hasReachedMax,
+    bool? isPaginationLoading,
+    int? currentPage,
+  }) {
+    return MessagesLoaded(
+      messages ?? this.messages,
+      conversationId,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+      isPaginationLoading: isPaginationLoading ?? this.isPaginationLoading,
+      currentPage: currentPage ?? this.currentPage,
+    );
+  }
 
   @override
-  List<Object> get props => [messages, conversationId];
+  List<Object> get props => [messages, conversationId, hasReachedMax, isPaginationLoading, currentPage];
 }
 
 class MessageSent extends ChatState {

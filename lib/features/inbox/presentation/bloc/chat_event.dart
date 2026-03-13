@@ -75,3 +75,26 @@ class ReceiveSocketMessageEvent extends ChatEvent {
   @override
   List<Object> get props => [message];
 }
+
+class LoadMoreMessagesEvent extends ChatEvent {
+  final String conversationId;
+  const LoadMoreMessagesEvent({required this.conversationId});
+
+  @override
+  List<Object> get props => [conversationId];
+}
+
+class UpdateMessageStatusEvent extends ChatEvent {
+  final String tempId;
+  final MessageStatus status;
+  final MessageEntity? finalMessage;
+
+  const UpdateMessageStatusEvent({
+    required this.tempId,
+    required this.status,
+    this.finalMessage,
+  });
+
+  @override
+  List<Object> get props => [tempId, status];
+}

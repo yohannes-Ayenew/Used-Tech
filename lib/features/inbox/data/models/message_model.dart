@@ -1,5 +1,6 @@
 // lib/features/inbox/data/models/message_model.dart
 
+import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import '../../domain/entities/message_entity.dart';
 
 class MessageModel extends MessageEntity {
@@ -26,7 +27,7 @@ class MessageModel extends MessageEntity {
       conversationId: json['conversationId'] ?? '',
       senderId: (sender is Map) ? sender['_id'] : (sender ?? ''),
       senderName: senderName,
-      senderAvatar: senderAvatar,
+      senderAvatar: ApiEndpoints.resolveImageUrl(senderAvatar ?? ''),
       message: json['message'] ?? '',
       type: json['type'] ?? 'text',
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
