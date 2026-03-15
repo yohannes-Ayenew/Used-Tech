@@ -45,6 +45,7 @@ class ApiEndpoints {
   static String get requestVerification => '$baseUrl/users/request-verification';
   static String get createProduct => '$baseUrl/products';
   static String get getProducts => '$baseUrl/products';
+  static String getProductById(String id) => '$baseUrl/products/$id';
 
   // Chat Endpoints
   static String get sendMessage => '$baseUrl/chat';

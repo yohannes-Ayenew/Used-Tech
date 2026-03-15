@@ -23,6 +23,7 @@ import 'features/profile/presentation/pages/settings_page.dart';
 import 'features/sell/presentation/pages/sell_page.dart';
 import 'features/sell/presentation/pages/success_page.dart';
 import 'features/product/presentation/pages/collections_page.dart';
+import 'features/product/presentation/pages/product_detail_page.dart';
 import 'features/product/presentation/pages/favorites_page.dart';
 import 'features/inbox/presentation/bloc/chat_bloc.dart';
 import 'core/services/notification_service.dart';
@@ -179,6 +180,29 @@ class MyApp extends StatelessWidget {
                     userId: args['userId'] ?? '',
                     token: args['token'] ?? '',
                     email: args['email'] ?? '',
+                  ),
+                );
+              }
+              // Product Detail Route
+              if (settings.name == '/product-detail' && settings.arguments != null) {
+                final productId = settings.arguments as String;
+                return MaterialPageRoute(
+                  builder: (context) => BlocProvider(
+                    create: (context) => di.sl<ProductBloc>()..add(GetProductDetailsEvent(productId: productId)),
+                    child: BlocBuilder<ProductBloc, ProductState>(
+                      builder: (context, state) {
+                        if (state is ProductLoading) {
+                          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                        }
+                        if (state is ProductDetailsLoaded) {
+                          return ProductDetailPage(product: state.product);
+                        }
+                        if (state is ProductError) {
+                          return Scaffold(body: Center(child: Text(state.message)));
+                        }
+                        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                      },
+                    ),
                   ),
                 );
               }
