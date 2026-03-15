@@ -24,6 +24,8 @@ abstract class ProductRemoteDataSource {
     int? limit,
     String? sort,
   });
+
+  Future<ProductModel> getProductById(String id);
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -127,6 +129,25 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         return productsJson.map((json) => ProductModel.fromJson(json)).toList();
       } else {
         throw ServerException('Failed to load products');
+      }
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<ProductModel> getProductById(String id) async {
+    try {
+      final response = await client.get(
+        Uri.parse(ApiEndpoints.getProductById(id)),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return ProductModel.fromJson(data['data']);
+      } else {
+        throw ServerException('Failed to load product details');
       }
     } catch (e) {
       throw ServerException(e.toString());

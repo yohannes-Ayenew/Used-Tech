@@ -14,6 +14,7 @@ class MessageModel extends MessageEntity {
     required super.type,
     required super.createdAt,
     required super.isRead,
+    super.tempId,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +33,7 @@ class MessageModel extends MessageEntity {
       type: json['type'] ?? 'text',
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       isRead: json['isRead'] ?? false,
+      tempId: json['tempId'],
     );
   }
 

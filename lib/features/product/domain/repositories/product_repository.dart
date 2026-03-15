@@ -20,4 +20,6 @@ abstract class ProductRepository {
     int? limit,
     String? sort,
   });
+
+  Future<Either<Failure, ProductEntity>> getProductById(String id);
 }

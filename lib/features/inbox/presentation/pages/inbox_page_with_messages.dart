@@ -11,6 +11,8 @@ import 'package:used_tech_client/features/inbox/presentation/bloc/chat_bloc.dart
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_event.dart';
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dart';
 import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/services/connectivity_service.dart';
+import '../../../../injection_container.dart';
 
 class InboxChatPage extends StatefulWidget {
   final ConversationEntity conversation;
@@ -29,14 +31,20 @@ class _InboxChatPageState extends State<InboxChatPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatBloc>().add(GetMessagesEvent(conversationId: widget.conversation.id));
+      context.read<ChatBloc>().add(GetMessagesEvent(
+        conversationId: widget.conversation.id,
+        productId: widget.conversation.productId,
+      ));
     });
     
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.9) {
         final state = context.read<ChatBloc>().state;
         if (state is MessagesLoaded && !state.hasReachedMax && !state.isPaginationLoading) {
-          context.read<ChatBloc>().add(LoadMoreMessagesEvent(conversationId: widget.conversation.id));
+          context.read<ChatBloc>().add(LoadMoreMessagesEvent(
+            conversationId: widget.conversation.id,
+            productId: widget.conversation.productId,
+          ));
         }
       }
     });
@@ -130,11 +138,84 @@ class _InboxChatPageState extends State<InboxChatPage> {
             icon: Icon(Icons.call_outlined, color: context.primaryColor),
             onPressed: () {},
           ),
-          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded, color: context.primaryColor),
+            color: context.cardBackground,
+            onSelected: (value) {
+              if (value == 'delete') {
+                if (widget.conversation.id.startsWith('new_') || widget.conversation.id.isEmpty) {
+                  Navigator.pop(context);
+                } else {
+                  context.read<ChatBloc>().add(DeleteConversationEvent(conversationId: widget.conversation.id));
+                }
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                      SizedBox(width: 12),
+                      Text("Delete Chat", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+          const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        children: [
+      body: BlocListener<ChatBloc, ChatState>(
+        listenWhen: (previous, current) => current is ConversationDeleted || (current is ChatError && current.message.contains('delete')),
+        listener: (context, state) {
+          if (state is ConversationDeleted && state.conversationId == widget.conversation.id) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Chat deleted successfully'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            Navigator.pop(context);
+          } else if (state is ChatError && state.message.contains('delete')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+        child: Column(
+          children: [
+            StreamBuilder<ConnectivityStatus>(
+              stream: sl<ConnectivityService>().statusStream,
+              initialData: sl<ConnectivityService>().currentStatus,
+              builder: (context, snapshot) {
+                if (snapshot.data == ConnectivityStatus.offline) {
+                  return Container(
+                    width: double.infinity,
+                    color: Colors.red.shade600,
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          "No Internet Connection. Offline mode coming soon.",
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           _buildProductHeader(context),
           Expanded(
             child: Container(
@@ -197,6 +278,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
           _buildMessageInput(context),
         ],
       ),
+      ),
     );
   }
 
@@ -248,7 +330,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
           ),
           const SizedBox(width: 12),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () => Navigator.pushNamed(context, '/product-detail', arguments: widget.conversation.productId),
             style: ElevatedButton.styleFrom(
               backgroundColor: context.primaryColor,
               foregroundColor: Colors.white,

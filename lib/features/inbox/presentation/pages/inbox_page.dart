@@ -11,6 +11,9 @@ import 'package:used_tech_client/features/inbox/presentation/bloc/chat_event.dar
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/services/connectivity_service.dart';
+import '../../../../injection_container.dart';
 
 class InboxPage extends StatefulWidget {
   const InboxPage({super.key});
@@ -52,6 +55,33 @@ class _InboxPageState extends State<InboxPage> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               _buildHeader(context, state),
+              SliverToBoxAdapter(
+                child: StreamBuilder<ConnectivityStatus>(
+                  stream: sl<ConnectivityService>().statusStream,
+                  initialData: sl<ConnectivityService>().currentStatus,
+                  builder: (context, snapshot) {
+                    if (snapshot.data == ConnectivityStatus.offline) {
+                      return Container(
+                        width: double.infinity,
+                        color: Colors.red.shade600,
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 8),
+                            Text(
+                              "No Internet Connection. Offline mode coming soon.",
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
               _buildSearchBox(context),
               _buildContent(context, state),
             ],
@@ -356,7 +386,12 @@ class _InboxPageState extends State<InboxPage> {
                 MaterialPageRoute(
                   builder: (context) => InboxChatPage(conversation: conv),
                 ),
-              );
+              ).then((_) {
+                // Ensure we go back to ConversationsLoaded state using cache
+                if (context.mounted) {
+                  context.read<ChatBloc>().add(GetConversationsEvent());
+                }
+              });
             },
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -389,7 +424,27 @@ class _InboxPageState extends State<InboxPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        if (conv.productTitle != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2, bottom: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.shopping_bag_outlined, size: 12, color: context.primaryColor),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    conv.productTitle!,
+                                    style: context.textTheme.bodySmall?.copyWith(
+                                      color: context.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         Row(
                           children: [
                             Expanded(
@@ -442,6 +497,20 @@ class _InboxPageState extends State<InboxPage> {
                       ],
                     ),
                   ),
+                  if (conv.productImage != null && conv.productImage!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          ApiEndpoints.resolveImageUrl(conv.productImage!),
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

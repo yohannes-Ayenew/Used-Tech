@@ -16,6 +16,19 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   ProductBloc({required this.productRepository}) : super(ProductInitial()) {
     on<GetProductsEvent>(_onGetProducts);
     on<GetHomeDataEvent>(_onGetHomeData);
+    on<GetProductDetailsEvent>(_onGetProductDetails);
+  }
+
+  Future<void> _onGetProductDetails(
+    GetProductDetailsEvent event,
+    Emitter<ProductState> emit,
+  ) async {
+    emit(ProductLoading());
+    final result = await productRepository.getProductById(event.productId);
+    result.fold(
+      (failure) => emit(ProductError(failure.message)),
+      (product) => emit(ProductDetailsLoaded(product)),
+    );
   }
 
   Future<void> _onGetProducts(

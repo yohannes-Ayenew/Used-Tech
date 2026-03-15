@@ -10,14 +10,16 @@ import '../models/message_model.dart';
 
 abstract class ChatRemoteDataSource {
   Future<List<ConversationModel>> getConversations();
-  Future<List<MessageModel>> getChatHistory(String conversationId, {int page = 1});
+  Future<List<MessageModel>> getChatHistory(String conversationId, {int page = 1, String? productId});
   Future<MessageModel> sendMessage({
     required String receiverId,
     String? productId,
     required String message,
     String type = 'text',
+    String? tempId,
   });
   Future<void> updateFcmToken(String token);
+  Future<void> deleteConversation(String conversationId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -53,9 +55,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }
 
   @override
-  Future<List<MessageModel>> getChatHistory(String conversationId, {int page = 1}) async {
+  Future<List<MessageModel>> getChatHistory(String conversationId, {int page = 1, String? productId}) async {
+    final baseUrl = ApiEndpoints.getChatHistory(conversationId);
+    final url = productId != null 
+      ? '$baseUrl?page=$page&productId=$productId' 
+      : '$baseUrl?page=$page';
+
     final response = await client.get(
-      Uri.parse('${ApiEndpoints.getChatHistory}/$conversationId?page=$page'),
+      Uri.parse(url),
       headers: _headers,
     );
 
@@ -74,6 +81,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     String? productId,
     required String message,
     String type = 'text',
+    String? tempId,
   }) async {
     final response = await client.post(
       Uri.parse(ApiEndpoints.sendMessage),
@@ -83,6 +91,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         'productId': productId,
         'message': message,
         'type': type,
+        'tempId': tempId,
       }),
     );
 
@@ -104,6 +113,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
     if (response.statusCode != 200) {
       throw ServerException('Failed to update FCM token: ${response.statusCode}');
+    }
+  }
+
+  @override
+  Future<void> deleteConversation(String conversationId) async {
+    final response = await client.delete(
+      Uri.parse(ApiEndpoints.deleteConversation(conversationId)),
+      headers: _headers,
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw ServerException('Failed to delete conversation: ${response.statusCode}');
     }
   }
 }

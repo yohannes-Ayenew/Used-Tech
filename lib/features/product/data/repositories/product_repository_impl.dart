@@ -75,4 +75,16 @@ class ProductRepositoryImpl implements ProductRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, ProductEntity>> getProductById(String id) async {
+    try {
+      final product = await remoteDataSource.getProductById(id);
+      return Right(product);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

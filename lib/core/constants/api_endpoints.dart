@@ -9,9 +9,8 @@ class ApiEndpoints {
     if (kIsWeb) {
       return 'http://localhost:3000/api';
     } else {
-      // 💡 TIP: Your IP changed from 10.232.201.96 to 10.232.201.120
-      // Run 'ipconfig' and look for Ethernet adapter IPv4 Address
-      const String localIp = '192.168.137.188';   
+       // Run 'ipconfig' and look for Ethernet adapter IPv4 Address
+      const String localIp = '10.230.31.163';   
       return 'http://$localIp:3000/api'; 
     }
   }
@@ -50,7 +49,8 @@ class ApiEndpoints {
   // Chat Endpoints
   static String get sendMessage => '$baseUrl/chat';
   static String get getConversations => '$baseUrl/chat/conversations';
-  static String get getChatHistory => '$baseUrl/chat/history';
+  static String deleteConversation(String id) => '$baseUrl/chat/conversations/$id';
+  static String getChatHistory(String id) => '$baseUrl/chat/history/$id';
   static String get updateFcmToken => '$baseUrl/users/fcm-token';
 
   // Socket URL
