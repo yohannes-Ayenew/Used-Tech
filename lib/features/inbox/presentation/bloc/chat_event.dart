@@ -7,17 +7,18 @@ abstract class ChatEvent extends Equatable {
   const ChatEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class GetConversationsEvent extends ChatEvent {}
 
 class GetMessagesEvent extends ChatEvent {
   final String conversationId;
-  const GetMessagesEvent({required this.conversationId});
+  final String? productId;
+  const GetMessagesEvent({required this.conversationId, this.productId});
 
   @override
-  List<Object> get props => [conversationId];
+  List<Object?> get props => [conversationId, productId];
 }
 
 class SendMessageEvent extends ChatEvent {
@@ -78,10 +79,11 @@ class ReceiveSocketMessageEvent extends ChatEvent {
 
 class LoadMoreMessagesEvent extends ChatEvent {
   final String conversationId;
-  const LoadMoreMessagesEvent({required this.conversationId});
+  final String? productId;
+  const LoadMoreMessagesEvent({required this.conversationId, this.productId});
 
   @override
-  List<Object> get props => [conversationId];
+  List<Object?> get props => [conversationId, productId];
 }
 
 class UpdateMessageStatusEvent extends ChatEvent {
@@ -97,4 +99,12 @@ class UpdateMessageStatusEvent extends ChatEvent {
 
   @override
   List<Object> get props => [tempId, status];
+}
+
+class DeleteConversationEvent extends ChatEvent {
+  final String conversationId;
+  const DeleteConversationEvent({required this.conversationId});
+
+  @override
+  List<Object> get props => [conversationId];
 }

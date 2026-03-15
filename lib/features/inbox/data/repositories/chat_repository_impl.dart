@@ -26,9 +26,9 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, List<MessageEntity>>> getChatHistory(String conversationId, {int page = 1}) async {
+  Future<Either<Failure, List<MessageEntity>>> getChatHistory(String conversationId, {int page = 1, String? productId}) async {
     try {
-      final result = await remoteDataSource.getChatHistory(conversationId, page: page);
+      final result = await remoteDataSource.getChatHistory(conversationId, page: page, productId: productId);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -43,6 +43,7 @@ class ChatRepositoryImpl implements ChatRepository {
     String? productId,
     required String message,
     String type = 'text',
+    String? tempId,
   }) async {
     try {
       final result = await remoteDataSource.sendMessage(
@@ -50,6 +51,7 @@ class ChatRepositoryImpl implements ChatRepository {
         productId: productId,
         message: message,
         type: type,
+        tempId: tempId,
       );
       return Right(result);
     } on ServerException catch (e) {
@@ -66,6 +68,18 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteConversation(String conversationId) async {
+    try {
+      await remoteDataSource.deleteConversation(conversationId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Data processing error: ${e.toString()}'));
     }
   }
 }

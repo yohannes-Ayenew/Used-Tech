@@ -7,12 +7,14 @@ import '../entities/message_entity.dart';
 
 abstract class ChatRepository {
   Future<Either<Failure, List<ConversationEntity>>> getConversations();
-  Future<Either<Failure, List<MessageEntity>>> getChatHistory(String conversationId, {int page = 1});
+  Future<Either<Failure, List<MessageEntity>>> getChatHistory(String conversationId, {int page = 1, String? productId});
   Future<Either<Failure, MessageEntity>> sendMessage({
     required String receiverId,
     String? productId,
     required String message,
     String type = 'text',
+    String? tempId,
   });
   Future<Either<Failure, void>> updateFcmToken(String token);
+  Future<Either<Failure, void>> deleteConversation(String conversationId);
 }

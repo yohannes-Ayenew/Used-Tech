@@ -390,94 +390,73 @@ class _SellerProfilePageState extends State<SellerProfilePage>
     return Row(
       children: [
         Expanded(
-          child: BlocListener<ChatBloc, ChatState>(
-            listenWhen: (previous, current) => current is MessageSent || current is ChatError,
-            listener: (context, state) {
-              if (state is MessageSent) {
-                final conv = ConversationEntity(
-                  id: state.message.conversationId,
+          child: ElevatedButton(
+            onPressed: () {
+              final authState = context.read<AuthBloc>().state;
+              if (authState is AuthSuccess) {
+                if (authState.user.id == widget.sellerId) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("You cannot chat with yourself")),
+                  );
+                  return;
+                }
+                
+                final chatBloc = context.read<ChatBloc>();
+                final existingConv = chatBloc.getConversationWithUser(widget.sellerId, null);
+                
+                final conv = existingConv ?? ConversationEntity(
+                  id: "new_${widget.sellerId}_profile",
                   otherUserId: widget.sellerId,
                   otherUserName: widget.sellerName,
                   otherUserAvatar: widget.sellerProfileImage ?? "",
                   otherUserIsVerified: widget.isVerified,
-                  lastMessage: state.message.message,
-                  lastMessageTime: state.message.createdAt,
+                  lastMessage: "",
+                  lastMessageTime: DateTime.now(),
                   hasUnread: false,
                   unreadCount: 0,
                 );
 
-                Navigator.pushReplacement(
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => InboxChatPage(conversation: conv),
                   ),
-                );
-              } else if (state is ChatError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
+                ).then((_) {
+                  if (context.mounted) {
+                    chatBloc.add(GetConversationsEvent());
+                  }
+                });
+              } else {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const AuthBottomSheet(),
                 );
               }
             },
-            child: ElevatedButton(
-              onPressed: () {
-                final authState = context.read<AuthBloc>().state;
-                if (authState is AuthSuccess) {
-                  if (authState.user.id == widget.sellerId) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("You cannot chat with yourself")),
-                    );
-                    return;
-                  }
-                  context.read<ChatBloc>().add(StartNewConversationEvent(
-                        sellerId: widget.sellerId,
-                        initialMessage: "Hi ${widget.sellerName}, I'm interested in your listings!",
-                      ));
-                } else {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => const AuthBottomSheet(),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.primaryColor,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.chat_bubble_outline, size: 20, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  "Chat with Seller",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
-                elevation: 0,
-              ),
-              child: BlocBuilder<ChatBloc, ChatState>(
-                builder: (context, state) {
-                  if (state is ChatLoading) {
-                    return const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    );
-                  }
-                  return const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.chat_bubble_outline, size: 20, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        "Chat with Seller",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+              ],
             ),
           ),
         ),

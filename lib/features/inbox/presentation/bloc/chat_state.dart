@@ -41,13 +41,14 @@ class MessagesLoaded extends ChatState {
 
   MessagesLoaded copyWith({
     List<MessageEntity>? messages,
+    String? conversationId,
     bool? hasReachedMax,
     bool? isPaginationLoading,
     int? currentPage,
   }) {
     return MessagesLoaded(
       messages ?? this.messages,
-      conversationId,
+      conversationId ?? this.conversationId,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       isPaginationLoading: isPaginationLoading ?? this.isPaginationLoading,
       currentPage: currentPage ?? this.currentPage,
@@ -80,4 +81,12 @@ class ChatError extends ChatState {
 
   @override
   List<Object> get props => [message];
+}
+
+class ConversationDeleted extends ChatState {
+  final String conversationId;
+  const ConversationDeleted(this.conversationId);
+
+  @override
+  List<Object> get props => [conversationId];
 }

@@ -13,6 +13,21 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final SocketService socketService;
   StreamSubscription? _socketSubscription;
 
+  List<ConversationEntity>? _conversationsCache;
+  int _unreadCountCache = 0;
+
+  ConversationEntity? getConversationWithUser(String userId, String? productId) {
+    if (_conversationsCache == null) return null;
+    try {
+      return _conversationsCache!.firstWhere((c) => 
+        c.otherUserId == userId && 
+        (productId == null || c.productId == productId)
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   ChatBloc({
     required this.chatRepository,
     required this.socketService,
@@ -25,6 +40,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ReceiveSocketMessageEvent>(_onReceiveSocketMessage);
     on<LoadMoreMessagesEvent>(_onLoadMoreMessages);
     on<UpdateMessageStatusEvent>(_onUpdateMessageStatus);
+    on<DeleteConversationEvent>(_onDeleteConversation);
 
     // Listen to Socket messages
     _socketSubscription = socketService.messageStream.listen((data) {
@@ -43,15 +59,23 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     GetConversationsEvent event,
     Emitter<ChatState> emit,
   ) async {
-    if (state is! ConversationsLoaded) {
+    if (state is! ConversationsLoaded && _conversationsCache == null) {
       emit(ChatLoading());
+    } else if (_conversationsCache != null) {
+      emit(ConversationsLoaded(_conversationsCache!, unreadCount: _unreadCountCache));
     }
+    
     final result = await chatRepository.getConversations();
     result.fold(
-      (failure) => emit(ChatError(failure.message)),
+      (failure) {
+        if (_conversationsCache == null) {
+          emit(ChatError(failure.message));
+        }
+      },
       (conversations) {
-        final unread = conversations.fold<int>(0, (sum, c) => sum + c.unreadCount);
-        emit(ConversationsLoaded(conversations, unreadCount: unread));
+        _conversationsCache = conversations;
+        _unreadCountCache = conversations.fold<int>(0, (sum, c) => sum + c.unreadCount);
+        emit(ConversationsLoaded(_conversationsCache!, unreadCount: _unreadCountCache));
       },
     );
   }
@@ -60,12 +84,23 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     GetMessagesEvent event,
     Emitter<ChatState> emit,
   ) async {
+    if (event.conversationId.isEmpty || event.conversationId.startsWith("new_")) {
+      emit(MessagesLoaded(
+        const [], 
+        event.conversationId,
+        hasReachedMax: true,
+        currentPage: 1,
+      ));
+      return;
+    }
+
     if (state is! MessagesLoaded || (state as MessagesLoaded).conversationId != event.conversationId) {
       emit(ChatLoading());
     }
-    final result = await chatRepository.getChatHistory(event.conversationId, page: 1);
+    
+    final result = await chatRepository.getChatHistory(event.conversationId, page: 1, productId: event.productId);
     result.fold(
-      (failure) => emit(ChatError("Failed to load messages")),
+      (failure) => emit(const ChatError("Failed to load messages")),
       (messages) => emit(MessagesLoaded(
         messages, 
         event.conversationId,
@@ -105,6 +140,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       receiverId: event.receiverId,
       productId: event.productId,
       message: event.message,
+      tempId: tempId,
     );
 
     result.fold(
@@ -128,7 +164,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       final currentState = state as MessagesLoaded;
       if (currentState.conversationId == message.conversationId) {
         // Prevent duplicate if we already have it (from optimistic or direct send)
-        final alreadyExists = currentState.messages.any((m) => m.id == message.id);
+        final alreadyExists = currentState.messages.any((m) => 
+          m.id == message.id || 
+          (m.tempId != null && m.tempId == message.tempId)
+        );
         if (!alreadyExists) {
           final updatedMessages = List<MessageEntity>.from(currentState.messages)..add(message);
           emit(currentState.copyWith(messages: updatedMessages));
@@ -137,11 +176,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
 
     // 2. Update Conversations list (even if not active, for background updates)
-    // This is tricky because Bloc doesn't easily allow updating a DIFFERENT state.
-    // However, if the current state is ConversationsLoaded, we can update it.
-    if (state is ConversationsLoaded) {
-      final currentState = state as ConversationsLoaded;
-      final conversations = List<ConversationEntity>.from(currentState.conversations);
+    if (_conversationsCache != null) {
+      final conversations = List<ConversationEntity>.from(_conversationsCache!);
       
       final index = conversations.indexWhere((c) => c.id == message.conversationId);
       
@@ -158,10 +194,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         final moved = conversations.removeAt(index);
         conversations.insert(0, moved);
         
-        emit(ConversationsLoaded(conversations, unreadCount: currentState.unreadCount + 1));
+        _conversationsCache = conversations;
+        _unreadCountCache = conversations.fold<int>(0, (sum, c) => sum + c.unreadCount);
+        
+        if (state is ConversationsLoaded) {
+          emit(ConversationsLoaded(_conversationsCache!, unreadCount: _unreadCountCache));
+        }
       } else {
         // Handle new conversation appearing? 
-        // For simplicity, we could trigger a refresh.
         add(GetConversationsEvent());
       }
     }
@@ -208,7 +248,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(currentState.copyWith(isPaginationLoading: true));
 
     final nextPage = currentState.currentPage + 1;
-    final result = await chatRepository.getChatHistory(event.conversationId, page: nextPage);
+    final result = await chatRepository.getChatHistory(event.conversationId, page: nextPage, productId: event.productId);
 
     result.fold(
       (failure) => emit(currentState.copyWith(isPaginationLoading: false)),
@@ -240,11 +280,40 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (index != -1) {
         if (event.status == MessageStatus.sent && event.finalMessage != null) {
           messages[index] = event.finalMessage!;
+          if (currentState.conversationId.isEmpty || currentState.conversationId.startsWith("new_")) {
+            emit(currentState.copyWith(
+              messages: messages,
+              conversationId: event.finalMessage!.conversationId,
+            ));
+            return;
+          }
         } else {
           messages[index] = messages[index].copyWith(status: event.status);
         }
         emit(currentState.copyWith(messages: messages));
       }
     }
+  }
+
+  Future<void> _onDeleteConversation(
+    DeleteConversationEvent event,
+    Emitter<ChatState> emit,
+  ) async {
+    emit(ChatLoading());
+    
+    final result = await chatRepository.deleteConversation(event.conversationId);
+    
+    result.fold(
+      (failure) => emit(ChatError("Failed to delete conversation: ${failure.message}")),
+      (_) {
+        // Remove from cache
+        if (_conversationsCache != null) {
+          _conversationsCache!.removeWhere((c) => c.id == event.conversationId);
+          _unreadCountCache = _conversationsCache!.fold<int>(0, (sum, c) => sum + c.unreadCount);
+        }
+        
+        emit(ConversationDeleted(event.conversationId));
+      },
+    );
   }
 }

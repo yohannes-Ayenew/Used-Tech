@@ -616,19 +616,22 @@ class ProductDetailPage extends StatelessWidget {
                     children: [
                       Expanded(
                         flex: 1,
-                        child: BlocListener<ChatBloc, ChatState>(
-                          listenWhen: (previous, current) => current is MessageSent || current is ChatError,
-                          listener: (context, state) {
-                            if (state is MessageSent) {
-                              // We need to construct a ConversationEntity from the message
-                              // Alternatively, we could navigate to the general Inbox
-                              // But ideally, we want to go to the specific chat.
-                              // For simplicity and "smoothness", let's navigate to Inbox first
-                              // or try to find the conversation.
+                        child: OutlinedButton(
+                          onPressed: () {
+                            if (isAuthenticated) {
+                              final authState = state as AuthSuccess;
+                              if (authState.user.id == product.sellerId) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("You cannot chat with yourself")),
+                                );
+                                return;
+                              }
                               
-                              // Create a dummy conversation entity to open the chat page
-                              final conv = ConversationEntity(
-                                id: state.message.conversationId,
+                              final chatBloc = context.read<ChatBloc>();
+                              final existingConv = chatBloc.getConversationWithUser(product.sellerId, product.id);
+                              
+                              final conv = existingConv ?? ConversationEntity(
+                                id: "new_${product.sellerId}_${product.id}",
                                 otherUserId: product.sellerId,
                                 otherUserName: product.sellerName,
                                 otherUserAvatar: product.sellerProfileImage ?? "",
@@ -636,70 +639,41 @@ class ProductDetailPage extends StatelessWidget {
                                 productId: product.id,
                                 productTitle: product.title,
                                 productImage: ApiEndpoints.resolveImageUrl(product.coverImage),
-                                lastMessage: state.message.message,
-                                lastMessageTime: state.message.createdAt,
+                                lastMessage: "",
+                                lastMessageTime: DateTime.now(),
                                 hasUnread: false,
                                 unreadCount: 0,
                               );
 
-                              Navigator.pushReplacement(
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => InboxChatPage(conversation: conv),
                                 ),
-                              );
-                            } else if (state is ChatError) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(state.message)),
+                              ).then((_) {
+                                if (context.mounted) {
+                                  chatBloc.add(GetConversationsEvent());
+                                }
+                              });
+                            } else {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => const AuthBottomSheet(),
                               );
                             }
                           },
-                          child: OutlinedButton(
-                            onPressed: () {
-                              if (isAuthenticated) {
-                                final authState = state as AuthSuccess;
-                                if (authState.user.id == product.sellerId) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("You cannot chat with yourself")),
-                                  );
-                                  return;
-                                }
-                                context.read<ChatBloc>().add(StartNewConversationEvent(
-                                  productId: product.id,
-                                  sellerId: product.sellerId,
-                                  initialMessage: "Hi, I'm interested in ${product.title}!",
-                                ));
-                              } else {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => const AuthBottomSheet(),
-                                );
-                              }
-                            },
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              side: BorderSide(color: context.primaryColor),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: context.primaryColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: BlocBuilder<ChatBloc, ChatState>(
-                              builder: (context, state) {
-                                if (state is ChatLoading) {
-                                  return const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  );
-                                }
-                                return Icon(
-                                  Icons.chat_bubble_outline,
-                                  color: context.primaryColor,
-                                );
-                              },
-                            ),
+                          ),
+                          child: Icon(
+                            Icons.chat_bubble_outline,
+                            color: context.primaryColor,
                           ),
                         ),
                       ),
