@@ -10,6 +10,9 @@ import 'package:used_tech_client/features/inbox/domain/entities/message_entity.d
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_bloc.dart';
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_event.dart';
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_event.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../injection_container.dart';
@@ -26,15 +29,25 @@ class InboxChatPage extends StatefulWidget {
 class _InboxChatPageState extends State<InboxChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late ConversationEntity _currentConversation;
 
   @override
   void initState() {
     super.initState();
+    _currentConversation = widget.conversation;
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ChatBloc>().add(GetMessagesEvent(
-        conversationId: widget.conversation.id,
-        productId: widget.conversation.productId,
+        conversationId: _currentConversation.id,
+        productId: _currentConversation.productId,
       ));
+
+      // 🔍 Fetch missing product details if needed
+      if (_currentConversation.productId != null && 
+          (_currentConversation.productTitle == 'Unknown Product' || 
+           _currentConversation.productPrice == null)) {
+        context.read<ProductBloc>().add(GetProductDetailsEvent(productId: _currentConversation.productId!));
+      }
     });
     
     _scrollController.addListener(() {
@@ -42,8 +55,8 @@ class _InboxChatPageState extends State<InboxChatPage> {
         final state = context.read<ChatBloc>().state;
         if (state is MessagesLoaded && !state.hasReachedMax && !state.isPaginationLoading) {
           context.read<ChatBloc>().add(LoadMoreMessagesEvent(
-            conversationId: widget.conversation.id,
-            productId: widget.conversation.productId,
+            conversationId: _currentConversation.id,
+            productId: _currentConversation.productId,
           ));
         }
       }
@@ -61,8 +74,8 @@ class _InboxChatPageState extends State<InboxChatPage> {
     if (_messageController.text.trim().isEmpty) return;
 
     context.read<ChatBloc>().add(SendMessageEvent(
-      receiverId: widget.conversation.otherUserId,
-      productId: widget.conversation.productId,
+      receiverId: _currentConversation.otherUserId,
+      productId: _currentConversation.productId,
       message: _messageController.text,
     ));
 
@@ -91,22 +104,22 @@ class _InboxChatPageState extends State<InboxChatPage> {
         title: Row(
           children: [
             Hero(
-              tag: "avatar_${widget.conversation.id}",
+              tag: "avatar_${_currentConversation.id}",
               child: CircleAvatar(
                 radius: 18,
                 backgroundColor: context.primaryColor.withValues(alpha: 0.1),
-                child: widget.conversation.otherUserAvatar.isNotEmpty
+                child: _currentConversation.otherUserAvatar.isNotEmpty
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(18),
                         child: Image.network(
-                          ApiEndpoints.resolveImageUrl(widget.conversation.otherUserAvatar),
+                          ApiEndpoints.resolveImageUrl(_currentConversation.otherUserAvatar),
                           fit: BoxFit.cover,
                           width: 36,
                           height: 36,
                         ),
                       )
                     : Text(
-                        widget.conversation.otherUserName[0].toUpperCase(),
+                        _currentConversation.otherUserName[0].toUpperCase(),
                         style: TextStyle(color: context.primaryColor, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
               ),
@@ -117,7 +130,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.conversation.otherUserName,
+                    _currentConversation.otherUserName,
                     style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
@@ -143,10 +156,10 @@ class _InboxChatPageState extends State<InboxChatPage> {
             color: context.cardBackground,
             onSelected: (value) {
               if (value == 'delete') {
-                if (widget.conversation.id.startsWith('new_') || widget.conversation.id.isEmpty) {
+                if (_currentConversation.id.startsWith('new_') || _currentConversation.id.isEmpty) {
                   Navigator.pop(context);
                 } else {
-                  context.read<ChatBloc>().add(DeleteConversationEvent(conversationId: widget.conversation.id));
+                  context.read<ChatBloc>().add(DeleteConversationEvent(conversationId: _currentConversation.id));
                 }
               }
             },
@@ -168,27 +181,44 @@ class _InboxChatPageState extends State<InboxChatPage> {
           const SizedBox(width: 4),
         ],
       ),
-      body: BlocListener<ChatBloc, ChatState>(
-        listenWhen: (previous, current) => current is ConversationDeleted || (current is ChatError && current.message.contains('delete')),
-        listener: (context, state) {
-          if (state is ConversationDeleted && state.conversationId == widget.conversation.id) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Chat deleted successfully'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-            Navigator.pop(context);
-          } else if (state is ChatError && state.message.contains('delete')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<ChatBloc, ChatState>(
+            listenWhen: (previous, current) => current is ConversationDeleted || (current is ChatError && current.message.contains('delete')),
+            listener: (context, state) {
+              if (state is ConversationDeleted && state.conversationId == _currentConversation.id) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Chat deleted successfully'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                Navigator.pop(context);
+              } else if (state is ChatError && state.message.contains('delete')) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
+          BlocListener<ProductBloc, ProductState>(
+            listener: (context, state) {
+              if (state is ProductDetailsLoaded && state.product.id == _currentConversation.productId) {
+                setState(() {
+                  _currentConversation = _currentConversation.copyWith(
+                    productTitle: state.product.title,
+                    productPrice: state.product.price,
+                    productImage: state.product.images.isNotEmpty ? state.product.images.first : null,
+                  );
+                });
+              }
+            },
+          ),
+        ],
         child: Column(
           children: [
             StreamBuilder<ConnectivityStatus>(
@@ -278,12 +308,11 @@ class _InboxChatPageState extends State<InboxChatPage> {
           _buildMessageInput(context),
         ],
       ),
-      ),
     );
   }
 
   Widget _buildProductHeader(BuildContext context) {
-    if (widget.conversation.productTitle == null) return const SizedBox.shrink();
+    if (_currentConversation.productTitle == null) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.all(12),
@@ -300,11 +329,11 @@ class _InboxChatPageState extends State<InboxChatPage> {
       ),
       child: Row(
         children: [
-          if (widget.conversation.productImage != null && widget.conversation.productImage!.isNotEmpty)
+          if (_currentConversation.productImage != null && _currentConversation.productImage!.isNotEmpty)
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                ApiEndpoints.resolveImageUrl(widget.conversation.productImage!), 
+                ApiEndpoints.resolveImageUrl(_currentConversation.productImage!), 
                 width: 50, 
                 height: 50, 
                 fit: BoxFit.cover
@@ -316,14 +345,14 @@ class _InboxChatPageState extends State<InboxChatPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.conversation.productTitle!,
+                  _currentConversation.productTitle!,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  widget.conversation.productPrice != null 
-                    ? "${widget.conversation.productPrice!.toStringAsFixed(0)} ETB"
+                  _currentConversation.productPrice != null 
+                    ? "${_currentConversation.productPrice!.toStringAsFixed(0)} ETB"
                     : "Discussing this item",
                   style: TextStyle(fontSize: 12, color: context.primaryColor, fontWeight: FontWeight.w600),
                 ),
@@ -332,7 +361,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
           ),
           const SizedBox(width: 12),
           ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/product-detail', arguments: widget.conversation.productId),
+            onPressed: () => Navigator.pushNamed(context, '/product-detail', arguments: _currentConversation.productId),
             style: ElevatedButton.styleFrom(
               backgroundColor: context.primaryColor,
               foregroundColor: Colors.white,
@@ -423,7 +452,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 4),
               child: Text(
-                widget.conversation.otherUserName,
+                _currentConversation.otherUserName,
                 style: TextStyle(fontSize: 10, color: context.greyText, fontWeight: FontWeight.bold),
               ),
             ),

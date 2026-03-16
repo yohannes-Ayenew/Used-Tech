@@ -48,8 +48,8 @@ class ConversationModel extends ConversationEntity {
       productTitle: parseTitle(product),
       productImage: (product is Map && product['images'] != null && product['images'] is List && product['images'].isNotEmpty) 
           ? ApiEndpoints.resolveImageUrl(product['images'][0]) 
-          : (product is Map && product['image'] != null ? ApiEndpoints.resolveImageUrl(product['image']) : null),
-      productPrice: (product is Map) ? (product['price'] ?? product['amount'] ?? 0).toDouble() : null,
+          : (product is Map && product['image'] != null && product['image'].toString().isNotEmpty ? ApiEndpoints.resolveImageUrl(product['image']) : null),
+      productPrice: (product is Map) ? (product['price'] ?? product['amount'])?.toDouble() : null,
       lastMessage: lastMsg['type'] == 'image' ? '📷 Photo' : (lastMsg['message'] ?? ''),
       lastMessageTime: DateTime.parse(lastMsg['createdAt'] ?? DateTime.now().toIso8601String()),
       hasUnread: (json['unreadCount'] ?? 0) > 0,
