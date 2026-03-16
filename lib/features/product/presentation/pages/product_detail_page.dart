@@ -639,6 +639,7 @@ class ProductDetailPage extends StatelessWidget {
                                 productId: product.id,
                                 productTitle: product.title,
                                 productImage: ApiEndpoints.resolveImageUrl(product.coverImage),
+                                productPrice: product.price,
                                 lastMessage: "",
                                 lastMessageTime: DateTime.now(),
                                 hasUnread: false,

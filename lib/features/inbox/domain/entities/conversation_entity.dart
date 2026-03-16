@@ -11,6 +11,7 @@ class ConversationEntity extends Equatable {
   final String? productId;
   final String? productTitle;
   final String? productImage;
+  final double? productPrice;
   final String lastMessage;
   final DateTime lastMessageTime;
   final bool hasUnread;
@@ -25,6 +26,7 @@ class ConversationEntity extends Equatable {
     this.productId,
     this.productTitle,
     this.productImage,
+    this.productPrice,
     required this.lastMessage,
     required this.lastMessageTime,
     required this.hasUnread,
@@ -65,6 +67,7 @@ class ConversationEntity extends Equatable {
       productId: productId,
       productTitle: productTitle,
       productImage: productImage,
+      productPrice: productPrice,
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       hasUnread: hasUnread ?? this.hasUnread,
@@ -77,6 +80,10 @@ class ConversationEntity extends Equatable {
         id,
         otherUserId,
         otherUserName,
+        productId,
+        productTitle,
+        productImage,
+        productPrice,
         lastMessage,
         lastMessageTime,
         unreadCount,

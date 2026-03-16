@@ -13,6 +13,7 @@ class ConversationModel extends ConversationEntity {
     super.productId,
     super.productTitle,
     super.productImage,
+    super.productPrice,
     required super.lastMessage,
     required super.lastMessageTime,
     required super.hasUnread,
@@ -24,6 +25,19 @@ class ConversationModel extends ConversationEntity {
     final product = json['product'];
     final lastMsg = json['lastMessage'] ?? {};
 
+    String? parseTitle(dynamic product) {
+      if (product is! Map) return null;
+      final brand = product['brand'];
+      final model = product['model'];
+      final title = product['title'];
+      final name = product['name'];
+      
+      if (brand != null && model != null && brand.toString().isNotEmpty && model.toString().isNotEmpty) {
+        return "$brand $model";
+      }
+      return title ?? name ?? brand ?? model ?? 'Unknown Product';
+    }
+
     return ConversationModel(
       id: json['conversationId'] ?? '',
       otherUserId: other['_id'] ?? '',
@@ -31,10 +45,11 @@ class ConversationModel extends ConversationEntity {
       otherUserAvatar: ApiEndpoints.resolveImageUrl(other['profileImage'] ?? ''),
       otherUserIsVerified: (other['role'] == 'VERIFIED_SELLER'),
       productId: (product is Map) ? product['_id'] : null,
-      productTitle: (product is Map) ? "${product['brand']} ${product['model']}" : null,
-      productImage: (product is Map && product['images'] != null && product['images'].isNotEmpty) 
+      productTitle: parseTitle(product),
+      productImage: (product is Map && product['images'] != null && product['images'] is List && product['images'].isNotEmpty) 
           ? ApiEndpoints.resolveImageUrl(product['images'][0]) 
-          : null,
+          : (product is Map && product['image'] != null ? ApiEndpoints.resolveImageUrl(product['image']) : null),
+      productPrice: (product is Map) ? (product['price'] ?? product['amount'] ?? 0).toDouble() : null,
       lastMessage: lastMsg['type'] == 'image' ? '📷 Photo' : (lastMsg['message'] ?? ''),
       lastMessageTime: DateTime.parse(lastMsg['createdAt'] ?? DateTime.now().toIso8601String()),
       hasUnread: (json['unreadCount'] ?? 0) > 0,

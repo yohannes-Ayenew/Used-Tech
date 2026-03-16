@@ -322,8 +322,10 @@ class _InboxChatPageState extends State<InboxChatPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  "Discussing this item",
-                  style: TextStyle(fontSize: 12, color: context.greyText),
+                  widget.conversation.productPrice != null 
+                    ? "${widget.conversation.productPrice!.toStringAsFixed(0)} ETB"
+                    : "Discussing this item",
+                  style: TextStyle(fontSize: 12, color: context.primaryColor, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
