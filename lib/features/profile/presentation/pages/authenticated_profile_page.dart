@@ -11,6 +11,7 @@ import 'package:used_tech_client/features/profile/presentation/widgets/verificat
 import 'package:cached_network_image/cached_network_image.dart';
 import 'verification_page.dart';
 import 'settings_page.dart';
+import 'my_listings_page.dart';
 
 class AuthenticatedProfilePage extends StatelessWidget {
   const AuthenticatedProfilePage({super.key});
@@ -303,9 +304,14 @@ class AuthenticatedProfilePage extends StatelessWidget {
                   context,
                   icon: Icons.inventory,
                   title: "My Listings",
-                  subtitle: "5 active items",
+                  subtitle: "Manage your active & sold items",
                   showViewAll: true,
-                  onTap: () => _showComingSoon(context, "My Listings"),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MyListingsPage()),
+                    );
+                  },
                 ),
 
                 _buildMenuItem(

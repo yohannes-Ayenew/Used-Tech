@@ -16,6 +16,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   List<ConversationEntity>? _conversationsCache;
   int _unreadCountCache = 0;
 
+  List<ConversationEntity>? get conversationsCache => _conversationsCache;
+  int get unreadCountCache => _unreadCountCache;
+
   ConversationEntity? getConversationWithUser(String userId, String? productId) {
     if (_conversationsCache == null) return null;
     try {
@@ -211,7 +214,24 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     MarkAsReadEvent event,
     Emitter<ChatState> emit,
   ) async {
-    // No-op or update local unread state
+    if (_conversationsCache != null) {
+      final conversations = List<ConversationEntity>.from(_conversationsCache!);
+      final index = conversations.indexWhere((c) => c.id == event.conversationId);
+      
+      if (index != -1 && conversations[index].unreadCount > 0) {
+        conversations[index] = conversations[index].copyWith(
+          unreadCount: 0,
+        );
+        _conversationsCache = conversations;
+        _unreadCountCache = conversations.fold<int>(0, (sum, c) => sum + c.unreadCount);
+        
+        if (state is ConversationsLoaded) {
+          emit(ConversationsLoaded(_conversationsCache!, unreadCount: _unreadCountCache));
+        }
+      }
+    }
+
+    await chatRepository.markAsRead(event.conversationId);
   }
 
   Future<void> _onStartNewConversation(

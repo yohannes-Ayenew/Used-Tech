@@ -82,4 +82,16 @@ class ChatRepositoryImpl implements ChatRepository {
       return Left(ServerFailure('Data processing error: ${e.toString()}'));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> markAsRead(String conversationId) async {
+    try {
+      await remoteDataSource.markAsRead(conversationId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Data processing error: ${e.toString()}'));
+    }
+  }
 }

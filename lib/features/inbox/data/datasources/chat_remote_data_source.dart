@@ -20,6 +20,7 @@ abstract class ChatRemoteDataSource {
   });
   Future<void> updateFcmToken(String token);
   Future<void> deleteConversation(String conversationId);
+  Future<void> markAsRead(String conversationId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -125,6 +126,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw ServerException('Failed to delete conversation: ${response.statusCode}');
+    }
+  }
+
+  @override
+  Future<void> markAsRead(String conversationId) async {
+    final response = await client.post(
+      Uri.parse(ApiEndpoints.markAsRead(conversationId)),
+      headers: _headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw ServerException('Failed to mark as read: ${response.statusCode}');
     }
   }
 }

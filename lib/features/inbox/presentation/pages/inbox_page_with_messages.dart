@@ -42,6 +42,9 @@ class _InboxChatPageState extends State<InboxChatPage> {
         productId: _currentConversation.productId,
       ));
 
+      // 📩 Mark as read immediately
+      context.read<ChatBloc>().add(MarkAsReadEvent(conversationId: _currentConversation.id));
+
       // 🔍 Fetch missing product details if needed
       if (_currentConversation.productId != null && 
           (_currentConversation.productTitle == 'Unknown Product' || 
@@ -308,6 +311,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
           _buildMessageInput(context),
         ],
       ),
+      )
     );
   }
 

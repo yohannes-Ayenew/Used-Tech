@@ -17,4 +17,5 @@ abstract class ChatRepository {
   });
   Future<Either<Failure, void>> updateFcmToken(String token);
   Future<Either<Failure, void>> deleteConversation(String conversationId);
+  Future<Either<Failure, void>> markAsRead(String conversationId);
 }

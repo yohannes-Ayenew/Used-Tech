@@ -11,6 +11,9 @@ import 'package:used_tech_client/features/inbox/presentation/bloc/chat_event.dar
 import 'package:used_tech_client/features/inbox/presentation/bloc/chat_state.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_bloc.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_event.dart';
+import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../injection_container.dart';
@@ -234,21 +237,29 @@ class _InboxPageState extends State<InboxPage> {
       );
     }
 
-    if (state is ConversationsLoaded) {
-      if (state.conversations.isEmpty) {
+    if (state is ConversationsLoaded || (state is! ChatLoading && state is! ChatError)) {
+      final conversations = state is ConversationsLoaded 
+          ? state.conversations 
+          : context.read<ChatBloc>().conversationsCache;
+
+      if (conversations == null || (conversations.isEmpty && state is ChatLoading)) {
+        return _buildShimmerLoading();
+      }
+
+      if (conversations.isEmpty) {
         return _buildEmptyState(context);
       }
 
       return SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            final conv = state.conversations[index];
+            final conv = conversations![index];
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildConversationItem(context, conv),
+              child: ConversationTile(conversation: conv),
             );
           },
-          childCount: state.conversations.length,
+          childCount: conversations.length,
         ),
       );
     }
@@ -355,163 +366,265 @@ class _InboxPageState extends State<InboxPage> {
     );
   }
 
-  Widget _buildConversationItem(BuildContext context, ConversationEntity conv) {
-    final hasUnread = conv.unreadCount > 0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: hasUnread ? context.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  Widget _buildGuestMode(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text("Inbox", style: context.textTheme.titleLarge),
+        elevation: 0,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => InboxChatPage(conversation: conv),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  color: context.lightGrey,
+                  shape: BoxShape.circle,
                 ),
-              ).then((_) {
-                // Ensure we go back to ConversationsLoaded state using cache
-                if (context.mounted) {
-                  context.read<ChatBloc>().add(GetConversationsEvent());
-                }
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _buildAvatar(context, conv),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                conv.otherUserName,
-                                style: context.textTheme.titleMedium?.copyWith(
-                                  fontWeight: hasUnread ? FontWeight.bold : FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              conv.lastMessageTimeFormatted,
-                              style: context.textTheme.bodySmall?.copyWith(
-                                color: hasUnread ? context.primaryColor : context.greyText,
-                                fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (conv.productTitle != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2, bottom: 4),
-                            child: Row(
-                              children: [
-                                Icon(Icons.shopping_bag_outlined, size: 12, color: context.primaryColor),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    conv.productTitle!,
-                                    style: context.textTheme.bodySmall?.copyWith(
-                                      color: context.primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                conv.lastMessage,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: context.textTheme.bodyMedium?.copyWith(
-                                  color: hasUnread ? context.darkText : context.greyText,
-                                  fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                            if (hasUnread)
-                              Container(
-                                margin: const EdgeInsets.only(left: 8),
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: context.primaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  conv.unreadCount.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        if (conv.productTitle != null) ...[
-                          const SizedBox(height: 8),
+                child: Icon(
+                  Icons.lock_outline_rounded,
+                  size: 70,
+                  color: context.greyText,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                "Sign in required",
+                style: context.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Please sign in to view your messages and start conversations with sellers.",
+                textAlign: TextAlign.center,
+                style: context.textTheme.bodyMedium?.copyWith(color: context.greyText),
+              ),
+              const SizedBox(height: 48),
+              ElevatedButton(
+                onPressed: () => Navigator.pushNamed(context, '/login'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text("Sign In", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ConversationTile extends StatefulWidget {
+  final ConversationEntity conversation;
+
+  const ConversationTile({super.key, required this.conversation});
+
+  @override
+  State<ConversationTile> createState() => _ConversationTileState();
+}
+
+class _ConversationTileState extends State<ConversationTile> {
+  late ConversationEntity _currentConversation;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentConversation = widget.conversation;
+
+    // 🔍 Fetch missing product details if needed
+    if (_currentConversation.productId != null &&
+        (_currentConversation.productTitle == 'Unknown Product' ||
+            _currentConversation.productPrice == null)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<ProductBloc>().add(
+            GetProductDetailsEvent(productId: _currentConversation.productId!));
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUnread = _currentConversation.unreadCount > 0;
+
+    return BlocListener<ProductBloc, ProductState>(
+      listener: (context, state) {
+        if (state is ProductDetailsLoaded &&
+            state.product.id == _currentConversation.productId) {
+          setState(() {
+            _currentConversation = _currentConversation.copyWith(
+              productTitle: state.product.title,
+              productPrice: state.product.price,
+              productImage: state.product.images.isNotEmpty
+                  ? state.product.images.first
+                  : null,
+            );
+          });
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: hasUnread
+                ? context.primaryColor.withValues(alpha: 0.1)
+                : Colors.transparent,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        InboxChatPage(conversation: _currentConversation),
+                  ),
+                ).then((_) {
+                  if (context.mounted) {
+                    context.read<ChatBloc>().add(GetConversationsEvent());
+                  }
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    _buildAvatar(context, _currentConversation),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(Icons.shopping_bag_outlined, size: 12, color: context.primaryColor),
-                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  _currentConversation.otherUserName,
+                                  style:
+                                      context.textTheme.titleMedium?.copyWith(
+                                    fontWeight: hasUnread
+                                        ? FontWeight.bold
+                                        : FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                               Text(
-                                conv.productTitle!,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: context.primaryColor,
-                                  fontWeight: FontWeight.bold,
+                                _currentConversation.lastMessageTimeFormatted,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: hasUnread
+                                      ? context.primaryColor
+                                      : context.greyText,
+                                  fontWeight: hasUnread
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ],
                           ),
+                          if (_currentConversation.productTitle != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2, bottom: 4),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.shopping_bag_outlined,
+                                      size: 12, color: context.primaryColor),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      _currentConversation.productTitle!,
+                                      style:
+                                          context.textTheme.bodySmall?.copyWith(
+                                        color: context.primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _currentConversation.lastMessage,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.textTheme.bodyMedium?.copyWith(
+                                    color: hasUnread
+                                        ? context.darkText
+                                        : context.greyText,
+                                    fontWeight: hasUnread
+                                        ? FontWeight.w500
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                              if (hasUnread)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: context.primaryColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    _currentConversation.unreadCount.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ],
-                      ],
-                    ),
-                  ),
-                  if (conv.productImage != null && conv.productImage!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          ApiEndpoints.resolveImageUrl(conv.productImage!),
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
                       ),
                     ),
-                ],
+                    if (_currentConversation.productImage != null &&
+                        _currentConversation.productImage!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            ApiEndpoints.resolveImageUrl(
+                                _currentConversation.productImage!),
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -528,7 +641,9 @@ class _InboxPageState extends State<InboxPage> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: conv.unreadCount > 0 ? context.primaryColor : Colors.transparent,
+              color: conv.unreadCount > 0
+                  ? context.primaryColor
+                  : Colors.transparent,
               width: 2,
             ),
           ),
@@ -584,87 +699,4 @@ class _InboxPageState extends State<InboxPage> {
       ),
     );
   }
-
-  Widget _buildProductBadge(BuildContext context, ConversationEntity conv) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.lightGrey,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.shopping_bag_outlined, size: 14, color: context.primaryColor),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              conv.productTitle!,
-              style: context.textTheme.bodySmall?.copyWith(
-                color: context.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGuestMode(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text("Inbox", style: context.textTheme.titleLarge),
-        elevation: 0,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  color: context.lightGrey,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.lock_outline_rounded,
-                  size: 70,
-                  color: context.greyText,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                "Sign in required",
-                style: context.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Please sign in to view your messages and start conversations with sellers.",
-                textAlign: TextAlign.center,
-                style: context.textTheme.bodyMedium?.copyWith(color: context.greyText),
-              ),
-              const SizedBox(height: 48),
-              ElevatedButton(
-                onPressed: () => Navigator.pushNamed(context, '/login'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text("Sign In", style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+}

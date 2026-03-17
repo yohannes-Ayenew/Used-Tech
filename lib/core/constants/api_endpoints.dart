@@ -46,11 +46,14 @@ class ApiEndpoints {
   static String get createProduct => '$baseUrl/products';
   static String get getProducts => '$baseUrl/products';
   static String getProductById(String id) => '$baseUrl/products/$id';
+  static String deleteProduct(String id) => '$baseUrl/products/$id';
+  static String updateProductStatus(String id) => '$baseUrl/products/$id/status';
 
   // Chat Endpoints
   static String get sendMessage => '$baseUrl/chat';
   static String get getConversations => '$baseUrl/chat/conversations';
   static String deleteConversation(String id) => '$baseUrl/chat/conversations/$id';
+  static String markAsRead(String id) => '$baseUrl/chat/read/$id';
   static String getChatHistory(String id) => '$baseUrl/chat/history/$id';
   static String get updateFcmToken => '$baseUrl/users/fcm-token';
 
