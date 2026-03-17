@@ -17,6 +17,36 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     on<GetProductsEvent>(_onGetProducts);
     on<GetHomeDataEvent>(_onGetHomeData);
     on<GetProductDetailsEvent>(_onGetProductDetails);
+    on<DeleteProductEvent>(_onDeleteProduct);
+    on<UpdateProductStatusEvent>(_onUpdateProductStatus);
+  }
+
+  Future<void> _onDeleteProduct(
+    DeleteProductEvent event,
+    Emitter<ProductState> emit,
+  ) async {
+    final result = await productRepository.deleteProduct(event.productId);
+    result.fold(
+      (failure) => emit(ProductError(failure.message)),
+      (_) {
+        // After deleting, we might want to refresh the list or emit a specific state
+        // For now, just a generic success state isn't defined, so we'll rely on the caller to refresh
+      },
+    );
+  }
+
+  Future<void> _onUpdateProductStatus(
+    UpdateProductStatusEvent event,
+    Emitter<ProductState> emit,
+  ) async {
+    final result =
+        await productRepository.updateProductStatus(event.productId, event.status);
+    result.fold(
+      (failure) => emit(ProductError(failure.message)),
+      (_) {
+        // Similar to delete, we expect the UI to refresh
+      },
+    );
   }
 
   Future<void> _onGetProductDetails(

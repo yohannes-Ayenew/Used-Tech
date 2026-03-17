@@ -22,4 +22,6 @@ abstract class ProductRepository {
   });
 
   Future<Either<Failure, ProductEntity>> getProductById(String id);
+  Future<Either<Failure, void>> deleteProduct(String id);
+  Future<Either<Failure, void>> updateProductStatus(String id, String status);
 }

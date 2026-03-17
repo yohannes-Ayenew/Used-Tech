@@ -27,6 +27,7 @@ class ProductModel extends ProductEntity {
     required super.location,
     required super.isEscrow,
     required super.isVerified,
+    required super.status,
     required super.createdAt,
     required super.updatedAt,
   });
@@ -101,6 +102,7 @@ class ProductModel extends ProductEntity {
       location: json['location'] ?? 'Addis Ababa',
       isEscrow: true, // Always true for now
       isVerified: isSellerVerified,
+      status: json['status'] ?? 'ACTIVE',
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),

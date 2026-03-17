@@ -93,6 +93,7 @@ class ProductEntity extends Equatable {
   final String location;
   final bool isEscrow;
   final bool isVerified;
+  final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -120,6 +121,7 @@ class ProductEntity extends Equatable {
     required this.location,
     required this.isEscrow,
     required this.isVerified,
+    required this.status,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -157,6 +159,7 @@ class ProductEntity extends Equatable {
     core,
     generation,
     price,
+    status,
     createdAt,
   ];
 }

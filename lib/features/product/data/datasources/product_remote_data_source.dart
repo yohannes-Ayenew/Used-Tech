@@ -26,6 +26,8 @@ abstract class ProductRemoteDataSource {
   });
 
   Future<ProductModel> getProductById(String id);
+  Future<void> deleteProduct(String id);
+  Future<void> updateProductStatus(String id, String status);
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -151,6 +153,43 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       }
     } catch (e) {
       throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    final token = sharedPreferences.getString('CACHED_TOKEN');
+    if (token == null) throw ServerException('Not authenticated');
+
+    final response = await client.delete(
+      Uri.parse(ApiEndpoints.deleteProduct(id)),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw ServerException('Failed to delete product');
+    }
+  }
+
+  @override
+  Future<void> updateProductStatus(String id, String status) async {
+    final token = sharedPreferences.getString('CACHED_TOKEN');
+    if (token == null) throw ServerException('Not authenticated');
+
+    final response = await client.patch(
+      Uri.parse(ApiEndpoints.updateProductStatus(id)),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'status': status}),
+    );
+
+    if (response.statusCode != 200) {
+      throw ServerException('Failed to update product status');
     }
   }
 }
