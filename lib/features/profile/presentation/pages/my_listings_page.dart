@@ -206,9 +206,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
           );
         },
       ),
-      ),
-    );
-  }
+    ),
+  );
+}
 
   // ==========================================
   // HELPER WIDGETS

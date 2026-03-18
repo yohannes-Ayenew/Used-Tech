@@ -21,7 +21,9 @@ import 'features/auth/presentation/pages/forgot_password_page.dart';
 import 'features/auth/presentation/pages/reset_password_page.dart';
 import 'features/profile/presentation/pages/settings_page.dart';
 import 'features/sell/presentation/pages/sell_page.dart';
+import 'features/sell/presentation/pages/edit_product_page.dart';
 import 'features/sell/presentation/pages/success_page.dart';
+import 'features/product/domain/entities/product_entity.dart';
 import 'features/product/presentation/pages/collections_page.dart';
 import 'features/product/presentation/pages/product_detail_page.dart';
 import 'features/product/presentation/pages/favorites_page.dart';
@@ -204,6 +206,13 @@ class MyApp extends StatelessWidget {
                       },
                     ),
                   ),
+                );
+              }
+              // Edit Product Route
+              if (settings.name == '/edit-product' && settings.arguments != null) {
+                final product = settings.arguments as ProductEntity;
+                return MaterialPageRoute(
+                  builder: (context) => EditProductPage(product: product),
                 );
               }
               return null;

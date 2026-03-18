@@ -145,8 +145,9 @@ class SellBloc extends Bloc<SellEvent, SellState> {
     emit(SellLoading());
 
     final result = await updateProductUseCase(
-      productId: _editingProductId!,
-      productData: _listingData,
+      _editingProductId!,
+      _listingData,
+      images: _images.isNotEmpty ? _images : null,
     );
 
     result.fold(

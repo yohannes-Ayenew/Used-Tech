@@ -27,6 +27,7 @@ abstract class ProductRemoteDataSource {
 
   Future<ProductModel> getProductById(String id);
   Future<void> deleteProduct(String id);
+  Future<void> updateProduct(String id, Map<String, dynamic> productData, {List<File>? images});
   Future<void> updateProductStatus(String id, String status);
 }
 
@@ -170,7 +171,9 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw ServerException('Failed to delete product');
+      final errorData = jsonDecode(response.body);
+      final message = errorData['message'] ?? 'Failed to delete product';
+      throw ServerException('$message (Status: ${response.statusCode})');
     }
   }
 
@@ -190,6 +193,71 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
 
     if (response.statusCode != 200) {
       throw ServerException('Failed to update product status');
+    }
+  }
+
+  @override
+  Future<void> updateProduct(String id, Map<String, dynamic> productData, {List<File>? images}) async {
+    final token = sharedPreferences.getString('CACHED_TOKEN');
+    if (token == null) throw ServerException('Not authenticated');
+
+    try {
+      if (images != null && images.isNotEmpty) {
+        // Use MultipartRequest
+        var request = http.MultipartRequest(
+          'PATCH',
+          Uri.parse(ApiEndpoints.updateProduct(id)),
+        );
+
+        request.headers.addAll({'Authorization': 'Bearer $token'});
+
+        // Add text fields
+        productData.forEach((key, value) {
+          if (value != null) {
+            if (value is Map) {
+              request.fields[key] = jsonEncode(value);
+            } else {
+              request.fields[key] = value.toString();
+            }
+          }
+        });
+
+        // Add images
+        for (var image in images) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'images',
+              image.path,
+              contentType: MediaType('image', 'jpeg'),
+            ),
+          );
+        }
+
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+
+        if (response.statusCode != 200) {
+          final message = jsonDecode(response.body)['message'] ?? "Failed to update listing";
+          throw ServerException(message);
+        }
+      } else {
+        // Standard JSON PATCH
+        final response = await client.patch(
+          Uri.parse(ApiEndpoints.updateProduct(id)),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(productData),
+        );
+
+        if (response.statusCode != 200) {
+          final message = jsonDecode(response.body)['message'] ?? "Failed to update listing";
+          throw ServerException(message);
+        }
+      }
+    } catch (e) {
+      throw ServerException(e.toString());
     }
   }
 }

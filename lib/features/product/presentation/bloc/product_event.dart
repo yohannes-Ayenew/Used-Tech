@@ -145,3 +145,5 @@ class UpdateProductStatusEvent extends ProductEvent {
   @override
   List<Object> get props => [productId, status];
 }
+
+class RefreshProducts extends ProductEvent {}

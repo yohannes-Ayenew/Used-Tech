@@ -6,6 +6,8 @@ import '../../../../core/error/failures.dart';
 import '../entities/product_entity.dart';
 
 abstract class ProductRepository {
+  Stream<void> get productUpdateStream;
+  
   Future<Either<Failure, void>> createProduct({
     required Map<String, dynamic> productData,
     required List<File> images,
@@ -23,6 +25,6 @@ abstract class ProductRepository {
 
   Future<Either<Failure, ProductEntity>> getProductById(String id);
   Future<Either<Failure, void>> deleteProduct(String id);
-  Future<Either<Failure, void>> updateProduct(String id, Map<String, dynamic> productData);
+  Future<Either<Failure, void>> updateProduct(String id, Map<String, dynamic> productData, {List<File>? images});
   Future<Either<Failure, void>> updateProductStatus(String id, String status);
 }

@@ -38,6 +38,7 @@ import 'package:used_tech_client/core/services/connectivity_service.dart';
 import 'package:used_tech_client/features/product/data/repositories/product_repository_impl.dart';
 import 'package:used_tech_client/features/product/domain/repositories/product_repository.dart';
 import 'package:used_tech_client/features/product/domain/usecases/create_product.dart';
+import 'package:used_tech_client/features/product/domain/usecases/update_product.dart';
 
 // Sell Feature Imports
 
@@ -95,6 +96,7 @@ Future<void> init() async {
 
   // Product Use Cases
   sl.registerLazySingleton(() => CreateProduct(sl()));
+  sl.registerLazySingleton(() => UpdateProduct(sl()));
 
   // Bloc
   sl.registerFactory(
@@ -114,7 +116,10 @@ Future<void> init() async {
 
   // Sell Feature
   sl.registerFactory(
-    () => SellBloc(createProductUseCase: sl()),
+    () => SellBloc(
+      createProductUseCase: sl(),
+      updateProductUseCase: sl(),
+    ),
   );
 
   // Product Bloc

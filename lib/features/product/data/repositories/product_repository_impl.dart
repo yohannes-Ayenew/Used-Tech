@@ -1,5 +1,6 @@
 // lib/features/product/data/repositories/product_repository_impl.dart
 
+import 'dart:async';
 import 'dart:io';
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
@@ -14,6 +15,11 @@ class ProductRepositoryImpl implements ProductRepository {
   // 🚀 Simple In-Memory Cache
   static final Map<String, List<ProductEntity>> _cache = {};
 
+  // 📡 Global Refresh Stream
+  final _updateController = StreamController<void>.broadcast();
+  @override
+  Stream<void> get productUpdateStream => _updateController.stream;
+
   ProductRepositoryImpl({required this.remoteDataSource});
 
   @override
@@ -26,6 +32,8 @@ class ProductRepositoryImpl implements ProductRepository {
         productData: productData,
         images: images,
       );
+      _cache.clear(); 
+      _updateController.add(null); // 🚀 Notify listeners
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -88,6 +96,8 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<Either<Failure, void>> deleteProduct(String id) async {
     try {
       await remoteDataSource.deleteProduct(id);
+      _cache.clear(); 
+      _updateController.add(null); // 🚀 Notify listeners
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -98,9 +108,11 @@ class ProductRepositoryImpl implements ProductRepository {
 
   @override
   Future<Either<Failure, void>> updateProduct(
-      String id, Map<String, dynamic> productData) async {
+      String id, Map<String, dynamic> productData, {List<File>? images}) async {
     try {
-      await remoteDataSource.updateProduct(id, productData);
+      await remoteDataSource.updateProduct(id, productData, images: images);
+      _cache.clear(); 
+      _updateController.add(null); // 🚀 Notify listeners
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -114,6 +126,8 @@ class ProductRepositoryImpl implements ProductRepository {
       String id, String status) async {
     try {
       await remoteDataSource.updateProductStatus(id, status);
+      _cache.clear(); 
+      _updateController.add(null); // 🚀 Notify listeners
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

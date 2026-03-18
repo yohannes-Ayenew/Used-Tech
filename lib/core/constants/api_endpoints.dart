@@ -47,6 +47,7 @@ class ApiEndpoints {
   static String get getProducts => '$baseUrl/products';
   static String getProductById(String id) => '$baseUrl/products/$id';
   static String deleteProduct(String id) => '$baseUrl/products/$id';
+  static String updateProduct(String id) => '$baseUrl/products/$id';
   static String updateProductStatus(String id) => '$baseUrl/products/$id/status';
 
   // Chat Endpoints
