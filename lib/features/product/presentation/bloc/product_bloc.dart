@@ -29,8 +29,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     result.fold(
       (failure) => emit(ProductError(failure.message)),
       (_) {
-        // After deleting, we might want to refresh the list or emit a specific state
-        // For now, just a generic success state isn't defined, so we'll rely on the caller to refresh
+        emit(const ProductOperationSuccess("Product deleted successfully"));
       },
     );
   }
@@ -44,7 +43,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     result.fold(
       (failure) => emit(ProductError(failure.message)),
       (_) {
-        // Similar to delete, we expect the UI to refresh
+        emit(const ProductOperationSuccess("Status updated successfully"));
       },
     );
   }

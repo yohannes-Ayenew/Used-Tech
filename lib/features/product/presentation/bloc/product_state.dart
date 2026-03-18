@@ -79,3 +79,11 @@ class ProductCreated extends ProductState {
   @override
   List<Object> get props => [product];
 }
+
+class ProductOperationSuccess extends ProductState {
+  final String message;
+  const ProductOperationSuccess(this.message);
+
+  @override
+  List<Object> get props => [message];
+}

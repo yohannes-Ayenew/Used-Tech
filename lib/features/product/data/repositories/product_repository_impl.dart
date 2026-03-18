@@ -46,9 +46,6 @@ class ProductRepositoryImpl implements ProductRepository {
   }) async {
     final cacheKey = "${category ?? 'all'}_${searchQuery ?? 'none'}_${location ?? 'any'}_${sellerId ?? 'any'}_${status ?? 'any'}_${limit ?? 'all'}_${sort ?? 'default'}";
 
-    // 💡 Optional: Return cached data immediately if available (Fast UI)
-    // For now, we fetch fresh but we can evolve this to "Cache then Refresh"
-    
     try {
       final products = await remoteDataSource.getProducts(
         category: category,
@@ -63,7 +60,6 @@ class ProductRepositoryImpl implements ProductRepository {
       _cache[cacheKey] = products; // Update cache
       return Right(products);
     } on ServerException catch (e) {
-      // If network fails, try to return from cache instead of erroring
       if (_cache.containsKey(cacheKey)) {
         return Right(_cache[cacheKey]!);
       }
@@ -92,6 +88,19 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<Either<Failure, void>> deleteProduct(String id) async {
     try {
       await remoteDataSource.deleteProduct(id);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Data processing error: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateProduct(
+      String id, Map<String, dynamic> productData) async {
+    try {
+      await remoteDataSource.updateProduct(id, productData);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

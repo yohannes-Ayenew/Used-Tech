@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/global_variables.dart';
 import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/theme/theme_extensions.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
@@ -34,9 +35,22 @@ class _MyListingsPageState extends State<MyListingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GlobalVariables.backgroundWhite,
-      body: BlocBuilder<ProductBloc, ProductState>(
-        builder: (context, state) {
+      backgroundColor: context.theme.scaffoldBackgroundColor,
+      body: BlocListener<ProductBloc, ProductState>(
+        listener: (context, state) {
+          if (state is ProductOperationSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: context.successColor),
+            );
+            _fetchListings(); // Refresh list on success
+          } else if (state is ProductError) {
+             ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            );
+          }
+        },
+        child: BlocBuilder<ProductBloc, ProductState>(
+          builder: (context, state) {
           List<ProductEntity> activeProducts = [];
           List<ProductEntity> soldProducts = [];
           int totalViews = 0;
@@ -44,15 +58,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
           if (state is ProductsLoaded) {
             activeProducts = state.products.where((p) => p.status == 'ACTIVE').toList();
             soldProducts = state.products.where((p) => p.status == 'SOLD').toList();
-            // Assuming views is a field, but if not, we use 0
-            // totalViews = state.products.fold(0, (sum, p) => sum + (p.views ?? 0));
           }
 
           return Column(
             children: [
               // --- 1. TOP TEAL HEADER & STATS ---
               Container(
-                color: GlobalVariables.primaryTeal,
+                color: context.primaryColor,
                 padding: const EdgeInsets.only(top: 50, left: 16, right: 16, bottom: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +92,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 32), // Balance the row
+                        const SizedBox(width: 32),
                       ],
                     ),
                     const SizedBox(height: 25),
@@ -117,7 +129,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                           decoration: BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color: GlobalVariables.secondaryOrange.withOpacity(0.4),
+                                color: context.secondaryColor.withOpacity(0.4),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -133,7 +145,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: GlobalVariables.secondaryOrange,
+                              backgroundColor: context.secondaryColor,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               elevation: 0,
                             ),
@@ -144,13 +156,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
                         if (state is ProductLoading)
                           const Center(child: CircularProgressIndicator())
                         else if (state is ProductError)
-                          Center(child: Text(state.message))
+                          Center(child: Text(state.message, style: TextStyle(color: context.greyText)))
                         else ...[
                           // --- ACTIVE LISTINGS SECTION ---
-                          const Text("Active Listings", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(
+                            "Active Listings",
+                            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 12),
                           if (activeProducts.isEmpty)
-                            const Text("No active listings", style: TextStyle(color: Colors.grey))
+                            Text("No active listings", style: TextStyle(color: context.greyText))
                           else
                             ...activeProducts.map((product) => Padding(
                                   padding: const EdgeInsets.only(bottom: 12.0),
@@ -159,10 +174,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
                           const SizedBox(height: 25),
 
                           // --- SOLD SECTION ---
-                          const Text("Sold", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(
+                            "Sold",
+                            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 12),
                           if (soldProducts.isEmpty)
-                            const Text("No sold items", style: TextStyle(color: Colors.grey))
+                            Text("No sold items", style: TextStyle(color: context.greyText))
                           else
                             ...soldProducts.map((product) => Padding(
                                   padding: const EdgeInsets.only(bottom: 12.0),
@@ -171,10 +189,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
                           const SizedBox(height: 25),
 
                           // --- OTHER SECTION ---
-                          const Text("Other", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(
+                            "Other",
+                            style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 12),
-                          const Text("No pending disputes", style: TextStyle(color: Colors.grey)),
-                          const SizedBox(height: 40), // Bottom padding
+                          Text("No pending disputes", style: TextStyle(color: context.greyText)),
+                          const SizedBox(height: 40),
                         ],
                       ],
                     ),
@@ -184,6 +205,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             ],
           );
         },
+      ),
       ),
     );
   }
@@ -219,9 +241,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(
         children: [
@@ -237,7 +259,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                     height: 70,
                     width: 70,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(color: Colors.grey.shade200),
+                    placeholder: (context, url) => Container(color: context.lightGrey),
                     errorWidget: (context, url, error) => const Icon(Icons.error),
                   ),
                 ),
@@ -246,20 +268,23 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(product.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(
+                        product.title,
+                        style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         "${product.price.toStringAsFixed(0)} ETB",
-                        style: const TextStyle(color: GlobalVariables.primaryTeal, fontWeight: FontWeight.w900, fontSize: 16),
+                        style: TextStyle(color: context.primaryColor, fontWeight: FontWeight.w900, fontSize: 16),
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.visibility_outlined, size: 14, color: Colors.grey),
+                          Icon(Icons.visibility_outlined, size: 14, color: context.greyText),
                           const SizedBox(width: 4),
-                          const Text("0 views", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                          Text("0 views", style: TextStyle(color: context.greyText, fontSize: 11)),
                           const SizedBox(width: 10),
-                          Text("Posted", style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                          Text("Posted", style: TextStyle(color: context.greyText, fontSize: 11)),
                         ],
                       ),
                     ],
@@ -268,37 +293,46 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: GlobalVariables.successGreen.withOpacity(0.1),
+                    color: context.successColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: GlobalVariables.successGreen.withOpacity(0.5)),
+                    border: Border.all(color: context.successColor.withOpacity(0.5)),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.check_circle_outline, color: GlobalVariables.successGreen, size: 12),
-                      SizedBox(width: 4),
-                      Text("Active", style: TextStyle(color: GlobalVariables.successGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                    children: [
+                      Icon(Icons.check_circle_outline, color: context.successColor, size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Active",
+                        style: TextStyle(color: context.successColor, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          Divider(height: 1, color: Colors.grey.shade200),
+          Divider(height: 1, color: context.borderColor),
           IntrinsicHeight(
             child: Row(
               children: [
-                _buildActionButton(Icons.edit_outlined, "Edit", Colors.blue, () {
-                  // Edit logic
+                _buildActionButton(Icons.edit_outlined, "Edit", Colors.blue, () async {
+                  final result = await Navigator.pushNamed(
+                    context,
+                    '/edit-product',
+                    arguments: product,
+                  );
+                  if (result == true) {
+                    _fetchListings(); // Refresh on success
+                  }
                 }),
-                VerticalDivider(width: 1, color: Colors.grey.shade200),
-                _buildActionButton(Icons.check_circle_outline, "Sold", GlobalVariables.successGreen, () {
+                VerticalDivider(width: 1, color: context.borderColor),
+                _buildActionButton(Icons.check_circle_outline, "Sold", context.successColor, () {
                   context.read<ProductBloc>().add(UpdateProductStatusEvent(
                         productId: product.id,
                         status: 'SOLD',
                       ));
-                  _fetchListings(); // Refresh list
                 }),
-                VerticalDivider(width: 1, color: Colors.grey.shade200),
+                VerticalDivider(width: 1, color: context.borderColor),
                 _buildActionButton(Icons.delete_outline, "Delete", Colors.red, () {
                   _showDeleteConfirmDialog(product);
                 }),
@@ -318,9 +352,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: context.borderColor),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,7 +366,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 height: 70,
                 width: 70,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.grey.shade200),
+                placeholder: (context, url) => Container(color: context.lightGrey),
                 errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
             ),
@@ -341,20 +375,23 @@ class _MyListingsPageState extends State<MyListingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(
+                    product.title,
+                    style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     "${product.price.toStringAsFixed(0)} ETB",
-                    style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w900, fontSize: 16),
+                    style: TextStyle(color: context.greyText, fontWeight: FontWeight.w900, fontSize: 16),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.visibility_outlined, size: 14, color: Colors.grey),
+                      Icon(Icons.visibility_outlined, size: 14, color: context.greyText),
                       const SizedBox(width: 4),
-                      const Text("0 views", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                      Text("0 views", style: TextStyle(color: context.greyText, fontSize: 11)),
                       const SizedBox(width: 10),
-                      const Text("Sold", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                      Text("Sold", style: TextStyle(color: context.greyText, fontSize: 11)),
                     ],
                   ),
                 ],
@@ -406,7 +443,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
             onPressed: () {
               context.read<ProductBloc>().add(DeleteProductEvent(productId: product.id));
               Navigator.pop(context);
-              _fetchListings(); // Refresh list
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
