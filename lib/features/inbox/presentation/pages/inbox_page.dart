@@ -52,7 +52,8 @@ class _InboxPageState extends State<InboxPage> {
         buildWhen: (previous, current) =>
             current is ConversationsLoaded ||
             current is ChatLoading ||
-            current is ChatError,
+            current is ChatError ||
+            current is MessagesLoaded, // Add this to ensure we keep the state updated
         builder: (context, state) {
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
@@ -186,11 +187,14 @@ class _InboxPageState extends State<InboxPage> {
   }
 
   Widget _buildContent(BuildContext context, ChatState state) {
-    if (state is ChatLoading) {
+    final cachedConversations = context.read<ChatBloc>().conversationsCache;
+
+    // Show shimmer ONLY if we are loading AND have no cached data
+    if (state is ChatLoading && (cachedConversations == null || cachedConversations.isEmpty)) {
       return _buildShimmerLoading();
     }
 
-    if (state is ChatError) {
+    if (state is ChatError && (cachedConversations == null || cachedConversations.isEmpty)) {
       return SliverFillRemaining(
         child: Center(
           child: Padding(
@@ -237,23 +241,16 @@ class _InboxPageState extends State<InboxPage> {
       );
     }
 
-    if (state is ConversationsLoaded || (state is! ChatLoading && state is! ChatError)) {
-      final conversations = state is ConversationsLoaded 
-          ? state.conversations 
-          : context.read<ChatBloc>().conversationsCache;
+    // If we have conversations (either in state or cache), show them
+    final conversations = (state is ConversationsLoaded) 
+        ? state.conversations 
+        : cachedConversations;
 
-      if (conversations == null || (conversations.isEmpty && state is ChatLoading)) {
-        return _buildShimmerLoading();
-      }
-
-      if (conversations.isEmpty) {
-        return _buildEmptyState(context);
-      }
-
+    if (conversations != null && conversations.isNotEmpty) {
       return SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            final conv = conversations![index];
+            final conv = conversations[index];
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: ConversationTile(conversation: conv),
@@ -262,6 +259,10 @@ class _InboxPageState extends State<InboxPage> {
           childCount: conversations.length,
         ),
       );
+    }
+
+    if (state is ConversationsLoaded && conversations!.isEmpty) {
+      return _buildEmptyState(context);
     }
 
     // Trigger load if initial or anything else
