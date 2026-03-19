@@ -24,16 +24,36 @@ import 'package:used_tech_client/features/profile/presentation/pages/seller_prof
 import 'package:used_tech_client/features/inbox/domain/entities/conversation_entity.dart';
 import 'package:used_tech_client/features/inbox/presentation/pages/inbox_page_with_messages.dart';
 
-class ProductDetailPage extends StatelessWidget {
+class ProductDetailPage extends StatefulWidget {
   final ProductEntity product;
 
   const ProductDetailPage({super.key, required this.product});
 
+  @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  late final PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   String _getDisplayLocation() {
-    if (product.sellerLocation != null && product.sellerLocation!.isNotEmpty) {
-      return product.sellerLocation!;
+    if (widget.product.sellerLocation != null && widget.product.sellerLocation!.isNotEmpty) {
+      return widget.product.sellerLocation!;
     }
-    return product.location;
+    return widget.product.location;
   }
 
   String _getInitials(String name) {
@@ -79,23 +99,71 @@ class ProductDetailPage extends StatelessWidget {
                 // Image Header
                 Stack(
                   children: [
-                    Image.network(
-                      ApiEndpoints.resolveImageUrl(product.coverImage),
-                      height: 300,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 300,
-                          width: double.infinity,
-                          color: context.lightGrey,
-                          child: Icon(
-                            Icons.image_not_supported,
-                            color: context.greyText,
-                          ),
-                        );
-                      },
+                    SizedBox(
+                      height: 350,
+                      child: widget.product.images.isNotEmpty
+                          ? PageView.builder(
+                              controller: _pageController,
+                              onPageChanged: (index) {
+                                setState(() {
+                                  _currentPage = index;
+                                });
+                              },
+                              itemCount: widget.product.images.length,
+                              itemBuilder: (context, index) {
+                                return CachedNetworkImage(
+                                  imageUrl: ApiEndpoints.resolveImageUrl(
+                                      widget.product.images[index]),
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: context.lightGrey,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    color: context.lightGrey,
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      color: context.greyText,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              color: context.lightGrey,
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: context.greyText,
+                              ),
+                            ),
                     ),
+                    // Dots indicator
+                    if (widget.product.images.length > 1)
+                      Positioned(
+                        bottom: 20,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            widget.product.images.length,
+                            (index) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              height: 8,
+                              width: _currentPage == index ? 24 : 8,
+                              decoration: BoxDecoration(
+                                color: _currentPage == index
+                                    ? context.primaryColor
+                                    : Colors.white.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     Positioned(
                       top: 40,
                       left: 16,
@@ -115,7 +183,7 @@ class ProductDetailPage extends StatelessWidget {
                               bool isFavorite = false;
                               if (state is FavoritesLoaded) {
                                 isFavorite = state.products
-                                    .any((p) => p.id == product.id);
+                                    .any((p) => p.id == widget.product.id);
                               }
                               return _buildCircleBtn(
                                 context,
@@ -125,7 +193,7 @@ class ProductDetailPage extends StatelessWidget {
                                 () {
                                   context
                                       .read<FavoritesBloc>()
-                                      .add(ToggleFavorite(product));
+                                      .add(ToggleFavorite(widget.product));
                                 },
                                 iconColor: isFavorite ? Colors.red : null,
                               );
@@ -148,7 +216,7 @@ class ProductDetailPage extends StatelessWidget {
                     children: [
                       // Title & Price
                       Text(
-                        product.title,
+                        widget.product.title,
                         style: context.textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
@@ -156,9 +224,9 @@ class ProductDetailPage extends StatelessWidget {
                         children: [
                           _buildTag(
                             context,
-                            product.condition.displayName,
-                            product.condition.color.withValues(alpha: 0.1),
-                            product.condition.color,
+                            widget.product.condition.displayName,
+                            widget.product.condition.color.withValues(alpha: 0.1),
+                            widget.product.condition.color,
                           ),
                           const SizedBox(width: 10),
                           Icon(
@@ -174,7 +242,7 @@ class ProductDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 15),
                       Text(
-                        "${product.formattedPrice} ETB",
+                        "${widget.product.formattedPrice} ETB",
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
@@ -184,14 +252,14 @@ class ProductDetailPage extends StatelessWidget {
                       const SizedBox(height: 10),
 
                       // Description
-                      if (product.description.isNotEmpty) ...[
+                      if (widget.product.description.isNotEmpty) ...[
                         Text(
                           "Description",
                           style: context.textTheme.titleLarge,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          product.description,
+                          widget.product.description,
                           style: context.textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 25),
@@ -259,12 +327,12 @@ class ProductDetailPage extends StatelessWidget {
                                     shape: BoxShape.circle,
                                     color: context.cardBackground,
                                   ),
-                                  child: product.sellerProfileImage != null &&
-                                          product.sellerProfileImage!.isNotEmpty
+                                  child: widget.product.sellerProfileImage != null &&
+                                          widget.product.sellerProfileImage!.isNotEmpty
                                       ? ClipOval(
                                           child: CachedNetworkImage(
                                             imageUrl: ApiEndpoints.resolveImageUrl(
-                                                product.sellerProfileImage!),
+                                                widget.product.sellerProfileImage!),
                                             fit: BoxFit.cover,
                                             width: 40,
                                             height: 40,
@@ -277,7 +345,7 @@ class ProductDetailPage extends StatelessWidget {
                                                     error) =>
                                                 Center(
                                               child: Text(
-                                                _getInitials(product.sellerName),
+                                                _getInitials(widget.product.sellerName),
                                                 style: context.textTheme.titleMedium,
                                               ),
                                             ),
@@ -285,7 +353,7 @@ class ProductDetailPage extends StatelessWidget {
                                         )
                                       : Center(
                                           child: Text(
-                                            _getInitials(product.sellerName),
+                                            _getInitials(widget.product.sellerName),
                                             style: context.textTheme.titleMedium,
                                           ),
                                         ),
@@ -297,10 +365,10 @@ class ProductDetailPage extends StatelessWidget {
                                     Row(
                                       children: [
                                         Text(
-                                          product.sellerName,
+                                          widget.product.sellerName,
                                           style: context.textTheme.titleMedium,
                                         ),
-                                        if (product.isSellerVerified) ...[
+                                        if (widget.product.isSellerVerified) ...[
                                           const SizedBox(width: 4),
                                           Icon(
                                             Icons.check_circle,
@@ -311,7 +379,7 @@ class ProductDetailPage extends StatelessWidget {
                                       ],
                                     ),
                                       Text(
-                                        product.isSellerVerified
+                                        widget.product.isSellerVerified
                                             ? "Verified Seller"
                                             : "Member",
                                         style: TextStyle(
@@ -346,10 +414,10 @@ class ProductDetailPage extends StatelessWidget {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => SellerProfilePage(
-                                          sellerId: product.sellerId,
-                                          sellerName: product.sellerName,
-                                          isVerified: product.isSellerVerified,
-                                          sellerProfileImage: product.sellerProfileImage,
+                                          sellerId: widget.product.sellerId,
+                                          sellerName: widget.product.sellerName,
+                                          isVerified: widget.product.isSellerVerified,
+                                          sellerProfileImage: widget.product.sellerProfileImage,
                                         ),
                                       ),
                                     );
@@ -402,7 +470,7 @@ class ProductDetailPage extends StatelessWidget {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              product.sellerPhone ?? "Contact Verified",
+                                              widget.product.sellerPhone ?? "Contact Verified",
                                               style: TextStyle(
                                                 color: Colors.green,
                                                 fontSize: 13,
@@ -483,29 +551,29 @@ class ProductDetailPage extends StatelessWidget {
                             _buildSpecRow(
                               context,
                               "Category",
-                              product.category.displayName,
+                              widget.product.category.displayName,
                             ),
-                            _buildSpecRow(context, "Brand", product.brand),
-                            _buildSpecRow(context, "Model", product.model),
-                            if (product.hasStorage)
+                            _buildSpecRow(context, "Brand", widget.product.brand),
+                            _buildSpecRow(context, "Model", widget.product.model),
+                            if (widget.product.hasStorage)
                               _buildSpecRow(
                                 context,
                                 "Storage",
-                                product.storage!,
+                                widget.product.storage!,
                               ),
-                            if (product.hasRam)
-                              _buildSpecRow(context, "RAM", product.ram!),
-                            if (product.processor != null &&
-                                product.processor!.isNotEmpty)
+                            if (widget.product.hasRam)
+                              _buildSpecRow(context, "RAM", widget.product.ram!),
+                            if (widget.product.processor != null &&
+                                widget.product.processor!.isNotEmpty)
                               _buildSpecRow(
                                 context,
                                 "Processor",
-                                product.processor!,
+                                widget.product.processor!,
                               ),
                             _buildSpecRow(
                               context,
                               "Condition",
-                              product.condition.displayName,
+                              widget.product.condition.displayName,
                             ),
                             _buildSpecRow(
                               context,
@@ -527,7 +595,7 @@ class ProductDetailPage extends StatelessWidget {
                       BlocProvider(
                         create: (context) => ProductBloc(
                           productRepository: sl<ProductRepository>(),
-                        )..add(GetProductsEvent(location: product.location)),
+                        )..add(GetProductsEvent(location: widget.product.location)),
                         child: BlocBuilder<ProductBloc, ProductState>(
                           builder: (context, state) {
                             if (state is ProductLoading) {
@@ -545,7 +613,7 @@ class ProductDetailPage extends StatelessWidget {
                                   onRetry: () {
                                     context.read<ProductBloc>().add(
                                           GetProductsEvent(
-                                            location: product.location,
+                                            location: widget.product.location,
                                           ),
                                         );
                                   },
@@ -553,7 +621,7 @@ class ProductDetailPage extends StatelessWidget {
                               );
                             } else if (state is ProductsLoaded) {
                               final similarProducts = state.products
-                                  .where((p) => p.id != product.id)
+                                  .where((p) => p.id != widget.product.id)
                                   .toList();
 
                               if (similarProducts.isEmpty) {
@@ -620,7 +688,7 @@ class ProductDetailPage extends StatelessWidget {
                           onPressed: () {
                             if (isAuthenticated) {
                               final authState = state as AuthSuccess;
-                              if (authState.user.id == product.sellerId) {
+                              if (authState.user.id == widget.product.sellerId) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text("You cannot chat with yourself")),
                                 );
@@ -628,18 +696,18 @@ class ProductDetailPage extends StatelessWidget {
                               }
                               
                               final chatBloc = context.read<ChatBloc>();
-                              final existingConv = chatBloc.getConversationWithUser(product.sellerId, product.id);
+                              final existingConv = chatBloc.getConversationWithUser(widget.product.sellerId, widget.product.id);
                               
                               final conv = existingConv ?? ConversationEntity(
-                                id: "new_${product.sellerId}_${product.id}",
-                                otherUserId: product.sellerId,
-                                otherUserName: product.sellerName,
-                                otherUserAvatar: product.sellerProfileImage ?? "",
-                                otherUserIsVerified: product.isSellerVerified,
-                                productId: product.id,
-                                productTitle: product.title,
-                                productImage: ApiEndpoints.resolveImageUrl(product.coverImage),
-                                productPrice: product.price,
+                                id: "new_${widget.product.sellerId}_${widget.product.id}",
+                                otherUserId: widget.product.sellerId,
+                                otherUserName: widget.product.sellerName,
+                                otherUserAvatar: widget.product.sellerProfileImage ?? "",
+                                otherUserIsVerified: widget.product.isSellerVerified,
+                                productId: widget.product.id,
+                                productTitle: widget.product.title,
+                                productImage: ApiEndpoints.resolveImageUrl(widget.product.coverImage),
+                                productPrice: widget.product.price,
                                 lastMessage: "",
                                 lastMessageTime: DateTime.now(),
                                 hasUnread: false,
