@@ -32,7 +32,6 @@ import 'package:used_tech_client/features/order/presentation/pages/order_details
 import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
 import 'features/inbox/presentation/bloc/chat_bloc.dart';
 import 'core/services/notification_service.dart';
-import 'core/services/socket_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'injection_container.dart' as di;
 

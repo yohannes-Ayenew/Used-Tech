@@ -114,4 +114,40 @@ class OrderEntity extends Equatable {
     status,
     createdAt,
   ];
+
+  OrderEntity copyWith({
+    String? id,
+    String? buyerId,
+    String? buyerName,
+    String? sellerId,
+    String? sellerName,
+    String? productId,
+    String? productTitle,
+    String? productImage,
+    double? amount,
+    OrderStatus? status,
+    String? deliveryToken,
+    DateTime? deliveredAt,
+    DateTime? autoConfirmAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return OrderEntity(
+      id: id ?? this.id,
+      buyerId: buyerId ?? this.buyerId,
+      buyerName: buyerName ?? this.buyerName,
+      sellerId: sellerId ?? this.sellerId,
+      sellerName: sellerName ?? this.sellerName,
+      productId: productId ?? this.productId,
+      productTitle: productTitle ?? this.productTitle,
+      productImage: productImage ?? this.productImage,
+      amount: amount ?? this.amount,
+      status: status ?? this.status,
+      deliveryToken: deliveryToken ?? this.deliveryToken,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
+      autoConfirmAt: autoConfirmAt ?? this.autoConfirmAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

@@ -101,40 +101,97 @@ class OrderRepositoryImpl implements OrderRepository {
       final order = _mockOrders.firstWhere((o) => o.id == orderId);
       return Right(order);
     } catch (_) {
-      // If not in buying, check selling (simplified for mock)
-      return Right(_mockOrders.first); 
+      // For mock purposes, if not found, return the first one but with requested ID
+      if (_mockOrders.isNotEmpty) {
+        return Right(_mockOrders.first.copyWith(id: orderId));
+      }
+      return Left(ServerFailure("Order not found"));
     }
   }
 
   @override
   Future<Either<Failure, Unit>> acceptOrder(String orderId) async {
     await Future.delayed(const Duration(milliseconds: 800));
-    return const Right(unit);
+    try {
+      final index = _mockOrders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _mockOrders[index] = _mockOrders[index].copyWith(
+          status: OrderStatus.completed,
+          updatedAt: DateTime.now(),
+        );
+      }
+      return const Right(unit);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
   Future<Either<Failure, Unit>> reportOrderIssue(String orderId, String reason) async {
     await Future.delayed(const Duration(milliseconds: 800));
-    return const Right(unit);
+    try {
+      final index = _mockOrders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _mockOrders[index] = _mockOrders[index].copyWith(
+          status: OrderStatus.disputed,
+          updatedAt: DateTime.now(),
+        );
+      }
+      return const Right(unit);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
   Future<Either<Failure, OrderEntity>> createOrder({required String productId, required String deliveryMethod}) async {
     await Future.delayed(const Duration(seconds: 1));
-    return Right(_mockOrders.first);
+    final newOrder = OrderEntity(
+      id: 'ORD-${DateTime.now().millisecondsSinceEpoch}',
+      buyerId: 'buyer1',
+      buyerName: 'Yohannes',
+      sellerId: 'seller1',
+      sellerName: 'Apple Store',
+      productId: productId,
+      productTitle: 'Created Order',
+      productImage: '',
+      amount: 45000,
+      status: OrderStatus.pending,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    _mockOrders.add(newOrder);
+    return Right(newOrder);
   }
 
   @override
   Future<Either<Failure, OrderEntity>> updateOrderStatus({required String orderId, required OrderStatus status}) async {
     await Future.delayed(const Duration(milliseconds: 800));
-    final order = _mockOrders.first.copyWith(status: status);
-    return Right(order);
+    final index = _mockOrders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      _mockOrders[index] = _mockOrders[index].copyWith(
+        status: status,
+        updatedAt: DateTime.now(),
+      );
+      return Right(_mockOrders[index]);
+    }
+    return Left(ServerFailure("Order not found"));
   }
 
   @override
   Future<Either<Failure, OrderEntity>> confirmDelivery({required String orderId, required String scannedToken}) async {
     await Future.delayed(const Duration(seconds: 1));
-    final order = _mockOrders.first.copyWith(status: OrderStatus.completed);
-    return Right(order);
+    final index = _mockOrders.indexWhere((o) => o.id == orderId);
+    if (index != -1) {
+      final now = DateTime.now();
+      _mockOrders[index] = _mockOrders[index].copyWith(
+        status: OrderStatus.delivered,
+        deliveredAt: now,
+        autoConfirmAt: now.add(const Duration(hours: 24)),
+        updatedAt: now,
+      );
+      return Right(_mockOrders[index]);
+    }
+    return Left(ServerFailure("Order not found"));
   }
 }

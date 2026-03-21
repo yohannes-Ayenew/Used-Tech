@@ -105,9 +105,15 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   ) async {
     emit(OrderLoading());
     final result = await orderRepository.acceptOrder(event.orderId);
-    result.fold(
-      (failure) => emit(OrderError(failure.message)),
-      (_) => add(GetOrderDetailsEvent(orderId: event.orderId)),
+    await result.fold(
+      (failure) async => emit(OrderError(failure.message)),
+      (_) async {
+        final detailsResult = await orderRepository.getOrderDetails(event.orderId);
+        detailsResult.fold(
+          (failure) => emit(OrderError(failure.message)),
+          (order) => emit(OrderStatusUpdated(order)),
+        );
+      },
     );
   }
 
@@ -117,9 +123,15 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   ) async {
     emit(OrderLoading());
     final result = await orderRepository.reportOrderIssue(event.orderId, event.reason);
-    result.fold(
-      (failure) => emit(OrderError(failure.message)),
-      (_) => add(GetOrderDetailsEvent(orderId: event.orderId)),
+    await result.fold(
+      (failure) async => emit(OrderError(failure.message)),
+      (_) async {
+        final detailsResult = await orderRepository.getOrderDetails(event.orderId);
+        detailsResult.fold(
+          (failure) => emit(OrderError(failure.message)),
+          (order) => emit(OrderStatusUpdated(order)),
+        );
+      },
     );
   }
 }

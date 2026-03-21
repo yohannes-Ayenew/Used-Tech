@@ -131,7 +131,12 @@ class _ActiveOrdersPageState extends State<ActiveOrdersPage> {
 
           // Order List
           Expanded(
-            child: BlocBuilder<OrderBloc, OrderState>(
+            child: BlocConsumer<OrderBloc, OrderState>(
+              listener: (context, state) {
+                if (state is OrderStatusUpdated) {
+                  _fetchOrders();
+                }
+              },
               builder: (context, state) {
                 if (state is OrderLoading) {
                   return const Center(child: CircularProgressIndicator());
@@ -145,7 +150,7 @@ class _ActiveOrdersPageState extends State<ActiveOrdersPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.inventory_2_outlined, size: 64, color: context.greyText.withValues(alpha: 0.5)),
+                          Icon(Icons.inventory_2_outlined, size: 64, color: context.greyText.withOpacity(0.5)),
                           const SizedBox(height: 16),
                           Text(
                             _isBuyingSelected ? "No buying orders yet" : "No active sales",
@@ -179,6 +184,10 @@ class _ActiveOrdersPageState extends State<ActiveOrdersPage> {
                       );
                     },
                   );
+                } else if (state is OrderStatusUpdated || state is OrderDetailsLoaded) {
+                   // While refreshing after an action, show the previous state if possible, 
+                   // or just show a loading indicator.
+                   return const Center(child: CircularProgressIndicator());
                 }
                 return const SizedBox();
               },
