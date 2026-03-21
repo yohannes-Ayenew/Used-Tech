@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/inbox/presentation/pages/inbox_page_with_messages.dart';
 import 'package:used_tech_client/features/inbox/domain/entities/conversation_entity.dart';

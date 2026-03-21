@@ -92,6 +92,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(MessagesLoaded(
         const [], 
         event.conversationId,
+        productId: event.productId,
         hasReachedMax: true,
         currentPage: 1,
       ));
@@ -108,6 +109,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       (messages) => emit(MessagesLoaded(
         messages, 
         event.conversationId,
+        productId: event.productId,
         hasReachedMax: messages.length < 20, // Assuming 20 is the limit
         currentPage: 1,
       )),

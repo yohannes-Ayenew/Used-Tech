@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:used_tech_client/features/auth/presentation/bloc/auth_state.dart';
@@ -87,7 +88,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
   }
 
   void _scrollToBottom() {
-    // With reverse: true, we don't need manual scrolling for new messages
+    // Scroll logic handled by reverse: true in ListView
   }
 
   @override
@@ -121,13 +122,13 @@ class _InboxChatPageState extends State<InboxChatPage> {
                           height: 36,
                           placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2),
                           errorWidget: (context, url, error) => Text(
-                            _currentConversation.otherUserName[0].toUpperCase(),
+                            _currentConversation.otherUserName.isNotEmpty ? _currentConversation.otherUserName[0].toUpperCase() : 'U',
                             style: TextStyle(color: context.primaryColor, fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                         ),
                       )
                     : Text(
-                        _currentConversation.otherUserName[0].toUpperCase(),
+                        _currentConversation.otherUserName.isNotEmpty ? _currentConversation.otherUserName[0].toUpperCase() : 'U',
                         style: TextStyle(color: context.primaryColor, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
               ),
@@ -142,7 +143,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
                     style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    "Online", // Simulated for now
+                    "Online", 
                     style: TextStyle(fontSize: 11, color: context.successColor, fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -244,7 +245,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
                         Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
                         SizedBox(width: 8),
                         Text(
-                          "No Internet Connection. Offline mode coming soon.",
+                          "No Internet Connection",
                           style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -254,69 +255,69 @@ class _InboxChatPageState extends State<InboxChatPage> {
                 return const SizedBox.shrink();
               },
             ),
-          _buildProductHeader(context),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: context.theme.scaffoldBackgroundColor,
-                image: DecorationImage(
-                  image: const NetworkImage("https://www.transparenttextures.com/patterns/cubes.png"), // Subtle pattern
-                  opacity: 0.03,
-                  repeat: ImageRepeat.repeat,
+            _buildProductHeader(context),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.theme.scaffoldBackgroundColor,
+                  image: const DecorationImage(
+                    image: NetworkImage("https://www.transparenttextures.com/patterns/cubes.png"),
+                    opacity: 0.03,
+                    repeat: ImageRepeat.repeat,
+                  ),
                 ),
-              ),
-              child: BlocBuilder<ChatBloc, ChatState>(
-                builder: (context, state) {
-                  if (state is ChatLoading && state is! MessagesLoaded) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (state is MessagesLoaded) {
-                    final reversedMessages = state.messages.reversed.toList();
-                    return Column(
-                      children: [
-                        if (state.isPaginationLoading)
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                child: BlocBuilder<ChatBloc, ChatState>(
+                  builder: (context, state) {
+                    if (state is ChatLoading && state is! MessagesLoaded) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (state is MessagesLoaded) {
+                      final reversedMessages = state.messages.reversed.toList();
+                      return Column(
+                        children: [
+                          if (state.isPaginationLoading)
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          Expanded(
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              reverse: true,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                              itemCount: reversedMessages.length,
+                              itemBuilder: (context, index) {
+                                final msg = reversedMessages[index];
+                                final bool isMe = msg.senderId == currentUserId || msg.senderId == "ME";
+                                return _buildMessageBubble(context, msg, isMe);
+                              },
                             ),
                           ),
-                        Expanded(
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            reverse: true,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                            itemCount: reversedMessages.length,
-                            itemBuilder: (context, index) {
-                              final msg = reversedMessages[index];
-                              final bool isMe = msg.senderId == currentUserId || msg.senderId == "ME";
-                              return _buildMessageBubble(context, msg, isMe);
-                            },
-                          ),
-                        ),
-                      ],
+                        ],
+                      );
+                    }
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline, size: 48, color: context.greyText.withValues(alpha: 0.3)),
+                          const SizedBox(height: 16),
+                          Text("No messages yet", style: TextStyle(color: context.greyText)),
+                        ],
+                      ),
                     );
-                  }
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.chat_bubble_outline, size: 48, color: context.greyText.withValues(alpha: 0.3)),
-                        const SizedBox(height: 16),
-                        Text("No messages yet", style: TextStyle(color: context.greyText)),
-                      ],
-                    ),
-                  );
-                },
+                  },
+                ),
               ),
             ),
-          ),
-          _buildMessageInput(context),
-        ],
+            _buildMessageInput(context),
+          ],
+        ),
       ),
-      )
     );
   }
 
@@ -522,7 +523,9 @@ class _InboxChatPageState extends State<InboxChatPage> {
                     )
                   else if (msg.status == MessageStatus.failed)
                     GestureDetector(
-                      onTap: () => context.read<ChatBloc>().add(RetryMessageEvent(msg)),
+                      onTap: () {
+                        context.read<ChatBloc>().add(RetryMessageEvent(msg));
+                      },
                       child: Row(
                         children: [
                           const Icon(Icons.error_outline_rounded, size: 14, color: Colors.red),
@@ -540,7 +543,6 @@ class _InboxChatPageState extends State<InboxChatPage> {
                       size: 14, 
                       color: msg.isRead ? Colors.blue : context.greyText,
                     ),
-
                 ],
               ],
             ),
