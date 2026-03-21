@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
-import '../bloc/order_bloc.dart';
-import '../bloc/order_event.dart';
-import '../bloc/order_state.dart';
-import '../widgets/order_card.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_event.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_state.dart';
+import 'package:used_tech_client/features/order/presentation/widgets/order_card.dart';
 
 class ActiveOrdersPage extends StatefulWidget {
   const ActiveOrdersPage({super.key});

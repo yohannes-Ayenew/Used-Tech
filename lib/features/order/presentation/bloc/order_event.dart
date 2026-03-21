@@ -1,12 +1,13 @@
 // lib/features/order/presentation/bloc/order_event.dart
 
 import 'package:equatable/equatable.dart';
+import '../../domain/entities/order_entity.dart';
 
 abstract class OrderEvent extends Equatable {
   const OrderEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class GetMyOrdersEvent extends OrderEvent {}
@@ -18,7 +19,7 @@ class GetOrderDetailsEvent extends OrderEvent {
   const GetOrderDetailsEvent({required this.orderId});
 
   @override
-  List<Object> get props => [orderId];
+  List<Object?> get props => [orderId];
 }
 
 class CreateOrderEvent extends OrderEvent {
@@ -30,16 +31,16 @@ class CreateOrderEvent extends OrderEvent {
   });
 
   @override
-  List<Object> get props => [productId, deliveryMethod];
+  List<Object?> get props => [productId, deliveryMethod];
 }
 
 class UpdateOrderStatusEvent extends OrderEvent {
   final String orderId;
-  final String status;
+  final OrderStatus status;
   const UpdateOrderStatusEvent({required this.orderId, required this.status});
 
   @override
-  List<Object> get props => [orderId, status];
+  List<Object?> get props => [orderId, status];
 }
 
 class ConfirmDeliveryEvent extends OrderEvent {
@@ -51,5 +52,22 @@ class ConfirmDeliveryEvent extends OrderEvent {
   });
 
   @override
-  List<Object> get props => [orderId, scannedToken];
+  List<Object?> get props => [orderId, scannedToken];
+}
+
+class AcceptOrderEvent extends OrderEvent {
+  final String orderId;
+  const AcceptOrderEvent({required this.orderId});
+
+  @override
+  List<Object?> get props => [orderId];
+}
+
+class ReportOrderIssueEvent extends OrderEvent {
+  final String orderId;
+  final String reason;
+  const ReportOrderIssueEvent({required this.orderId, required this.reason});
+
+  @override
+  List<Object?> get props => [orderId, reason];
 }

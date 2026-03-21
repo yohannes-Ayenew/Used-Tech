@@ -59,7 +59,11 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       // Add text fields
       productData.forEach((key, value) {
         if (value != null) {
-          request.fields[key] = value.toString();
+          if (value is Map) {
+            request.fields[key] = jsonEncode(value);
+          } else {
+            request.fields[key] = value.toString();
+          }
         }
       });
 

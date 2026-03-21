@@ -144,14 +144,20 @@ class OrderCard extends StatelessWidget {
                  children: [
                     Row(
                       children: [
-                        Icon(Icons.access_time, size: 16, color: Colors.orange[800]),
+                        Icon(
+                          isSelling ? Icons.info_outline : Icons.timer_outlined, 
+                          size: 16, 
+                          color: Colors.orange[800],
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            "Inspection Period: 19h 53m remaining",
+                            isSelling 
+                                ? "Buyer is inspecting the item." 
+                                : "24-Hour Inspection Period Active",
                             style: context.textTheme.bodySmall?.copyWith(
                               color: Colors.orange[800],
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),

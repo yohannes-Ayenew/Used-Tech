@@ -1,13 +1,17 @@
-// lib/features/order/presentation/pages/order_details_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
-import '../bloc/order_bloc.dart';
-import '../bloc/order_event.dart';
-import '../bloc/order_state.dart';
-import '../widgets/order_progress_tracker.dart';
+import 'package:used_tech_client/features/order/domain/entities/order_entity.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_event.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_state.dart';
+import 'package:used_tech_client/features/order/presentation/widgets/order_progress_tracker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:used_tech_client/injection_container.dart';
+import 'package:used_tech_client/features/auth/data/datasources/auth_local_data_source.dart';
+import 'dart:async';
 
 class OrderDetailsPage extends StatefulWidget {
   final String orderId;
@@ -19,10 +23,120 @@ class OrderDetailsPage extends StatefulWidget {
 }
 
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
+  String? _currentUserId;
+  Timer? _countdownTimer;
+  String _remainingTime = "";
+
   @override
   void initState() {
     super.initState();
+    _loadUser();
     context.read<OrderBloc>().add(GetOrderDetailsEvent(orderId: widget.orderId));
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer(DateTime autoConfirmAt) {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final now = DateTime.now();
+      final difference = autoConfirmAt.difference(now);
+
+      if (difference.isNegative) {
+        timer.cancel();
+        if (mounted) setState(() => _remainingTime = "Expired");
+      } else {
+        if (mounted) {
+          setState(() {
+            final hours = difference.inHours;
+            final minutes = difference.inMinutes.remainder(60);
+            final seconds = difference.inSeconds.remainder(60);
+            _remainingTime = "${hours}h ${minutes}m ${seconds}s";
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _loadUser() async {
+    final user = await sl<AuthLocalDataSource>().getCachedUser();
+    if (mounted) {
+      setState(() {
+        _currentUserId = user?.id;
+      });
+    }
+  }
+
+  void _showQRCode(String orderId) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Delivery Confirmation QR",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Ask the seller to scan this code upon meetup.",
+              style: TextStyle(color: context.greyText, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 30),
+            QrImageView(
+              data: orderId,
+              version: QrVersions.auto,
+              size: 200.0,
+              foregroundColor: context.primaryColor,
+            ),
+            const SizedBox(height: 30),
+            Text(
+              "Order ID: $orderId",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openScanner(String orderId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: const Text("Scan Buyer's QR")),
+          body: MobileScanner(
+            onDetect: (capture) {
+              final List<Barcode> barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty) {
+                final String? code = barcodes.first.rawValue;
+                if (code == orderId) {
+                  Navigator.pop(context);
+                  context.read<OrderBloc>().add(
+                    ConfirmDeliveryEvent(orderId: orderId, scannedToken: code!),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Invalid QR Code for this order")),
+                  );
+                }
+              }
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -42,14 +156,29 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         ),
         centerTitle: true,
       ),
-      body: BlocBuilder<OrderBloc, OrderState>(
+      body: BlocConsumer<OrderBloc, OrderState>(
+        listener: (context, state) {
+          if (state is OrderDetailsLoaded && state.order.status == OrderStatus.delivered) {
+            if (state.order.autoConfirmAt != null) {
+              _startTimer(state.order.autoConfirmAt!);
+            }
+          }
+          if (state is OrderStatusUpdated && state.order.status == OrderStatus.delivered) {
+             if (state.order.autoConfirmAt != null) {
+              _startTimer(state.order.autoConfirmAt!);
+            }
+          }
+        },
         builder: (context, state) {
           if (state is OrderLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is OrderError) {
             return Center(child: Text(state.message));
-          } else if (state is OrderDetailsLoaded) {
-            final order = state.order;
+          } else if (state is OrderDetailsLoaded || (state is OrderStatusUpdated)) {
+            final order = (state is OrderDetailsLoaded) ? state.order : (state as OrderStatusUpdated).order;
+            final isBuyer = _currentUserId == order.buyerId;
+            final isSeller = _currentUserId == order.sellerId;
+
             return SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -63,7 +192,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -106,6 +235,39 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   ),
 
                   const SizedBox(height: 30),
+
+                  // Inspection Timer (Delivered state only)
+                  if (order.status == OrderStatus.delivered)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.timer_outlined, color: Colors.orange),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Inspection Period Ends In:",
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  _remainingTime,
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.orange),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   // Order Status & Progress
                   Text(
@@ -163,7 +325,39 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   const SizedBox(height: 40),
 
                   // Action Buttons
-                  if (order.status == OrderStatus.delivered)
+                  if (isBuyer && (order.status == OrderStatus.shipped || order.status == OrderStatus.escrowHeld))
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.qr_code_2_rounded),
+                        label: const Text("Show Delivery QR", style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () => _showQRCode(order.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        ),
+                      ),
+                    ),
+
+                  if (isSeller && (order.status == OrderStatus.shipped || order.status == OrderStatus.escrowHeld))
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.qr_code_scanner_rounded),
+                        label: const Text("Scan to Confirm Delivery", style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () => _openScanner(order.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        ),
+                      ),
+                    ),
+
+                  if (isBuyer && order.status == OrderStatus.delivered)
                     Row(
                       children: [
                         Expanded(
@@ -211,6 +405,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
       child: Row(
+        mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: context.greyText, fontSize: 13)),
