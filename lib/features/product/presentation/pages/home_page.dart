@@ -268,17 +268,13 @@ class _HomePageState extends State<HomePage> {
                   builder: (context, state) {
                     ProductEntity? matchingProduct;
                     if (state is HomeDataLoaded) {
-                      try {
-                        matchingProduct = state.trending.firstWhere(
-                          (p) =>
-                              p.title.toLowerCase().contains('iphone 13') ||
-                              (p.brand.toLowerCase() == 'apple' &&
-                                  p.model.toLowerCase().contains('13')),
-                        );
-                      } catch (_) {
-                        matchingProduct = null;
+                      final allProducts = [...state.trending, ...state.recommended];
+                      if (allProducts.isNotEmpty) {
+                        // Find the product with the minimum price
+                        matchingProduct = allProducts.reduce((curr, next) => curr.price < next.price ? curr : next);
                       }
                     }
+
 
                     return InkWell(
                       onTap: () {

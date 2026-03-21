@@ -40,6 +40,11 @@ import 'package:used_tech_client/features/product/domain/repositories/product_re
 import 'package:used_tech_client/features/product/domain/usecases/create_product.dart';
 import 'package:used_tech_client/features/product/domain/usecases/update_product.dart';
 
+// Order Feature Imports
+import 'package:used_tech_client/features/order/domain/repositories/order_repository.dart';
+import 'package:used_tech_client/features/order/data/repositories/order_repository_impl.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
+
 // Sell Feature Imports
 
 final sl = GetIt.instance;
@@ -73,6 +78,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<ChatRepository>(
     () => ChatRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<OrderRepository>(
+    () => OrderRepositoryImpl(),
   );
 
   // Services
@@ -126,4 +134,5 @@ Future<void> init() async {
   sl.registerFactory(() => ProductBloc(productRepository: sl()));
   sl.registerFactory(() => FavoritesBloc());
   sl.registerFactory(() => ChatBloc(chatRepository: sl(), socketService: sl()));
+  sl.registerFactory(() => OrderBloc(orderRepository: sl()));
 }

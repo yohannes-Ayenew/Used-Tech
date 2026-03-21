@@ -319,8 +319,9 @@ class AuthenticatedProfilePage extends StatelessWidget {
                   icon: Icons.shopping_bag,
                   title: "Orders",
                   subtitle: "Buying & Selling",
-                  onTap: () => _showComingSoon(context, "Orders"),
+                  onTap: () => Navigator.pushNamed(context, '/active-orders'),
                 ),
+
 
                 _buildMenuItem(
                   context,
