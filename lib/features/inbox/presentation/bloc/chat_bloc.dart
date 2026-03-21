@@ -44,6 +44,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<LoadMoreMessagesEvent>(_onLoadMoreMessages);
     on<UpdateMessageStatusEvent>(_onUpdateMessageStatus);
     on<DeleteConversationEvent>(_onDeleteConversation);
+    on<RetryMessageEvent>(_onRetryMessage);
 
     // Listen to Socket messages
     _socketSubscription = socketService.messageStream.listen((data) {
@@ -336,4 +337,42 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       },
     );
   }
+
+  Future<void> _onRetryMessage(
+    RetryMessageEvent event,
+    Emitter<ChatState> emit,
+  ) async {
+    final message = event.message;
+    final tempId = message.tempId ?? message.id;
+
+    // 1. Change status back to sending
+    add(UpdateMessageStatusEvent(tempId: tempId, status: MessageStatus.sending));
+
+    // 2. We need the receiverId. If we are in MessagesLoaded, we can use the conversationId to find it.
+    String? receiverId;
+    if (_conversationsCache != null) {
+      try {
+        final conv = _conversationsCache!.firstWhere((c) => c.id == message.conversationId);
+        receiverId = conv.otherUserId;
+      } catch (_) {}
+    }
+
+    if (receiverId == null) {
+      add(UpdateMessageStatusEvent(tempId: tempId, status: MessageStatus.failed));
+      return;
+    }
+
+    final result = await chatRepository.sendMessage(
+      receiverId: receiverId,
+      productId: (state is MessagesLoaded) ? (state as MessagesLoaded).productId : null,
+      message: message.message,
+      tempId: tempId,
+    );
+    
+    result.fold(
+      (failure) => add(UpdateMessageStatusEvent(tempId: tempId, status: MessageStatus.failed)),
+      (finalMsg) => add(UpdateMessageStatusEvent(tempId: tempId, status: MessageStatus.sent, finalMessage: finalMsg)),
+    );
+  }
+
 }

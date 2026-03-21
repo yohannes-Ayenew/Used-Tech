@@ -108,3 +108,12 @@ class DeleteConversationEvent extends ChatEvent {
   @override
   List<Object> get props => [conversationId];
 }
+
+class RetryMessageEvent extends ChatEvent {
+  final MessageEntity message;
+  const RetryMessageEvent(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+

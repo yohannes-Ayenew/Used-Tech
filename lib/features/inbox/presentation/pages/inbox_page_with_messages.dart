@@ -107,18 +107,23 @@ class _InboxChatPageState extends State<InboxChatPage> {
         title: Row(
           children: [
             Hero(
-              tag: "avatar_${_currentConversation.id}",
+              tag: _currentConversation.id.isNotEmpty ? "avatar_${_currentConversation.id}" : "avatar_none_${DateTime.now().millisecondsSinceEpoch}",
               child: CircleAvatar(
                 radius: 18,
                 backgroundColor: context.primaryColor.withValues(alpha: 0.1),
                 child: _currentConversation.otherUserAvatar.isNotEmpty
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(18),
-                        child: Image.network(
-                          ApiEndpoints.resolveImageUrl(_currentConversation.otherUserAvatar),
+                        child: CachedNetworkImage(
+                          imageUrl: ApiEndpoints.resolveImageUrl(_currentConversation.otherUserAvatar),
                           fit: BoxFit.cover,
                           width: 36,
                           height: 36,
+                          placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2),
+                          errorWidget: (context, url, error) => Text(
+                            _currentConversation.otherUserName[0].toUpperCase(),
+                            style: TextStyle(color: context.primaryColor, fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       )
                     : Text(
@@ -336,11 +341,20 @@ class _InboxChatPageState extends State<InboxChatPage> {
           if (_currentConversation.productImage != null && _currentConversation.productImage!.isNotEmpty)
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                ApiEndpoints.resolveImageUrl(_currentConversation.productImage!), 
+              child: CachedNetworkImage(
+                imageUrl: ApiEndpoints.resolveImageUrl(_currentConversation.productImage!), 
                 width: 50, 
                 height: 50, 
-                fit: BoxFit.cover
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  width: 50,
+                  height: 50,
+                  color: context.lightGrey,
+                  child: const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.image_not_supported, size: 20, color: Colors.grey),
               ),
             ),
           const SizedBox(width: 12),
@@ -507,13 +521,26 @@ class _InboxChatPageState extends State<InboxChatPage> {
                       child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.blue),
                     )
                   else if (msg.status == MessageStatus.failed)
-                    const Icon(Icons.error_outline_rounded, size: 14, color: Colors.red)
+                    GestureDetector(
+                      onTap: () => context.read<ChatBloc>().add(RetryMessageEvent(msg)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, size: 14, color: Colors.red),
+                          const SizedBox(width: 4),
+                          Text(
+                            "Retry",
+                            style: TextStyle(fontSize: 10, color: Colors.red[700], fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    )
                   else
                     Icon(
                       msg.isRead ? Icons.done_all_rounded : Icons.done_rounded,
                       size: 14, 
                       color: msg.isRead ? Colors.blue : context.greyText,
                     ),
+
                 ],
               ],
             ),

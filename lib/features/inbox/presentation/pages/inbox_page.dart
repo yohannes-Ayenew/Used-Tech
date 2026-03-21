@@ -613,14 +613,24 @@ class _ConversationTileState extends State<ConversationTile> {
                         padding: const EdgeInsets.only(left: 12),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            ApiEndpoints.resolveImageUrl(
+                          child: CachedNetworkImage(
+                            imageUrl: ApiEndpoints.resolveImageUrl(
                                 _currentConversation.productImage!),
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const SizedBox.shrink(),
+                            placeholder: (context, url) => Container(
+                              width: 50,
+                              height: 50,
+                              color: context.lightGrey,
+                              child: const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => const Icon(
+                                Icons.image_not_supported,
+                                size: 20,
+                                color: Colors.grey),
                           ),
                         ),
                       ),
@@ -649,7 +659,7 @@ class _ConversationTileState extends State<ConversationTile> {
             ),
           ),
           child: Hero(
-            tag: "avatar_${conv.id}",
+            tag: conv.id.isNotEmpty ? "avatar_${conv.id}" : "avatar_none_${DateTime.now().millisecondsSinceEpoch}",
             child: CircleAvatar(
               radius: 30,
               backgroundColor: context.primaryColor.withValues(alpha: 0.1),
@@ -657,12 +667,13 @@ class _ConversationTileState extends State<ConversationTile> {
               child: conv.otherUserAvatar.isNotEmpty
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(30),
-                      child: Image.network(
-                        ApiEndpoints.resolveImageUrl(conv.otherUserAvatar),
+                      child: CachedNetworkImage(
+                        imageUrl: ApiEndpoints.resolveImageUrl(conv.otherUserAvatar),
                         fit: BoxFit.cover,
                         width: 60,
                         height: 60,
-                        errorBuilder: (_, __, ___) => _buildAvatarFallback(conv),
+                        placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2),
+                        errorWidget: (_, __, ___) => _buildAvatarFallback(conv),
                       ),
                     )
                   : _buildAvatarFallback(conv),

@@ -26,7 +26,9 @@ class ConversationModel extends ConversationEntity {
     final lastMsg = json['lastMessage'] ?? {};
 
     String? parseTitle(dynamic product) {
-      if (product is! Map) return null;
+      if (product == null) return null;
+      if (product is! Map) return 'Unknown Product'; // It's likely just an ID string
+      
       final brand = product['brand'];
       final model = product['model'];
       final title = product['title'];
@@ -38,14 +40,25 @@ class ConversationModel extends ConversationEntity {
       return title ?? name ?? brand ?? model ?? 'Unknown Product';
     }
 
+    String? extractProductId(dynamic product) {
+      if (product == null) return null;
+      if (product is String) return product;
+      if (product is Map) {
+        return product['_id'] ?? product['id'] ?? product['productId'];
+      }
+      return null;
+    }
+
+    final prodId = extractProductId(product);
+
     return ConversationModel(
       id: json['conversationId'] ?? '',
       otherUserId: other['_id'] ?? '',
       otherUserName: other['name'] ?? 'Unknown',
       otherUserAvatar: ApiEndpoints.resolveImageUrl(other['profileImage'] ?? ''),
       otherUserIsVerified: (other['role'] == 'VERIFIED_SELLER'),
-      productId: (product is Map) ? product['_id'] : null,
-      productTitle: parseTitle(product),
+      productId: prodId,
+      productTitle: prodId != null ? parseTitle(product) : null,
       productImage: (product is Map && product['images'] != null && product['images'] is List && product['images'].isNotEmpty) 
           ? ApiEndpoints.resolveImageUrl(product['images'][0]) 
           : (product is Map && product['image'] != null && product['image'].toString().isNotEmpty ? ApiEndpoints.resolveImageUrl(product['image']) : null),
@@ -55,5 +68,6 @@ class ConversationModel extends ConversationEntity {
       hasUnread: (json['unreadCount'] ?? 0) > 0,
       unreadCount: json['unreadCount'] ?? 0,
     );
+
   }
 }
