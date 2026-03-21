@@ -25,18 +25,14 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
   String? _selectedStorage;
   String? _selectedRam;
   String? _selectedProcessor;
-  String? _selectedCore;
-
-  final _storageController = TextEditingController();
-  final _ramController = TextEditingController();
-  final _generationController = TextEditingController();
+  int _batteryHealth = 100;
 
   final List<Map<String, dynamic>> _conditions = [
-    {'title': 'Brand New', 'desc': 'Sealed', 'val': 'New'},
-    {'title': 'Like New', 'desc': 'No scratches', 'val': 'Like New'},
-    {'title': 'Good', 'desc': 'Minor scratches', 'val': 'Good'},
-    {'title': 'Fair', 'desc': 'Visible wear', 'val': 'Fair'},
-    {'title': 'For Parts', 'desc': 'Broken', 'val': 'Broken'},
+    {'title': 'Brand New', 'desc': 'Sealed box', 'val': 'New'},
+    {'title': 'Like New', 'desc': 'Open box, no scratches', 'val': 'Like New'},
+    {'title': 'Good', 'desc': 'Minor scratches, fully functional', 'val': 'Good'},
+    {'title': 'Fair', 'desc': 'Visible wear/dents, fully functional', 'val': 'Fair'},
+    {'title': 'For Parts', 'desc': 'Broken/Defective', 'val': 'Broken'},
   ];
 
   void _nextStep() {
@@ -46,22 +42,28 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
       );
       return;
     }
+    if (_selectedStorage == null || _selectedRam == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select Storage and RAM")),
+      );
+      return;
+    }
 
     // 🚀 Close keyboard
     FocusScope.of(context).unfocus();
 
     final Map<String, dynamic> specs = {
       'condition': _selectedCondition,
-      'storage': _selectedStorage == 'Other'
-          ? _storageController.text.trim()
-          : _selectedStorage,
-      'ram': _selectedRam == 'Other' ? _ramController.text.trim() : _selectedRam,
+      'storage': _selectedStorage,
+      'ram': _selectedRam,
     };
+
+    if (widget.category == 'mobile' || widget.category == 'tablet') {
+      specs['batteryHealth'] = _batteryHealth;
+    }
 
     if (widget.category == 'laptop') {
       specs['processor'] = _selectedProcessor;
-      specs['core'] = _selectedCore;
-      specs['generation'] = _generationController.text.trim();
     }
 
     // 📥 Update Bloc
@@ -81,12 +83,12 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
       '256GB',
       '512GB',
       '1TB',
-      'Other',
     ];
-    List<String> ramOpts = ['4GB', '8GB', '16GB', '32GB', 'Other'];
+    List<String> ramOpts = ['4GB', '6GB', '8GB', '12GB', '16GB'];
 
     if (widget.category == 'laptop') {
-      storageOpts = ['256GB SSD', '512GB SSD', '1TB SSD', '1TB HDD', 'Other'];
+      storageOpts = ['256GB SSD', '512GB SSD', '1TB SSD', '2TB SSD'];
+      ramOpts = ['8GB', '16GB', '24GB', '32GB', '64GB'];
     }
 
     return Scaffold(
@@ -111,9 +113,43 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                   const SizedBox(height: 8),
                   Text("Details", style: context.textTheme.headlineSmall),
                   const SizedBox(height: 32),
+                  
+                  // Battery Health for Mobiles
+                  if (widget.category == 'mobile' || widget.category == 'tablet') ...[
+                    Text("Battery Health: $_batteryHealth%", style: context.textTheme.titleMedium),
+                    Slider(
+                      value: _batteryHealth.toDouble(),
+                      min: 50,
+                      max: 100,
+                      divisions: 50,
+                      label: "$_batteryHealth%",
+                      activeColor: context.primaryColor,
+                      onChanged: (double value) {
+                        setState(() {
+                          _batteryHealth = value.toInt();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Processor for Laptops
+                  if (widget.category == 'laptop') ...[
+                    Text("Processor *", style: context.textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    _buildDropdown(
+                      value: _selectedProcessor,
+                      hint: "Select Processor",
+                      items: ['Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'Apple M1', 'Apple M2', 'Apple M3', 'Ryzen 5', 'Ryzen 7', 'Ryzen 9'],
+                      onChanged: (v) => setState(() => _selectedProcessor = v),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
                   Text("Condition *", style: context.textTheme.titleMedium),
                   const SizedBox(height: 12),
                   ..._conditions.map((c) => _buildConditionCard(c)),
+                  
                   const SizedBox(height: 24),
                   Text("Storage *", style: context.textTheme.titleMedium),
                   const SizedBox(height: 12),
@@ -129,8 +165,7 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                         )
                         .toList(),
                   ),
-                  if (_selectedStorage == 'Other')
-                    _buildTextInput(_storageController, "Enter Storage"),
+                  
                   const SizedBox(height: 24),
                   Text("RAM *", style: context.textTheme.titleMedium),
                   const SizedBox(height: 12),
@@ -146,8 +181,6 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                         )
                         .toList(),
                   ),
-                  if (_selectedRam == 'Other')
-                    _buildTextInput(_ramController, "Enter RAM"),
                 ],
               ),
             ),
@@ -163,13 +196,34 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _selectedCondition == null ? null : _nextStep,
+                  onPressed: (_selectedCondition == null || _selectedStorage == null || _selectedRam == null) ? null : _nextStep,
                   child: const Text("Next"),
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown({required String? value, required String hint, required List<String> items, required Function(String?) onChanged}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.borderColor),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          hint: Text(hint, style: context.textTheme.bodyMedium),
+          isExpanded: true,
+          dropdownColor: context.cardBackground,
+          items: items.map((o) => DropdownMenuItem(value: o, child: Text(o, style: context.textTheme.bodyLarge))).toList(),
+          onChanged: onChanged,
+        ),
       ),
     );
   }

@@ -86,6 +86,7 @@ class ProductEntity extends Equatable {
   final String? processor;
   final String? core;
   final String? generation;
+  final int? batteryHealth;
   final String title;
   final String description;
   final double price;
@@ -114,6 +115,7 @@ class ProductEntity extends Equatable {
     this.processor,
     this.core,
     this.generation,
+    this.batteryHealth,
     required this.title,
     required this.description,
     required this.price,
@@ -158,6 +160,7 @@ class ProductEntity extends Equatable {
     processor,
     core,
     generation,
+    batteryHealth,
     price,
     status,
     createdAt,

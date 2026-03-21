@@ -20,6 +20,7 @@ class ProductModel extends ProductEntity {
     super.processor,
     super.core,
     super.generation,
+    super.batteryHealth,
     required super.title,
     required super.description,
     required super.price,
@@ -95,6 +96,7 @@ class ProductModel extends ProductEntity {
       processor: specs['processor'],
       core: specs['core'],
       generation: specs['generation'],
+      batteryHealth: specs['batteryHealth'],
       title: "${json['brand']} ${json['model']}", // Virtual Title
       description: json['description'] ?? '',
       price: (json['price'] ?? 0).toDouble(),
@@ -110,5 +112,25 @@ class ProductModel extends ProductEntity {
         json['updatedAt'] ?? DateTime.now().toIso8601String(),
       ),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'category': category.name,
+      'brand': brand,
+      'model': model,
+      'condition': condition.name.toLowerCase(),
+      'description': description,
+      'price': price,
+      'location': location,
+      'specs': {
+        if (storage != null) 'storage': storage,
+        if (ram != null) 'ram': ram,
+        if (processor != null) 'processor': processor,
+        if (core != null) 'core': core,
+        if (generation != null) 'generation': generation,
+        if (batteryHealth != null) 'batteryHealth': batteryHealth,
+      },
+    };
   }
 }

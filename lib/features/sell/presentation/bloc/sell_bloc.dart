@@ -102,6 +102,7 @@ class SellBloc extends Bloc<SellEvent, SellState> {
         'storage': event.product.storage,
         'ram': event.product.ram,
         'processor': event.product.processor,
+        'batteryHealth': event.product.batteryHealth,
       }
     });
     // Images are tricky as they are URLs now, not Files
