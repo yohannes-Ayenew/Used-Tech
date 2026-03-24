@@ -10,7 +10,7 @@ class ApiEndpoints {
       return 'http://localhost:3000/api';
     } else {
        // Run 'ipconfig' and look for Ethernet adapter IPv4 Address
-      const String localIp = '10.230.31.163';   
+      const String localIp = '10.230.31.188';   
       return 'http://$localIp:3000/api'; 
     }
   }
@@ -57,6 +57,18 @@ class ApiEndpoints {
   static String markAsRead(String id) => '$baseUrl/chat/read/$id';
   static String getChatHistory(String id) => '$baseUrl/chat/history/$id';
   static String get updateFcmToken => '$baseUrl/users/fcm-token';
+  static String get requestWithdrawal => '$baseUrl/withdrawals';
+  static String get getTransactions => '$baseUrl/transactions'; // Future use
+
+  // Order Endpoints
+  static String get createOrder => '$baseUrl/orders';
+  static String get getMyOrders => '$baseUrl/orders/my';
+  static String markOrderShipped(String id) => '$baseUrl/orders/$id/shipped';
+  static String get confirmDelivery => '$baseUrl/orders/verify-delivery';
+  static String completeOrder(String id) => '$baseUrl/orders/$id/complete';
+
+  // Payment Endpoints
+  static String get initPayment => '$baseUrl/payments/init';
 
   // Socket URL
   static String get socketUrl {

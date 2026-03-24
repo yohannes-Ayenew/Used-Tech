@@ -43,13 +43,18 @@ import 'package:used_tech_client/features/product/domain/usecases/update_product
 // Order Feature Imports
 import 'package:used_tech_client/features/order/domain/repositories/order_repository.dart';
 import 'package:used_tech_client/features/order/data/repositories/order_repository_impl.dart';
+import 'package:used_tech_client/features/order/data/datasources/order_remote_data_source.dart';
 import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
 
-// Sell Feature Imports
+import 'package:used_tech_client/features/wallet/data/datasources/wallet_remote_data_source.dart';
+import 'package:used_tech_client/features/wallet/data/repositories/wallet_repository_impl.dart';
+import 'package:used_tech_client/features/wallet/domain/repositories/wallet_repository.dart';
+import 'package:used_tech_client/features/wallet/presentation/bloc/wallet_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  // ... (previous registrations omitted for brevity in instruction, will be included in ReplacementContent)
   // External
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
@@ -68,6 +73,12 @@ Future<void> init() async {
   sl.registerLazySingleton<ChatRemoteDataSource>(
     () => ChatRemoteDataSourceImpl(client: sl(), sharedPreferences: sl()),
   );
+  sl.registerLazySingleton<WalletRemoteDataSource>(
+    () => WalletRemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerLazySingleton<OrderRemoteDataSource>(
+    () => OrderRemoteDataSourceImpl(client: sl()),
+  );
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
@@ -80,7 +91,10 @@ Future<void> init() async {
     () => ChatRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerLazySingleton<OrderRepository>(
-    () => OrderRepositoryImpl(),
+    () => OrderRepositoryImpl(authLocalDataSource: sl(), remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton<WalletRepository>(
+    () => WalletRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Services
@@ -135,4 +149,5 @@ Future<void> init() async {
   sl.registerFactory(() => FavoritesBloc());
   sl.registerFactory(() => ChatBloc(chatRepository: sl(), socketService: sl()));
   sl.registerFactory(() => OrderBloc(orderRepository: sl()));
+  sl.registerFactory(() => WalletBloc(walletRepository: sl()));
 }

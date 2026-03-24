@@ -4,43 +4,31 @@ import 'package:equatable/equatable.dart';
 
 abstract class WalletEvent extends Equatable {
   const WalletEvent();
-
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
-class GetWalletBalanceEvent extends WalletEvent {}
+class GetWalletDataEvent extends WalletEvent {}
 
-class GetTransactionHistoryEvent extends WalletEvent {
-  final int? limit;
-  final int? offset;
-  const GetTransactionHistoryEvent({this.limit, this.offset});
-
-  @override
-  List<Object> get props => [
-        if (limit != null) limit!,
-        if (offset != null) offset!,
-      ];
-}
-
-class WithdrawFundsEvent extends WalletEvent {
+class RequestWithdrawalEvent extends WalletEvent {
   final double amount;
   final String bankName;
   final String accountNumber;
-  const WithdrawFundsEvent({
+
+  const RequestWithdrawalEvent({
     required this.amount,
     required this.bankName,
     required this.accountNumber,
   });
 
   @override
-  List<Object> get props => [amount, bankName, accountNumber];
+  List<Object?> get props => [amount, bankName, accountNumber];
 }
 
-class DepositFundsEvent extends WalletEvent {
+class InitializeDepositEvent extends WalletEvent {
   final double amount;
-  const DepositFundsEvent({required this.amount});
+  const InitializeDepositEvent(this.amount);
 
   @override
-  List<Object> get props => [amount];
+  List<Object?> get props => [amount];
 }
