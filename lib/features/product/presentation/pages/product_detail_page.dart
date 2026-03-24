@@ -23,7 +23,10 @@ import 'package:used_tech_client/injection_container.dart';
 import 'package:used_tech_client/features/profile/presentation/pages/seller_profile_page.dart';
 import 'package:used_tech_client/features/inbox/domain/entities/conversation_entity.dart';
 import 'package:used_tech_client/features/inbox/presentation/pages/inbox_page_with_messages.dart';
-
+import 'package:used_tech_client/features/wallet/presentation/pages/payment_webview_page.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_event.dart';
+import 'package:used_tech_client/features/order/presentation/bloc/order_state.dart';
 class ProductDetailPage extends StatefulWidget {
   final ProductEntity product;
 
@@ -63,6 +66,62 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return name[0].toUpperCase();
+  }
+
+  void _startCheckout(BuildContext context) {
+    final orderBloc = context.read<OrderBloc>();
+    orderBloc.add(CreateOrderEvent(
+      productId: widget.product.id,
+      deliveryMethod: "standard",
+    ));
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return BlocListener<OrderBloc, OrderState>(
+          bloc: orderBloc,
+          listener: (context, state) {
+            if (state is PaymentInitialized) {
+              Navigator.pop(ctx); // close loading dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PaymentWebViewPage(
+                    checkoutUrl: state.checkoutUrl,
+                    title: "Escrow Payment",
+                  ),
+                ),
+              ).then((success) {
+                if (success == true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text("Payment Successful! Funds are secured in Escrow."),
+                      backgroundColor: context.successColor,
+                    ),
+                  );
+                  Navigator.pop(context); // Optional: close product details too
+                }
+              });
+            } else if (state is OrderError) {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+              );
+            }
+          },
+          child: AlertDialog(
+            content: Row(
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: 20),
+                const Expanded(child: Text("Initializing Secure Escrow...")),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _handleAction(BuildContext context, String action) {
@@ -752,7 +811,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         child: ElevatedButton(
                           onPressed: () {
                             if (isAuthenticated) {
-                              _handleAction(context, "Buy Now");
+                              _startCheckout(context);
                             } else {
                               showModalBottomSheet(
                                 context: context,

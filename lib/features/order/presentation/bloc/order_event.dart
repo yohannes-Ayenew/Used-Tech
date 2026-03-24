@@ -71,3 +71,11 @@ class ReportOrderIssueEvent extends OrderEvent {
   @override
   List<Object?> get props => [orderId, reason];
 }
+
+class InitPaymentEvent extends OrderEvent {
+  final String orderId;
+  const InitPaymentEvent({required this.orderId});
+
+  @override
+  List<Object?> get props => [orderId];
+}

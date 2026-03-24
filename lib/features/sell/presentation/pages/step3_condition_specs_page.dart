@@ -49,6 +49,13 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
       return;
     }
 
+    if (widget.category == 'laptop' && _selectedProcessor == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a Processor")),
+      );
+      return;
+    }
+
     // 🚀 Close keyboard
     FocusScope.of(context).unfocus();
 
@@ -116,14 +123,34 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                   
                   // Battery Health for Mobiles
                   if (widget.category == 'mobile' || widget.category == 'tablet') ...[
-                    Text("Battery Health: $_batteryHealth%", style: context.textTheme.titleMedium),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Battery Health", style: context.textTheme.titleMedium),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getBatteryColor().withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "$_batteryHealth%",
+                            style: TextStyle(
+                              color: _getBatteryColor(),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Slider(
                       value: _batteryHealth.toDouble(),
                       min: 50,
                       max: 100,
                       divisions: 50,
                       label: "$_batteryHealth%",
-                      activeColor: context.primaryColor,
+                      activeColor: _getBatteryColor(),
                       onChanged: (double value) {
                         setState(() {
                           _batteryHealth = value.toInt();
@@ -196,7 +223,11 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: (_selectedCondition == null || _selectedStorage == null || _selectedRam == null) ? null : _nextStep,
+                  onPressed: (_selectedCondition == null || 
+                               _selectedStorage == null || 
+                               _selectedRam == null || 
+                               (widget.category == 'laptop' && _selectedProcessor == null)) 
+                               ? null : _nextStep,
                   child: const Text("Next"),
                 ),
               ),
@@ -300,5 +331,11 @@ class _Step3ConditionSpecsPageState extends State<Step3ConditionSpecsPage> {
         ),
       ),
     );
+  }
+
+  Color _getBatteryColor() {
+    if (_batteryHealth >= 90) return Colors.green;
+    if (_batteryHealth >= 80) return Colors.orange;
+    return Colors.red;
   }
 }

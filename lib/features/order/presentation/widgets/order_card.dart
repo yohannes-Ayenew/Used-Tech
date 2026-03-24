@@ -115,9 +115,33 @@ class OrderCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: order.status.color,
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    if (!isSelling && (order.status == OrderStatus.shipped || order.status == OrderStatus.escrowHeld))
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: context.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: context.primaryColor.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.qr_code_2, size: 12, color: context.primaryColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              "QR Ready",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: context.primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),

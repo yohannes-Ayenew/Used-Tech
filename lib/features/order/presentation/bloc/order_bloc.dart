@@ -15,14 +15,17 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<ConfirmDeliveryEvent>(_onConfirmDelivery);
     on<AcceptOrderEvent>(_onAcceptOrder);
     on<ReportOrderIssueEvent>(_onReportOrderIssue);
+    on<InitPaymentEvent>(_onInitPayment);
   }
-
-
   Future<void> _onGetMyOrders(
     GetMyOrdersEvent event,
     Emitter<OrderState> emit,
   ) async {
-    emit(OrderLoading());
+    // Only show loading if we don't have data yet
+    if (state is! OrdersLoaded) {
+      emit(OrderLoading());
+    }
+    
     final result = await orderRepository.getBuyingOrders();
     result.fold(
       (failure) => emit(OrderError(failure.message)),
@@ -34,7 +37,11 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     GetMySalesEvent event,
     Emitter<OrderState> emit,
   ) async {
-    emit(OrderLoading());
+    // Only show loading if we don't have data yet
+    if (state is! SalesLoaded) {
+      emit(OrderLoading());
+    }
+
     final result = await orderRepository.getSellingOrders();
     result.fold(
       (failure) => emit(OrderError(failure.message)),
@@ -63,9 +70,17 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       productId: event.productId,
       deliveryMethod: event.deliveryMethod,
     );
-    result.fold(
-      (failure) => emit(OrderError(failure.message)),
-      (order) => emit(OrderCreated(order)),
+    await result.fold(
+      (failure) async => emit(OrderError(failure.message)),
+      (order) async {
+        emit(OrderCreated(order));
+        // Auto-initialize payment
+        final paymentResult = await orderRepository.initPayment(order.id);
+        paymentResult.fold(
+          (failure) => emit(OrderError(failure.message)),
+          (url) => emit(PaymentInitialized(url)),
+        );
+      },
     );
   }
 
@@ -132,6 +147,18 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           (order) => emit(OrderStatusUpdated(order)),
         );
       },
+    );
+  }
+
+  Future<void> _onInitPayment(
+    InitPaymentEvent event,
+    Emitter<OrderState> emit,
+  ) async {
+    emit(OrderLoading());
+    final result = await orderRepository.initPayment(event.orderId);
+    result.fold(
+      (failure) => emit(OrderError(failure.message)),
+      (url) => emit(PaymentInitialized(url)),
     );
   }
 }

@@ -244,25 +244,28 @@ class AuthenticatedProfilePage extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: context.lightGrey,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                formattedBalance,
-                                style: context.textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "ETB Available",
-                                style: context.textTheme.bodySmall,
-                              ),
-                            ],
+                        child: InkWell(
+                          onTap: () => Navigator.pushNamed(context, '/wallet'),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: context.lightGrey,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  formattedBalance,
+                                  style: context.textTheme.headlineSmall,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "ETB Available",
+                                  style: context.textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -328,7 +331,7 @@ class AuthenticatedProfilePage extends StatelessWidget {
                   icon: Icons.account_balance_wallet,
                   title: "Wallet",
                   subtitle: "Available: $formattedBalance ETB",
-                  onTap: () => _showComingSoon(context, "Wallet"),
+                  onTap: () => Navigator.pushNamed(context, '/wallet'),
                 ),
 
                 _buildMenuItem(
