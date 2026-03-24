@@ -30,6 +30,8 @@ import 'features/product/presentation/pages/favorites_page.dart';
 import 'package:used_tech_client/features/order/presentation/pages/active_orders_page.dart';
 import 'package:used_tech_client/features/order/presentation/pages/order_details_page.dart';
 import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
+import 'package:used_tech_client/features/wallet/presentation/bloc/wallet_bloc.dart';
+import 'package:used_tech_client/features/wallet/presentation/pages/wallet_page.dart';
 import 'features/inbox/presentation/bloc/chat_bloc.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/connectivity_service.dart';
@@ -90,6 +92,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<SellBloc>()),
         BlocProvider(create: (_) => di.sl<ChatBloc>()),
         BlocProvider(create: (_) => di.sl<OrderBloc>()),
+        BlocProvider(create: (_) => di.sl<WalletBloc>()),
         BlocProvider(create: (_) => ThemeCubit()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
@@ -168,6 +171,7 @@ class MyApp extends StatelessWidget {
                 final orderId = ModalRoute.of(context)!.settings.arguments as String;
                 return OrderDetailsPage(orderId: orderId);
               },
+              '/wallet': (context) => const WalletPage(),
             },
             onGenerateRoute: (settings) {
               if (settings.name == '/email-verification' &&

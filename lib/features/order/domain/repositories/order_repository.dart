@@ -13,4 +13,5 @@ abstract class OrderRepository {
   Future<Either<Failure, OrderEntity>> createOrder({required String productId, required String deliveryMethod});
   Future<Either<Failure, OrderEntity>> updateOrderStatus({required String orderId, required OrderStatus status});
   Future<Either<Failure, OrderEntity>> confirmDelivery({required String orderId, required String scannedToken});
+  Future<Either<Failure, String>> initPayment(String orderId);
 }
