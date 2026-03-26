@@ -86,6 +86,11 @@ class OrderEntity extends Equatable {
     required this.updatedAt,
   });
 
+  String get formattedAmount => amount.toStringAsFixed(0).replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]},',
+      );
+
   // Helper getters
   bool get isPending => status == OrderStatus.pending;
   bool get isEscrowHeld => status == OrderStatus.escrowHeld;

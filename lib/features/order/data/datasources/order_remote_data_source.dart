@@ -8,9 +8,10 @@ import '../models/order_model.dart';
 abstract class OrderRemoteDataSource {
   Future<List<OrderModel>> getMyOrders();
   Future<OrderModel> createOrder({required String productId, required String deliveryMethod});
-  Future<OrderModel> markShipped(String orderId);
+  Future<OrderModel> markShipped({required String orderId, required String trackingNumber, required String courierName});
   Future<OrderModel> confirmDelivery({required String orderId, required String scannedToken});
   Future<void> completeOrder(String orderId);
+  Future<void> reportIssue({required String orderId, required String reason});
   Future<String> initPayment(String orderId);
 }
 
@@ -71,18 +72,19 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   }
 
   @override
-  Future<OrderModel> markShipped(String orderId) async {
+  Future<OrderModel> markShipped({required String orderId, required String trackingNumber, required String courierName}) async {
     final token = await _getToken();
     final response = await client.put(
       Uri.parse(ApiEndpoints.markOrderShipped(orderId)),
       headers: _getHeaders(token: token),
+      body: jsonEncode({
+        'trackingNumber': trackingNumber,
+        'courierName': courierName,
+      }),
     ).timeout(const Duration(seconds: 10));
 
     final data = jsonDecode(response.body);
     if (response.statusCode == 200 && data['success'] == true) {
-      // Backend markShipped might not return the full order, so we may need to fetch again
-      // or just rely on backend returning it if it does. Right now order.controller.js returns { message: "Item marked as shipped" }
-      // So we will just call getMyOrders() to find it and return it.
       final orders = await getMyOrders();
       return orders.firstWhere((o) => o.id == orderId);
     } else {
@@ -123,12 +125,31 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   }
 
   @override
+  Future<void> reportIssue({required String orderId, required String reason}) async {
+    final token = await _getToken();
+    final response = await client.post(
+      Uri.parse(ApiEndpoints.reportIssue(orderId)),
+      headers: _getHeaders(token: token),
+      body: jsonEncode({'reason': reason}),
+    ).timeout(const Duration(seconds: 10));
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Failed to report issue');
+    }
+  }
+
+  @override
   Future<String> initPayment(String orderId) async {
     final token = await _getToken();
     final response = await client.post(
       Uri.parse(ApiEndpoints.initPayment),
       headers: _getHeaders(token: token),
-      body: jsonEncode({'orderId': orderId}),
+      body: jsonEncode({
+        'orderId': orderId,
+        'order_id': orderId,
+        'id': orderId,
+      }),
     ).timeout(const Duration(seconds: 10));
 
     final data = jsonDecode(response.body);

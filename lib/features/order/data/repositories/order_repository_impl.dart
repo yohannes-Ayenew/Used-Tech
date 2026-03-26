@@ -66,9 +66,12 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Future<Either<Failure, Unit>> reportOrderIssue(String orderId, String reason) async {
-    // Currently no backend support for disputing/reporting issue. Just simulating success.
-    await Future.delayed(const Duration(milliseconds: 800));
-    return const Right(unit);
+    try {
+      await remoteDataSource.reportIssue(orderId: orderId, reason: reason);
+      return const Right(unit);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override
@@ -82,10 +85,14 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  Future<Either<Failure, OrderEntity>> updateOrderStatus({required String orderId, required OrderStatus status}) async {
+  Future<Either<Failure, OrderEntity>> updateOrderStatus({required String orderId, required OrderStatus status, String? trackingNumber, String? courierName}) async {
     try {
       if (status == OrderStatus.shipped) {
-        final order = await remoteDataSource.markShipped(orderId);
+        final order = await remoteDataSource.markShipped(
+          orderId: orderId,
+          trackingNumber: trackingNumber ?? 'N/A',
+          courierName: courierName ?? 'N/A',
+        );
         return Right(order);
       } else {
         return Left(ServerFailure("Unsupported status update from repository"));

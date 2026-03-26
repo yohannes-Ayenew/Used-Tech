@@ -65,6 +65,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     CreateOrderEvent event,
     Emitter<OrderState> emit,
   ) async {
+    if (state is OrderLoading) return;
     emit(OrderLoading());
     final result = await orderRepository.createOrder(
       productId: event.productId,
@@ -78,7 +79,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         final paymentResult = await orderRepository.initPayment(order.id);
         paymentResult.fold(
           (failure) => emit(OrderError(failure.message)),
-          (url) => emit(PaymentInitialized(url)),
+          (url) => emit(PaymentInitialized(url, order.id)),
         );
       },
     );
@@ -92,6 +93,8 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     final result = await orderRepository.updateOrderStatus(
       orderId: event.orderId,
       status: event.status,
+      trackingNumber: event.trackingNumber,
+      courierName: event.courierName,
     );
     result.fold(
       (failure) => emit(OrderError(failure.message)),
@@ -154,11 +157,12 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     InitPaymentEvent event,
     Emitter<OrderState> emit,
   ) async {
+    if (state is OrderLoading) return;
     emit(OrderLoading());
     final result = await orderRepository.initPayment(event.orderId);
     result.fold(
       (failure) => emit(OrderError(failure.message)),
-      (url) => emit(PaymentInitialized(url)),
+      (url) => emit(PaymentInitialized(url, event.orderId)),
     );
   }
 }
