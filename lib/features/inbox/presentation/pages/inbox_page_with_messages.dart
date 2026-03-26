@@ -256,6 +256,7 @@ class _InboxChatPageState extends State<InboxChatPage> {
               },
             ),
             _buildProductHeader(context),
+            _buildSafetyWarning(context),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -317,6 +318,35 @@ class _InboxChatPageState extends State<InboxChatPage> {
             _buildMessageInput(context),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSafetyWarning(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.security_rounded, color: Colors.orange, size: 18),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              "Do not send money outside the app. You will lose your buyer protection.",
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

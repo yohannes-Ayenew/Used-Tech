@@ -36,6 +36,8 @@ import 'features/inbox/presentation/bloc/chat_bloc.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'injection_container.dart' as di;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,7 +71,7 @@ void main() async {
   Future.microtask(() async {
     try {
       di.sl<ConnectivityService>().init();
-      di.sl<NotificationService>().init();
+      di.sl<NotificationService>().init(scaffoldMessengerKey: scaffoldMessengerKey);
       print('🚀 Background services (Connectivity/Push) initialized');
     } catch (e) {
       print('⚠️ Error during background initialization: $e');
@@ -98,6 +100,8 @@ class MyApp extends StatelessWidget {
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(
+            navigatorKey: navigatorKey,
+            scaffoldMessengerKey: scaffoldMessengerKey,
             debugShowCheckedModeBanner: false,
             title: 'Used Tech Market',
             theme: AppThemes.lightTheme,
