@@ -56,10 +56,11 @@ class OrderStatusUpdated extends OrderState {
 
 class PaymentInitialized extends OrderState {
   final String checkoutUrl;
-  const PaymentInitialized(this.checkoutUrl);
+  final String orderId;
+  const PaymentInitialized(this.checkoutUrl, this.orderId);
 
   @override
-  List<Object> get props => [checkoutUrl];
+  List<Object> get props => [checkoutUrl, orderId];
 }
 
 class OrderError extends OrderState {

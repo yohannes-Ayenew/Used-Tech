@@ -11,6 +11,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:used_tech_client/injection_container.dart';
 import 'package:used_tech_client/features/auth/data/datasources/auth_local_data_source.dart';
+import 'package:used_tech_client/features/wallet/presentation/pages/payment_webview_page.dart';
 import 'dart:async';
 
 class OrderDetailsPage extends StatefulWidget {
@@ -71,6 +72,30 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     }
   }
 
+  void _openScanner(String orderId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: MobileScanner(
+          onDetect: (capture) {
+            final List<Barcode> barcodes = capture.barcodes;
+            for (final barcode in barcodes) {
+              if (barcode.rawValue == orderId) {
+                Navigator.pop(context);
+                context.read<OrderBloc>().add(
+                  ConfirmDeliveryEvent(orderId: orderId, scannedToken: barcode.rawValue!),
+                );
+                return;
+              }
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   void _showQRCode(String orderId) {
     showModalBottomSheet(
       context: context,
@@ -110,31 +135,102 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  void _openScanner(String orderId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(title: const Text("Scan Buyer's QR")),
-          body: MobileScanner(
-            onDetect: (capture) {
-              final List<Barcode> barcodes = capture.barcodes;
-              if (barcodes.isNotEmpty) {
-                final String? code = barcodes.first.rawValue;
-                if (code == orderId) {
-                  Navigator.pop(context);
-                  context.read<OrderBloc>().add(
-                    ConfirmDeliveryEvent(orderId: orderId, scannedToken: code!),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Invalid QR Code for this order")),
-                  );
-                }
+  void _showTrackingDialog(String orderId) {
+    final trackingController = TextEditingController();
+    final courierController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Enter Shipping Details"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: courierController,
+              decoration: const InputDecoration(
+                labelText: "Courier Name (e.g. DHL, EMS, Local)",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: trackingController,
+              decoration: const InputDecoration(
+                labelText: "Tracking Number",
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (courierController.text.isNotEmpty && trackingController.text.isNotEmpty) {
+                context.read<OrderBloc>().add(
+                  UpdateOrderStatusEvent(
+                    orderId: orderId,
+                    status: OrderStatus.shipped,
+                    trackingNumber: trackingController.text,
+                    courierName: courierController.text,
+                  ),
+                );
+                Navigator.pop(context);
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: sl<ThemeData>().primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text("Confirm Shipment", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportIssueDialog(String orderId) {
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Report an Issue"),
+        content: TextField(
+          controller: reasonController,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: "Describe the issue with the item...",
+            border: OutlineInputBorder(),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (reasonController.text.isNotEmpty) {
+                context.read<OrderBloc>().add(
+                  ReportOrderIssueEvent(orderId: orderId, reason: reasonController.text),
+                );
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text("Submit Report", style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
@@ -179,8 +275,13 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
             final isBuyer = _currentUserId == order.buyerId;
             final isSeller = _currentUserId == order.sellerId;
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<OrderBloc>().add(GetOrderDetailsEvent(orderId: order.id));
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -220,7 +321,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "${order.amount.toStringAsFixed(0)} ETB",
+                                "${order.formattedAmount} ETB",
                                 style: TextStyle(
                                   color: context.primaryColor,
                                   fontSize: 18,
@@ -325,6 +426,62 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   const SizedBox(height: 40),
 
                   // Action Buttons
+                  if (isBuyer && order.status == OrderStatus.pending)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.payment_rounded),
+                        label: const Text("Pay Now (Secure Escrow)", style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          context.read<OrderBloc>().add(InitPaymentEvent(orderId: order.id));
+                          
+                          // Show loading dialog similar to ProductDetailPage
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (ctx) => BlocListener<OrderBloc, OrderState>(
+                              listener: (context, state) {
+                                if (state is PaymentInitialized) {
+                                  Navigator.pop(ctx);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PaymentWebViewPage(
+                                        checkoutUrl: state.checkoutUrl,
+                                        title: "Escrow Payment",
+                                      ),
+                                    ),
+                                  ).then((_) {
+                                    context.read<OrderBloc>().add(GetOrderDetailsEvent(orderId: order.id));
+                                  });
+                                } else if (state is OrderError) {
+                                  Navigator.pop(ctx);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                                  );
+                                }
+                              },
+                              child: AlertDialog(
+                                content: Row(
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(width: 20),
+                                    const Expanded(child: Text("Initializing Payment...")),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        ),
+                      ),
+                    ),
+
                   if (isBuyer && (order.status == OrderStatus.shipped || order.status == OrderStatus.escrowHeld))
                     SizedBox(
                       width: double.infinity,
@@ -341,12 +498,44 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       ),
                     ),
 
-                  if (isSeller && (order.status == OrderStatus.shipped || order.status == OrderStatus.escrowHeld))
+                  if (isSeller && (order.status == OrderStatus.escrowHeld))
                     SizedBox(
+                      width: double.infinity,
+                      child: Column(
+                        children: [
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.local_shipping_rounded),
+                            label: const Text("Mark as Shipped (Courier)", style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: () => _showTrackingDialog(order.id),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.qr_code_scanner_rounded),
+                            label: const Text("Confirm Meetup Delivery (Scan QR)", style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: () => _openScanner(order.id),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  if (isSeller && (order.status == OrderStatus.shipped))
+                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.qr_code_scanner_rounded),
-                        label: const Text("Scan to Confirm Delivery", style: TextStyle(fontWeight: FontWeight.bold)),
+                        label: const Text("Scan Buyer's QR to Confirm Delivery", style: TextStyle(fontWeight: FontWeight.bold)),
                         onPressed: () => _openScanner(order.id),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.primaryColor,
@@ -377,9 +566,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () {
-                               // Show report dialog
-                            },
+                            onPressed: () => _showReportIssueDialog(order.id),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red,
                               side: const BorderSide(color: Colors.red),
@@ -393,6 +580,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     ),
                 ],
               ),
+              )
             );
           }
           return const SizedBox();

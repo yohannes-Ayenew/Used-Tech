@@ -92,7 +92,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     title: "Escrow Payment",
                   ),
                 ),
-              ).then((success) {
+                  ).then((success) {
                 if (success == true) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -100,7 +100,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       backgroundColor: context.successColor,
                     ),
                   );
-                  Navigator.pop(context); // Optional: close product details too
+                  // Refresh Order History
+                  orderBloc.add(GetMyOrdersEvent());
+                  // Navigate to details
+                  Navigator.pushReplacementNamed(
+                    context, 
+                    '/order-details', 
+                    arguments: state.orderId,
+                  );
                 }
               });
             } else if (state is OrderError) {
@@ -809,10 +816,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       Expanded(
                         flex: 3,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (isAuthenticated) {
-                              _startCheckout(context);
-                            } else {
+                          onPressed: (state is OrderLoading) 
+                              ? null 
+                              : () {
+                                  if (isAuthenticated) {
+                                    _startCheckout(context);
+                                  } else {
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,

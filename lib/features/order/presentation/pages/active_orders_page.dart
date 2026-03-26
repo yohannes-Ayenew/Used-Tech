@@ -161,28 +161,33 @@ class _ActiveOrdersPageState extends State<ActiveOrdersPage> {
                     );
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: orders.length,
-                    itemBuilder: (context, index) {
-                      return OrderCard(
-                        order: orders[index],
-                        isSelling: !_isBuyingSelected,
-                        onAccept: () {
-                          context.read<OrderBloc>().add(AcceptOrderEvent(orderId: orders[index].id));
-                        },
-                        onReport: () {
-                          // TODO: Show report dialog
-                        },
-                        onViewDetails: () {
-                          Navigator.pushNamed(
-                            context, 
-                            '/order-details', 
-                            arguments: orders[index].id,
-                          );
-                        },
-                      );
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      _fetchOrders();
                     },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: orders.length,
+                      itemBuilder: (context, index) {
+                        return OrderCard(
+                          order: orders[index],
+                          isSelling: !_isBuyingSelected,
+                          onAccept: () {
+                            context.read<OrderBloc>().add(AcceptOrderEvent(orderId: orders[index].id));
+                          },
+                          onReport: () {
+                            // TODO: Show report dialog
+                          },
+                          onViewDetails: () {
+                            Navigator.pushNamed(
+                              context, 
+                              '/order-details', 
+                              arguments: orders[index].id,
+                            ).then((_) => _fetchOrders());
+                          },
+                        );
+                      },
+                    ),
                   );
                 } else if (state is OrderStatusUpdated || state is OrderDetailsLoaded) {
                    // While refreshing after an action, show the previous state if possible, 

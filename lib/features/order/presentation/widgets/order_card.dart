@@ -69,7 +69,7 @@ class OrderCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "${order.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} ETB",
+                        "${order.formattedAmount} ETB",
                         style: context.textTheme.titleLarge?.copyWith(
                           color: context.primaryColor,
                           fontWeight: FontWeight.w900,
