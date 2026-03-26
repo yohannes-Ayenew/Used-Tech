@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import '../../domain/entities/order_entity.dart';
 import 'order_progress_tracker.dart';
 
@@ -48,7 +49,7 @@ class OrderCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: CachedNetworkImage(
-                    imageUrl: order.productImage,
+                    imageUrl: ApiEndpoints.resolveImageUrl(order.productImage),
                     width: 70,
                     height: 70,
                     fit: BoxFit.cover,

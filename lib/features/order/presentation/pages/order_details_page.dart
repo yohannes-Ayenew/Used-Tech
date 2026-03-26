@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
+import 'package:used_tech_client/core/constants/api_endpoints.dart';
 import 'package:used_tech_client/features/order/domain/entities/order_entity.dart';
 import 'package:used_tech_client/features/order/presentation/bloc/order_bloc.dart';
 import 'package:used_tech_client/features/order/presentation/bloc/order_event.dart';
@@ -26,6 +27,7 @@ class OrderDetailsPage extends StatefulWidget {
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
   String? _currentUserId;
   Timer? _countdownTimer;
+  Timer? _statusPollingTimer;
   String _remainingTime = "";
 
   @override
@@ -38,7 +40,22 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _statusPollingTimer?.cancel();
     super.dispose();
+  }
+
+  void _startStatusPolling() {
+    _statusPollingTimer?.cancel();
+    _statusPollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (mounted) {
+        context.read<OrderBloc>().add(GetOrderDetailsEvent(orderId: widget.orderId));
+      }
+    });
+  }
+
+  void _stopStatusPolling() {
+    _statusPollingTimer?.cancel();
+    _statusPollingTimer = null;
   }
 
   void _startTimer(DateTime autoConfirmAt) {
@@ -254,14 +271,28 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       ),
       body: BlocConsumer<OrderBloc, OrderState>(
         listener: (context, state) {
-          if (state is OrderDetailsLoaded && state.order.status == OrderStatus.delivered) {
-            if (state.order.autoConfirmAt != null) {
-              _startTimer(state.order.autoConfirmAt!);
+          if (state is OrderDetailsLoaded) {
+            if (state.order.status == OrderStatus.pending) {
+              _startStatusPolling();
+            } else {
+              _stopStatusPolling();
+            }
+            if (state.order.status == OrderStatus.delivered) {
+              if (state.order.autoConfirmAt != null) {
+                _startTimer(state.order.autoConfirmAt!);
+              }
             }
           }
-          if (state is OrderStatusUpdated && state.order.status == OrderStatus.delivered) {
-             if (state.order.autoConfirmAt != null) {
-              _startTimer(state.order.autoConfirmAt!);
+          if (state is OrderStatusUpdated) {
+             if (state.order.status == OrderStatus.pending) {
+              _startStatusPolling();
+            } else {
+              _stopStatusPolling();
+            }
+            if (state.order.status == OrderStatus.delivered) {
+              if (state.order.autoConfirmAt != null) {
+                _startTimer(state.order.autoConfirmAt!);
+              }
             }
           }
         },
@@ -304,7 +335,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: CachedNetworkImage(
-                            imageUrl: order.productImage,
+                            imageUrl: ApiEndpoints.resolveImageUrl(order.productImage),
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
