@@ -49,22 +49,35 @@ class OrderModel extends OrderEntity {
   }
 
   static OrderStatus _parseStatus(String? status) {
-    switch (status?.toLowerCase()) {
+    if (status == null) return OrderStatus.pending;
+    
+    // Normalize string: lowercase, remove spaces, underscores, and hyphens
+    final normalized = status.toLowerCase()
+        .replaceAll(' ', '')
+        .replaceAll('_', '')
+        .replaceAll('-', '');
+        
+    switch (normalized) {
       case 'pending':
         return OrderStatus.pending;
-      case 'escrow_held':
+      case 'escrowheld':
+      case 'escrow':
         return OrderStatus.escrowHeld;
       case 'shipped':
         return OrderStatus.shipped;
       case 'delivered':
         return OrderStatus.delivered;
       case 'completed':
+      case 'complete':
         return OrderStatus.completed;
       case 'disputed':
+      case 'dispute':
         return OrderStatus.disputed;
       case 'cancelled':
+      case 'cancel':
         return OrderStatus.cancelled;
       default:
+        print('⚠️ Unknown order status from backend: $status');
         return OrderStatus.pending;
     }
   }
