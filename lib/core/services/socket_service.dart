@@ -36,6 +36,22 @@ class SocketService {
       _messageController.add(data);
     });
 
+    _socket!.on('order_update', (data) {
+      print('📦 Socket Order Update: $data');
+      _messageController.add({
+        ...Map<String, dynamic>.from(data),
+        'socket_event': 'order_update',
+      });
+    });
+
+    _socket!.on('payment_status', (data) {
+      print('💰 Socket Payment Status: $data');
+      _messageController.add({
+        ...Map<String, dynamic>.from(data),
+        'socket_event': 'payment_status',
+      });
+    });
+
     _socket!.onDisconnect((_) {
       print('❌ Socket Disconnected');
       _statusController.add(false);

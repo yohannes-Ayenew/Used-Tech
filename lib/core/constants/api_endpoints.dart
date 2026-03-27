@@ -72,6 +72,7 @@ class ApiEndpoints {
 
   // Payment Endpoints
   static String get initPayment => '$baseUrl/payments/init';
+  static String verifyPayment(String txRef) => '$baseUrl/payments/verify/$txRef';
 
   // Socket URL
   static String get socketUrl {

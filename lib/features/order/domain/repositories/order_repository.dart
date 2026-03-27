@@ -13,5 +13,6 @@ abstract class OrderRepository {
   Future<Either<Failure, OrderEntity>> createOrder({required String productId, required String deliveryMethod});
   Future<Either<Failure, OrderEntity>> updateOrderStatus({required String orderId, required OrderStatus status, String? trackingNumber, String? courierName});
   Future<Either<Failure, OrderEntity>> confirmDelivery({required String orderId, required String scannedToken});
-  Future<Either<Failure, String>> initPayment(String orderId);
+  Future<Either<Failure, Map<String, String>>> initPayment(String orderId);
+  Future<Either<Failure, OrderEntity>> verifyManualPayment(String txRef);
 }

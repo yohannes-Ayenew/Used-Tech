@@ -113,10 +113,23 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  Future<Either<Failure, String>> initPayment(String orderId) async {
+  Future<Either<Failure, Map<String, String>>> initPayment(String orderId) async {
     try {
-      final url = await remoteDataSource.initPayment(orderId);
-      return Right(url);
+      final res = await remoteDataSource.initPayment(orderId);
+      return Right({
+        'checkout_url': res['checkout_url'] as String,
+        'tx_ref': res['tx_ref'] as String,
+      });
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, OrderEntity>> verifyManualPayment(String txRef) async {
+    try {
+      final order = await remoteDataSource.verifyManualPayment(txRef);
+      return Right(order);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

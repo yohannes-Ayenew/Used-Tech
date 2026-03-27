@@ -12,7 +12,8 @@ abstract class OrderRemoteDataSource {
   Future<OrderModel> confirmDelivery({required String orderId, required String scannedToken});
   Future<void> completeOrder(String orderId);
   Future<void> reportIssue({required String orderId, required String reason});
-  Future<String> initPayment(String orderId);
+  Future<Map<String, dynamic>> initPayment(String orderId);
+  Future<OrderModel> verifyManualPayment(String txRef);
 }
 
 class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
@@ -140,23 +141,40 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   }
 
   @override
-  Future<String> initPayment(String orderId) async {
+  Future<Map<String, dynamic>> initPayment(String orderId) async {
     final token = await _getToken();
     final response = await client.post(
       Uri.parse(ApiEndpoints.initPayment),
       headers: _getHeaders(token: token),
       body: jsonEncode({
         'orderId': orderId,
-        'order_id': orderId,
-        'id': orderId,
       }),
     ).timeout(const Duration(seconds: 10));
 
     final data = jsonDecode(response.body);
     if (response.statusCode == 200 && data['success'] == true) {
-      return data['checkout_url'];
+      return {
+        'checkout_url': data['checkout_url'],
+        'tx_ref': data['tx_ref'],
+      };
     } else {
       throw Exception(data['message'] ?? 'Failed to initialize payment');
+    }
+  }
+
+  @override
+  Future<OrderModel> verifyManualPayment(String txRef) async {
+    final token = await _getToken();
+    final response = await client.get(
+      Uri.parse(ApiEndpoints.verifyPayment(txRef)),
+      headers: _getHeaders(token: token),
+    ).timeout(const Duration(seconds: 10));
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return OrderModel.fromJson(data['order']);
+    } else {
+      throw Exception(data['message'] ?? 'Failed to verify payment manuals');
     }
   }
 }

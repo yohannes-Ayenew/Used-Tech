@@ -148,6 +148,6 @@ Future<void> init() async {
   sl.registerFactory(() => ProductBloc(productRepository: sl()));
   sl.registerFactory(() => FavoritesBloc());
   sl.registerFactory(() => ChatBloc(chatRepository: sl(), socketService: sl()));
-  sl.registerFactory(() => OrderBloc(orderRepository: sl()));
+  sl.registerFactory(() => OrderBloc(orderRepository: sl(), socketService: sl()));
   sl.registerFactory(() => WalletBloc(walletRepository: sl()));
 }
