@@ -12,15 +12,16 @@ class OrderProgressTracker extends StatelessWidget {
   int get _currentStep {
     switch (status) {
       case OrderStatus.pending:
+        return 0; // Payment (Active)
       case OrderStatus.escrowHeld:
-        return 0; // Payment
+        return 1; // Shipped (Payment Done, waiting for shipment)
       case OrderStatus.shipped:
-        return 1; // Shipped
+        return 2; // Delivered (Waiting for delivery)
       case OrderStatus.delivered:
       case OrderStatus.disputed:
-        return 2; // Delivered
+        return 3; // Complete (Waiting for completion)
       case OrderStatus.completed:
-        return 3; // Complete
+        return 4; // Checkmark on everything
       case OrderStatus.cancelled:
         return 0;
     }
@@ -28,7 +29,7 @@ class OrderProgressTracker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final steps = ['Payment', 'Shipped', 'Delivered', 'Complete'];
+    final steps = ['Paid', 'Shipped', 'In-Transit', 'Complete'];
     
     return Column(
       children: [

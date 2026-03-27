@@ -38,6 +38,10 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
             if (url.contains("payment-success")) {
               Navigator.pop(context, true); // Return success
             }
+            if (url.contains("tx_ref=")) {
+               // Extract tx_ref if needed, though we already have it in the details page
+               debugPrint("Detected tx_ref in URL: $url");
+            }
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint("WebView Error: ${error.description}");

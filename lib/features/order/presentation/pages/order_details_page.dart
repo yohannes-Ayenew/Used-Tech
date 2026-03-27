@@ -99,7 +99,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           onDetect: (capture) {
             final List<Barcode> barcodes = capture.barcodes;
             for (final barcode in barcodes) {
-              if (barcode.rawValue == orderId) {
+              if (barcode.rawValue != null && barcode.rawValue!.isNotEmpty) {
                 Navigator.pop(context);
                 context.read<OrderBloc>().add(
                   ConfirmDeliveryEvent(orderId: orderId, scannedToken: barcode.rawValue!),
@@ -113,7 +113,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  void _showQRCode(String orderId) {
+  void _showQRCode(OrderEntity order) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -135,15 +135,18 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 30),
-            QrImageView(
-              data: orderId,
-              version: QrVersions.auto,
-              size: 200.0,
-              foregroundColor: context.primaryColor,
-            ),
+            if (order.deliveryToken != null)
+              QrImageView(
+                data: order.deliveryToken!,
+                version: QrVersions.auto,
+                size: 200.0,
+                foregroundColor: context.primaryColor,
+              )
+            else
+              const Text("Token not generated. Please refresh."),
             const SizedBox(height: 30),
             Text(
-              "Order ID: $orderId",
+              "Order ID: ${order.id}",
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
@@ -473,6 +476,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                             builder: (ctx) => BlocListener<OrderBloc, OrderState>(
                               listener: (context, state) {
                                 if (state is PaymentInitialized) {
+                                  final txRef = state.txRef;
+                                  final orderId = state.orderId;
                                   Navigator.pop(ctx);
                                   Navigator.push(
                                     context,
@@ -482,8 +487,13 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                         title: "Escrow Payment",
                                       ),
                                     ),
-                                  ).then((_) {
-                                    context.read<OrderBloc>().add(GetOrderDetailsEvent(orderId: order.id));
+                                  ).then((_) async {
+                                    if (context.mounted) {
+                                      // Dispatch manual verification event
+                                      context.read<OrderBloc>().add(
+                                        VerifyManualPaymentEvent(txRef: txRef, orderId: orderId),
+                                      );
+                                    }
                                   });
                                 } else if (state is OrderError) {
                                   Navigator.pop(ctx);
@@ -519,7 +529,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.qr_code_2_rounded),
                         label: const Text("Show Delivery QR", style: TextStyle(fontWeight: FontWeight.bold)),
-                        onPressed: () => _showQRCode(order.id),
+                        onPressed: () => _showQRCode(order),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.primaryColor,
                           foregroundColor: Colors.white,

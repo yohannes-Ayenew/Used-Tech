@@ -87,3 +87,12 @@ class InitPaymentEvent extends OrderEvent {
   @override
   List<Object?> get props => [orderId];
 }
+
+class VerifyManualPaymentEvent extends OrderEvent {
+  final String txRef;
+  final String orderId;
+  const VerifyManualPaymentEvent({required this.txRef, required this.orderId});
+
+  @override
+  List<Object?> get props => [txRef, orderId];
+}

@@ -1,12 +1,19 @@
+import 'package:used_tech_client/core/services/socket_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 import '../../domain/repositories/order_repository.dart';
 import 'order_event.dart';
 import 'order_state.dart';
 
 class OrderBloc extends Bloc<OrderEvent, OrderState> {
   final OrderRepository orderRepository;
+  final SocketService socketService;
+  StreamSubscription? _socketSubscription;
 
-  OrderBloc({required this.orderRepository}) : super(OrderInitial()) {
+  OrderBloc({
+    required this.orderRepository,
+    required this.socketService,
+  }) : super(OrderInitial()) {
     on<GetMyOrdersEvent>(_onGetMyOrders);
     on<GetMySalesEvent>(_onGetMySales);
     on<GetOrderDetailsEvent>(_onGetOrderDetails);
@@ -16,6 +23,24 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<AcceptOrderEvent>(_onAcceptOrder);
     on<ReportOrderIssueEvent>(_onReportOrderIssue);
     on<InitPaymentEvent>(_onInitPayment);
+    on<VerifyManualPaymentEvent>(_onVerifyManualPayment);
+
+    // Listen to real-time updates
+    _socketSubscription = socketService.messageStream.listen((data) {
+      final event = data['socket_event'];
+      if (event == 'order_update' || event == 'payment_status') {
+        final orderId = data['orderId'];
+        if (orderId != null) {
+           add(GetOrderDetailsEvent(orderId: orderId));
+        }
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _socketSubscription?.cancel();
+    return super.close();
   }
   Future<void> _onGetMyOrders(
     GetMyOrdersEvent event,
@@ -79,7 +104,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         final paymentResult = await orderRepository.initPayment(order.id);
         paymentResult.fold(
           (failure) => emit(OrderError(failure.message)),
-          (url) => emit(PaymentInitialized(url, order.id)),
+          (data) => emit(PaymentInitialized(data['checkout_url']!, order.id, data['tx_ref']!)),
         );
       },
     );
@@ -162,7 +187,19 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     final result = await orderRepository.initPayment(event.orderId);
     result.fold(
       (failure) => emit(OrderError(failure.message)),
-      (url) => emit(PaymentInitialized(url, event.orderId)),
+      (data) => emit(PaymentInitialized(data['checkout_url']!, event.orderId, data['tx_ref']!)),
+    );
+  }
+
+  Future<void> _onVerifyManualPayment(
+    VerifyManualPaymentEvent event,
+    Emitter<OrderState> emit,
+  ) async {
+    emit(OrderLoading());
+    final result = await orderRepository.verifyManualPayment(event.txRef);
+    result.fold(
+      (failure) => emit(OrderError(failure.message)),
+      (order) => emit(OrderStatusUpdated(order)),
     );
   }
 }
