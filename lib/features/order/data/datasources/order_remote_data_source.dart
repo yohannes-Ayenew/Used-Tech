@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/error/exceptions.dart';
+import '../../../../core/utils/error_parser.dart';
 import '../../../auth/data/datasources/auth_local_data_source.dart';
 import '../../../../injection_container.dart' as di;
 import '../models/order_model.dart';
@@ -32,7 +34,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
     final localDataSource = di.sl<AuthLocalDataSource>();
     final token = await localDataSource.getLastToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Not authenticated');
+      throw ServerException('Not authenticated');
     }
     return token;
   }
@@ -51,7 +53,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
           .map((json) => OrderModel.fromJson(json))
           .toList();
     } else {
-      throw Exception(data['message'] ?? 'Failed to load orders');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to load orders');
     }
   }
 
@@ -68,7 +70,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
     if (response.statusCode == 201 && data['success'] == true) {
       return OrderModel.fromJson(data['data']);
     } else {
-      throw Exception(data['message'] ?? 'Failed to create order');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to create order');
     }
   }
 
@@ -89,7 +91,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       final orders = await getMyOrders();
       return orders.firstWhere((o) => o.id == orderId);
     } else {
-      throw Exception(data['message'] ?? 'Failed to mark as shipped');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to mark as shipped');
     }
   }
 
@@ -107,7 +109,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       final orders = await getMyOrders();
       return orders.firstWhere((o) => o.id == orderId);
     } else {
-      throw Exception(data['message'] ?? 'Failed to confirm delivery');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to confirm delivery');
     }
   }
 
@@ -121,7 +123,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
 
     final data = jsonDecode(response.body);
     if (response.statusCode != 200 || data['success'] != true) {
-      throw Exception(data['message'] ?? 'Failed to complete order');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to complete order');
     }
   }
 
@@ -136,7 +138,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
 
     final data = jsonDecode(response.body);
     if (response.statusCode != 200 || data['success'] != true) {
-      throw Exception(data['message'] ?? 'Failed to report issue');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to report issue');
     }
   }
 
@@ -158,7 +160,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
         'tx_ref': data['tx_ref'],
       };
     } else {
-      throw Exception(data['message'] ?? 'Failed to initialize payment');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to initialize payment');
     }
   }
 
@@ -174,7 +176,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
     if (response.statusCode == 200 && data['success'] == true) {
       return OrderModel.fromJson(data['order']);
     } else {
-      throw Exception(data['message'] ?? 'Failed to verify payment manuals');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to verify payment manuals');
     }
   }
 }

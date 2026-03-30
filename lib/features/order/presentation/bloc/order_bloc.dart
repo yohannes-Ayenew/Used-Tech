@@ -78,7 +78,13 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     GetOrderDetailsEvent event,
     Emitter<OrderState> emit,
   ) async {
-    emit(OrderLoading());
+    // Only show loading if we are not already showing details for this specific order
+    final isShowingSameOrder = state is OrderDetailsLoaded && (state as OrderDetailsLoaded).order.id == event.orderId;
+    
+    if (!isShowingSameOrder) {
+      emit(OrderLoading());
+    }
+
     final result = await orderRepository.getOrderDetails(event.orderId);
     result.fold(
       (failure) => emit(OrderError(failure.message)),
@@ -92,15 +98,19 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   ) async {
     if (state is OrderLoading) return;
     emit(OrderLoading());
+    
     final result = await orderRepository.createOrder(
       productId: event.productId,
       deliveryMethod: event.deliveryMethod,
     );
+
     await result.fold(
       (failure) async => emit(OrderError(failure.message)),
       (order) async {
+        // Emit created but keep loading state conceptually for the next step
         emit(OrderCreated(order));
-        // Auto-initialize payment
+        
+        // Auto-initialize payment - don't emit OrderLoading again as it's already in a transition state
         final paymentResult = await orderRepository.initPayment(order.id);
         paymentResult.fold(
           (failure) => emit(OrderError(failure.message)),

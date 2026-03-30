@@ -31,3 +31,27 @@ class UnauthorizedException implements Exception {
   @override
   String toString() => message;
 }
+
+class ValidationException implements Exception {
+  final String message;
+  ValidationException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class NotFoundException implements Exception {
+  final String message;
+  NotFoundException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class ConflictException implements Exception {
+  final String message;
+  ConflictException(this.message);
+
+  @override
+  String toString() => message;
+}
