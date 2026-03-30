@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:used_tech_client/core/theme/theme_extensions.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import 'package:used_tech_client/features/product/domain/entities/product_entity.dart';
 import '../pages/product_detail_page.dart';
@@ -71,15 +72,10 @@ class ProductCard extends StatelessWidget {
                       child: CachedNetworkImage(
                         imageUrl: ApiEndpoints.resolveImageUrl(product.coverImage),
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: context.lightGrey,
-                          child: Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: context.isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+                          highlightColor: context.isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+                          child: Container(color: Colors.white),
                         ),
                         errorWidget: (context, url, error) {
                           return Container(

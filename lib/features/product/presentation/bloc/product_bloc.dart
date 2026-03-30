@@ -71,7 +71,10 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
 
   Future<void> _onGetProducts(GetProductsEvent event, Emitter<ProductState> emit) async {
     _lastGetProductsEvent = event;
-    emit(ProductLoading());
+    // Only emit loading if we don't have products yet
+    if (state is! ProductsLoaded) {
+      emit(ProductLoading());
+    }
     final result = await productRepository.getProducts(
       category: event.category,
       searchQuery: event.searchQuery,
@@ -87,8 +90,15 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   }
 
   Future<void> _onGetHomeData(GetHomeDataEvent event, Emitter<ProductState> emit) async {
+    // Check if location changed to decide if we should show shimmers
+    final locationChanged = _lastGetHomeDataEvent != null && _lastGetHomeDataEvent!.location != event.location;
     _lastGetHomeDataEvent = event;
-    emit(ProductLoading());
+
+    // Only emit loading if not loaded yet OR if location changed (to show fresh shimmers)
+    if (state is! HomeDataLoaded || locationChanged) {
+      emit(ProductLoading());
+    }
+
     final results = await Future.wait([
       productRepository.getProducts(location: event.location, status: 'ACTIVE', sort: 'trending', limit: 10),
       productRepository.getProducts(location: event.location, status: 'SOLD', sort: 'sold', limit: 10),

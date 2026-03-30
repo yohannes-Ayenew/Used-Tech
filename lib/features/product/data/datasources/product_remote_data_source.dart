@@ -7,6 +7,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/utils/error_parser.dart';
 import '../models/product_model.dart';
 
 abstract class ProductRemoteDataSource {
@@ -83,10 +84,10 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode != 201) {
-        final message =
-            jsonDecode(response.body)['message'] ?? "Failed to create listing";
-        throw ServerException(message);
+        ErrorParser.handleResponseError(response, defaultMessage: "Failed to create listing");
       }
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -135,8 +136,10 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         final List<dynamic> productsJson = data['data'];
         return productsJson.map((json) => ProductModel.fromJson(json)).toList();
       } else {
-        throw ServerException('Failed to load products');
+        ErrorParser.handleResponseError(response, defaultMessage: 'Failed to load products');
       }
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -154,8 +157,10 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         final data = jsonDecode(response.body);
         return ProductModel.fromJson(data['data']);
       } else {
-        throw ServerException('Failed to load product details');
+        ErrorParser.handleResponseError(response, defaultMessage: 'Failed to load product details');
       }
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -175,9 +180,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      final errorData = jsonDecode(response.body);
-      final message = errorData['message'] ?? 'Failed to delete product';
-      throw ServerException('$message (Status: ${response.statusCode})');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to delete product');
     }
   }
 
@@ -196,7 +199,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     );
 
     if (response.statusCode != 200) {
-      throw ServerException('Failed to update product status');
+      ErrorParser.handleResponseError(response, defaultMessage: 'Failed to update product status');
     }
   }
 
@@ -241,8 +244,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         final response = await http.Response.fromStream(streamedResponse);
 
         if (response.statusCode != 200) {
-          final message = jsonDecode(response.body)['message'] ?? "Failed to update listing";
-          throw ServerException(message);
+          ErrorParser.handleResponseError(response, defaultMessage: "Failed to update listing");
         }
       } else {
         // Standard JSON PATCH
@@ -256,10 +258,15 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         );
 
         if (response.statusCode != 200) {
-          final message = jsonDecode(response.body)['message'] ?? "Failed to update listing";
-          throw ServerException(message);
+          ErrorParser.handleResponseError(response, defaultMessage: "Failed to update listing");
         }
       }
+    } on ServerException {
+      rethrow;
+    } on UnauthorizedException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
     } catch (e) {
       throw ServerException(e.toString());
     }

@@ -13,6 +13,7 @@ import 'package:used_tech_client/features/product/presentation/bloc/product_even
 import 'package:used_tech_client/features/product/presentation/bloc/product_state.dart';
 import 'product_detail_page.dart';
 import '../widgets/product_card.dart';
+import '../widgets/product_shimmer.dart';
 import '../../../../common/widgets/error_display.dart';
 
 class HomePage extends StatefulWidget {
@@ -436,7 +437,7 @@ class _HomePageState extends State<HomePage> {
                   child: BlocBuilder<ProductBloc, ProductState>(
                     builder: (context, state) {
                       if (state is ProductLoading) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const ProductShimmerList();
                       } else if (state is ProductError) {
                         return ErrorDisplay(
                           isCompact: true,
@@ -472,7 +473,7 @@ class _HomePageState extends State<HomePage> {
                           },
                         );
                       }
-                      return const SizedBox();
+                      return const ProductShimmerList();
                     },
                   ),
                 ),
@@ -505,7 +506,9 @@ class _HomePageState extends State<HomePage> {
                   height: 280,
                   child: BlocBuilder<ProductBloc, ProductState>(
                     builder: (context, state) {
-                      if (state is HomeDataLoaded) {
+                      if (state is ProductLoading) {
+                        return const ProductShimmerList();
+                      } else if (state is HomeDataLoaded) {
                         final soldProducts = state.recentlySold;
                         if (soldProducts.isEmpty) {
                           return const Center(
@@ -532,7 +535,7 @@ class _HomePageState extends State<HomePage> {
                           },
                         );
                       }
-                      return const SizedBox();
+                      return const ProductShimmerList();
                     },
                   ),
                 ),
@@ -558,7 +561,9 @@ class _HomePageState extends State<HomePage> {
                   height: 280,
                   child: BlocBuilder<ProductBloc, ProductState>(
                     builder: (context, state) {
-                      if (state is HomeDataLoaded) {
+                      if (state is ProductLoading) {
+                        return const ProductShimmerList();
+                      } else if (state is HomeDataLoaded) {
                         final recommendedProducts = state.recommended;
                         if (recommendedProducts.isEmpty) {
                           return const Center(
@@ -584,7 +589,7 @@ class _HomePageState extends State<HomePage> {
                           },
                         );
                       }
-                      return const SizedBox();
+                      return const ProductShimmerList();
                     },
                   ),
                 ),
