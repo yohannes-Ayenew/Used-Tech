@@ -35,4 +35,6 @@ extension ThemeExtensions on BuildContext {
   bool get isSmallScreen => width < 600;
   bool get isMediumScreen => width >= 600 && width < 1200;
   bool get isLargeScreen => width >= 1200;
+
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
 }
