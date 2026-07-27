@@ -73,7 +73,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     if (token == null) throw Exception('No token found');
 
     final response = await client.post(
-      Uri.parse('${ApiEndpoints.baseUrl}/api/withdrawals'),
+      Uri.parse(ApiEndpoints.requestWithdrawal),
       headers: _getHeaders(token),
       body: jsonEncode({
         'amount': amount,
@@ -94,7 +94,7 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
     if (token == null) throw Exception('No token found');
 
     final response = await client.post(
-      Uri.parse('${ApiEndpoints.baseUrl}/wallets/deposit/initialize'),
+      Uri.parse(ApiEndpoints.initDeposit),
       headers: _getHeaders(token),
       body: jsonEncode({
         'amount': amount,
