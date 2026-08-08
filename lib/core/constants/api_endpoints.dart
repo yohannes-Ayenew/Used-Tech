@@ -4,15 +4,8 @@ import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
   // Logic to switch URL based on platform
-  // WE REMOVED "static const String baseUrl = ..." to avoid the duplicate error
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:3000/api';
-    } else {
-       // Run 'ipconfig' and look for Ethernet adapter IPv4 Address
-      const String localIp = '10.230.31.249';   
-      return 'http://$localIp:3000/api'; 
-    }
+    return 'https://ecommerce-backend-saje.onrender.com/api';
   }
 
   // Resolve Backend Image Paths
