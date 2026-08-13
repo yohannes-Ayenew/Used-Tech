@@ -40,6 +40,7 @@ C:.
 |   \---utils
 |           auth_guard.dart
 |           biometric_helper.dart
+|           currency_formatter.dart
 |           error_parser.dart
 |           performance_monitor.dart
 |           validators.dart
