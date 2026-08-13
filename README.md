@@ -1,16 +1,39 @@
-# used_tech_client
+# Used Tech Client
 
-A new Flutter project.
+A Flutter application for buying, selling, and managing used electronics and tech gadgets.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### Prerequisites
+- Flutter SDK (3.x or higher)
+- Dart SDK
+- Android Studio / VS Code with Flutter extension
 
-A few resources to get you started if this is your first Flutter project:
+### Running the Application
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+# Get dependencies
+flutter pub get
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Run on an attached device or emulator
+flutter run
+```
+
+### Running Unit Tests
+
+To run the full suite of unit and widget tests:
+
+```bash
+# Run all tests
+flutter test
+
+# Run core utility tests
+flutter test test/core/utils/
+```
+
+## Project Architecture
+
+The application follows Clean Architecture principles divided into core layers and feature modules:
+- `lib/core`: Constants, error handling, network drivers, theme definitions, and utility helpers (`Validators`, `CurrencyFormatter`, `ErrorParser`).
+- `lib/features`: Feature-based modules containing domain, data, and presentation layers.
+- `test/`: Unit, widget, and integration tests mirroring `lib/`.
